@@ -1,2 +1,6 @@
+alembic
+pytest
+sqlalchemy
+psycopg2
 argh
 pytest
