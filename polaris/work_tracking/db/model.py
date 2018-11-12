@@ -37,3 +37,5 @@ class WorkItem(Base):
     description = Column(Text, nullable=True)
     is_bug = Column(Boolean, nullable=False, default=False, server_default='FALSE')
 
+work_items = WorkItem.__table__
+
