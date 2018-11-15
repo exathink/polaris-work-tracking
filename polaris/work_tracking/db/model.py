@@ -16,17 +16,60 @@ import logging
 logger = logging.getLogger('polaris.work_tracking.db.model')
 
 from sqlalchemy import \
-    Table, Column, BigInteger, Integer, String, Text, DateTime, \
+    Table, Index, Column, BigInteger, Integer, String, Text, DateTime, \
     Boolean, MetaData, ForeignKey, TIMESTAMP, and_
 
-from sqlalchemy.orm import relationship, object_session
-from sqlalchemy.sql import cast
 
-from sqlalchemy.dialects.postgresql import UUID, JSONB
+
+from sqlalchemy.orm import relationship, object_session
+from sqlalchemy.sql import cast, select, func
+
+from sqlalchemy.dialects.postgresql import UUID, JSONB, ARRAY
 
 from polaris.common import db
 
 Base = db.polaris_declarative_base(metadata=MetaData(schema='work_tracking'))
+
+
+class WorkItemsSource(Base):
+    __tablename__ = 'work_items_sources'
+
+    id = Column(Integer, primary_key=True)
+    key =  Column(UUID(as_uuid=True), nullable=False, unique=True)
+    # type of integration: github, github_enterprise, jira, pivotal_tracker etc..
+    integration_type = Column(String, nullable=False)
+
+    # integration specific sub type: for example github_repository_issues, github_organization_issues
+    # this type determines the shape of the expected parameters for an instance of the WorkItemsSource
+    work_items_source_type = Column(String(128), nullable=False)
+    parameters = Column(JSONB, nullable=True, default={}, server_default='{}')
+    # User facing display name for the instance.
+    name = Column(String, nullable=False)
+    description = Column(Text, nullable=True)
+    # An instance must be tied to an account at the very least.
+    account_key = Column(UUID(as_uuid=True), nullable=False)
+    organization_key = Column(UUID(as_uuid=True), nullable=False)
+    # Optionally, it can be tied to a project and/or a specific repository.
+    project_key = Column(UUID(as_uuid=True), nullable=True)
+    repository_key = Column(UUID(as_uuid=True), nullable=True)
+
+    work_items = relationship('WorkItem')
+
+    @classmethod
+    def find_by_work_items_source_key(cls, session, work_items_source_key):
+        return session.query(cls).filter(cls.key == work_items_source_key).first()
+
+    @property
+    def latest_work_item_creation_date(self):
+        return object_session(self).scalar(
+            select([func.max(work_items.c.source_created_at)]).where(
+                work_items.c.work_items_source_id == self.id
+            )
+        )
+
+
+work_items_source = WorkItemsSource.__table__
+
 
 class WorkItem(Base):
     __tablename__ = 'work_items'
@@ -36,6 +79,26 @@ class WorkItem(Base):
     name = Column(String(256), nullable=False)
     description = Column(Text, nullable=True)
     is_bug = Column(Boolean, nullable=False, default=False, server_default='FALSE')
+    tags = Column(ARRAY(String), nullable=False, default=[], server_default='{}')
+    # ID of the item in the source system, used to cross ref this instance for updates etc.
+    source_id = Column(String, nullable=True, index=True)
+    url=Column(String, nullable=True)
+    source_created_at=Column(DateTime, nullable=False)
+    source_last_updated = Column(DateTime, nullable=True)
+    source_display_id = Column(String, nullable=False)
+    source_state=Column(String, nullable=False)
+
+    # Work Items Source relationship
+    work_items_source_id = Column(Integer, ForeignKey('work_items_sources.id'))
+    work_items_source = relationship('WorkItemsSource', back_populates='work_items')
+
 
 work_items = WorkItem.__table__
+Index('ix_work_items_work_item_source_id_source_display_id', work_items.c.work_items_source_id, work_items.c.source_display_id)
+
+
+
+
+
+
 

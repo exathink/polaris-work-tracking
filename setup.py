@@ -31,7 +31,7 @@ setup(
     version=polaris.work_tracking.__version__,
 
 
-    packages=['polaris', 'polaris.work_tracking', 'polaris.work_tracking.db'],
+    packages=['polaris', 'polaris.work_tracking', 'polaris.work_tracking.db', 'polaris.work_tracking.integrations'],
 
     url='',
     license = 'Commercial',
