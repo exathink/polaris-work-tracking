@@ -12,7 +12,7 @@ import logging
 import argh
 from polaris.utils.token_provider import get_token_provider
 from polaris.utils.logging import config_logging
-from polaris.work_tracking.work_tracker import import_work_items as api_import_work_items
+from polaris.work_tracking.work_tracker import sync_work_items as api_import_work_items
 
 from polaris.common import db
 

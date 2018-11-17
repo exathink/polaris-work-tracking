@@ -11,7 +11,7 @@
 import logging
 
 from github import Github
-from polaris.work_tracking.db.api import import_work_items
+from polaris.work_tracking.db.api import sync_work_items
 from polaris.utils.collections import find
 
 def github_client(token_provider, work_items_source):
@@ -35,17 +35,19 @@ class GithubRepositoryIssues(GithubIssuesWorkItemsSource):
     def __init__(self, token_provider, work_items_source):
         self.github = github_client(token_provider, work_items_source)
         self.work_items_source = work_items_source
+        self.last_updated = work_items_source.latest_work_item_update_timestamp
 
 
-    def fetch_new_work_items(self, created_since=None):
+    def fetch_work_items_to_sync(self):
         organization = self.work_items_source.parameters.get('organization')
         repository = self.work_items_source.parameters.get('repository')
         bug_tags =  ['bug', *self.work_items_source.parameters.get('bug_tags', [])]
 
         #query terms
         repository_query_term = f'repo:{organization}/{repository}'
-        created_since_query_term = f'created:>{created_since.isoformat()}' if created_since else ''
-        query=f'type:issue state:open {repository_query_term} {created_since_query_term}'
+        state_query_term='state:open' if self.last_updated is None else ''
+        updated_after_query_term = f'updated:>{self.last_updated.isoformat()}' if self.last_updated else ''
+        query=f'type:issue  {state_query_term} {repository_query_term} {updated_after_query_term}'
 
         logger.info(f"Importing issues for {repository_query_term}: query={query}")
         issues_iterator = self.github.search_issues(query=query)
@@ -59,7 +61,7 @@ class GithubRepositoryIssues(GithubIssuesWorkItemsSource):
                     is_bug=find(issue.labels, lambda label: label.name in bug_tags) is not None,
                     tags=[label.name for label in issue.labels],
                     url=issue.url,
-                    source_id=issue.id,
+                    source_id=str(issue.id),
                     source_last_updated=issue.updated_at,
                     source_created_at=issue.created_at,
                     source_display_id=issue.number,
