@@ -25,3 +25,16 @@ def create_work_items_source(token_provider, work_items_source_key):
 
     assert work_items_source_impl is not None, f'Could not determine work_items_source_implementation for work_items_source_key {work_items_source_key}'
     return work_items_source_impl
+
+def get_work_items_resolver(organization_key):
+    resolver = None
+    with db.orm_session() as session:
+        work_item_sources = WorkItemsSource.find_by_organization_key(session, organization_key)
+        if work_item_sources:
+            work_items_source = work_item_sources[0]
+            if work_items_source.integration_type in ['github', 'github_enterprise']:
+                resolver = GithubIssuesWorkItemsSource.WorkItemResolver
+            elif work_items_source.integration_type in ['pivotal_tracker']:
+                resolver = PivotalTrackerWorkItemsSource.WorkItemResolver
+
+    return resolver

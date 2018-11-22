@@ -9,9 +9,8 @@
 # Author: Krishna Kumar
 
 import logging
-
+import re
 from github import Github
-from polaris.work_tracking.db.api import sync_work_items
 from polaris.utils.collections import find
 
 def github_client(token_provider, work_items_source):
@@ -20,6 +19,14 @@ def github_client(token_provider, work_items_source):
 logger = logging.getLogger('polaris.work_tracking.github')
 
 class GithubIssuesWorkItemsSource:
+
+    class WorkItemResolver:
+        matcher = re.compile('#(\d+)')
+
+        @classmethod
+        def resolve(cls,commit_message):
+            return cls.matcher.findall(commit_message)
+
 
     @staticmethod
     def create(token_provider, work_items_source):

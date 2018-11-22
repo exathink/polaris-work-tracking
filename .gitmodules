@@ -1,3 +1,6 @@
 [submodule "polaris-build"]
 	path = polaris-build
 	url = ../../polaris-common/polaris-build
+[submodule "polaris-messaging"]
+	path = polaris-messaging
+	url = ../../polaris-common/polaris-messaging.git

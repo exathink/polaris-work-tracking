@@ -57,6 +57,11 @@ class WorkItemsSource(Base):
 
 
     @classmethod
+    def find_by_organization_key(cls, session, organization_key):
+        return session.query(cls).filter(cls.organization_key == organization_key).all()
+
+
+    @classmethod
     def find_by_work_items_source_key(cls, session, work_items_source_key):
         return session.query(cls).filter(cls.key == work_items_source_key).first()
 
@@ -86,7 +91,7 @@ class WorkItemsSource(Base):
         )
 
 
-work_items_source = WorkItemsSource.__table__
+work_items_sources = WorkItemsSource.__table__
 
 
 class WorkItem(Base):
@@ -116,7 +121,6 @@ UniqueConstraint(work_items.c.work_items_source_id, work_items.c.source_id)
 
 
 
-
-
-
-
+def recreate_all(engine):
+    Base.metadata.drop_all(engine)
+    Base.metadata.create_all(engine)

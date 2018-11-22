@@ -9,8 +9,21 @@
 # Author: Krishna Kumar
 
 import requests
+import re
 
 class PivotalTrackerWorkItemsSource:
+
+    class WorkItemResolver:
+        brackets = re.compile(r'\[(.*)\]')
+        stories = re.compile('#(\d+)')
+        @classmethod
+        def resolve(cls,commit_message):
+            resolved = []
+            groups = cls.brackets.findall(commit_message)
+            for group in groups:
+                resolved.extend(cls.stories.findall(group))
+            return resolved
+
 
     @staticmethod
     def create(token_provider, work_items_source):

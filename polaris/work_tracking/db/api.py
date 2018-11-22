@@ -11,7 +11,7 @@
 import uuid
 import logging
 from polaris.common import db
-from .model import WorkItem, WorkItemsSource, work_items
+from .model import WorkItem, WorkItemsSource, work_items, work_items_sources
 from sqlalchemy import select, and_, literal_column
 from sqlalchemy.dialects.postgresql import insert
 
@@ -57,3 +57,30 @@ def sync_work_items(work_items_source_key, work_item_list, join_this=None):
             ).rowcount
 
     return rows
+
+
+def resolve_work_items_by_display_ids(organization_key, display_ids):
+    resolved = {}
+    if len(display_ids) > 0:
+        with db.create_session() as session:
+            resolved = {
+                work_item['display_id']: work_item
+                for work_item in session.connection.execute(
+                    select([
+                        work_items.c.key,
+                        work_items.c.source_display_id.label('display_id'),
+                        work_items.c.url,
+                        work_items.c.name,
+                        work_items_sources.c.key.label('work_items_source_key'),
+                    ]).select_from(
+                        work_items.join(work_items_sources, work_items.c.work_items_source_id == work_items_sources.c.id)
+                    ).where(
+                        and_(
+                            work_items_sources.c.organization_key == organization_key,
+                            work_items.c.source_display_id.in_(display_ids)
+                        )
+                    )
+                ).fetchall()
+            }
+
+    return resolved
