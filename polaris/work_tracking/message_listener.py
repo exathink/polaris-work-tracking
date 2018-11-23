@@ -28,6 +28,10 @@ def process_commit_history_imported(message):
     message = request.loads(message)
     organization_key = message['organization_key']
     repository_name = message['repository_name']
+    logger.info(f"Processing  "
+                f"{MessageTypes.commit_history_imported} for "
+                f"Organization: {organization_key}"
+                f"Repository: {repository_name}")
 
     resolved_work_items = work_tracker.resolve_work_items_from_commit_summaries(
         organization_key,
@@ -47,6 +51,7 @@ def dispatch(body):
     message_type, payload = unpack_message(body)
     try:
         if message_type == MessageTypes.commit_history_imported:
+
             response_message_type = MessageTypes.commit_work_items_resolved
             response = process_commit_history_imported(message=payload)
             response_message = pack_message(
@@ -58,6 +63,7 @@ def dispatch(body):
                 message=response_message,
                 routing_key=response_message_type
             )
+            logger.info(f'Published {response_message_type}')
             return response_message
 
     except SchemaValidationError as exc:
