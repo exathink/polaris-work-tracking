@@ -18,6 +18,8 @@ from polaris.messaging.utils import polaris_mq_connection, unpack_message, pack_
 from polaris.messaging.messages import MessageTypes, CommitHistoryImported, CommitWorkItemsResolved
 from polaris.utils.exceptions import SchemaValidationError
 from polaris.work_tracking import work_tracker
+from polaris.common import db
+
 
 logger = logging.getLogger('polaris.work_tracking.message_listener')
 
@@ -81,6 +83,10 @@ def cleanup(channel, connection):
 if __name__ == "__main__":
     config_logging()
     config_provider = get_config_provider()
+
+    logger.info('Connecting to polaris db...')
+    db.init(config_provider.get('POLARIS_DB_URL'))
+
     with polaris_mq_connection() as connection:
         channel = connection.channel()
         init_consumer(channel)
