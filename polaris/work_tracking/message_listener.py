@@ -14,72 +14,69 @@ import signal
 
 from polaris.utils.logging import config_logging
 from polaris.utils.config import get_config_provider
-from polaris.messaging.utils import polaris_mq_connection, unpack_message, pack_message, publish
-from polaris.messaging.messages import MessageTypes, CommitHistoryImported, CommitWorkItemsResolved
-from polaris.utils.exceptions import SchemaValidationError
+from polaris.messaging.utils import polaris_mq_connection
+from polaris.messaging.messages import CommitHistoryImported, CommitWorkItemsResolved
+from polaris.messaging.topics import CommitsTopic
+
 from polaris.work_tracking import work_tracker
 from polaris.common import db
 
 
 logger = logging.getLogger('polaris.work_tracking.message_listener')
 
-def process_commit_history_imported(message):
-    request = CommitHistoryImported()
-    message = request.loads(message)
-    organization_key = message['organization_key']
-    repository_name = message['repository_name']
+def process_commit_history_imported(received):
+    message = CommitHistoryImported(receive=received)
+    payload = message.dict
+    organization_key = payload['organization_key']
+    repository_name = payload['repository_name']
     logger.info(f"Processing  "
-                f"{MessageTypes.commit_history_imported} for "
+                f"{message.message_type} for "
                 f"Organization: {organization_key}"
                 f"Repository: {repository_name}")
 
     resolved_work_items = work_tracker.resolve_work_items_from_commit_summaries(
         organization_key,
-        message['commit_summaries']
+        payload['commit_summaries']
     )
     if resolved_work_items is not None:
-        response = dict(
-            organization_key=organization_key,
-            repository_name=repository_name,
-            commit_work_items=resolved_work_items
-        )
-        return response
+        logger.info(f'Resolved new work_items for {len(resolved_work_items)} commits for organization {organization_key} and repository {repository_name}')
+        return dict(
+           organization_key=organization_key,
+           repository_name=repository_name,
+           commit_work_items=resolved_work_items
+       )
 
 
-
-def dispatch(body):
-    message_type, payload = unpack_message(body)
-    try:
-        if message_type == MessageTypes.commit_history_imported:
-
-            response_message_type = MessageTypes.commit_work_items_resolved
-            response = process_commit_history_imported(message=payload)
-            response_message = pack_message(
-                message_type=response_message_type,
-                payload=CommitWorkItemsResolved().dumps(response)
-            )
-            publish(
-                exchange='commits',
-                message=response_message,
-                routing_key=response_message_type
-            )
-            logger.info(f'Published {response_message_type}')
-            return response_message
-
-    except SchemaValidationError as exc:
-        logger.error(f"Message {body} failed schema validation: {str(exc)}")
+def commits_topic_dispatch(channel, method, properties, body):
+    if CommitHistoryImported.message_type == method.routing_key:
+       resolved = process_commit_history_imported(body)
+       if resolved:
+           response_message = CommitWorkItemsResolved(send=resolved)
+           CommitsTopic(channel).publish(message=response_message)
+           return response_message
 
 
+# -------------
+# Initialization
+# --------------
 
 
-def dispatch_callback(channel, method, properties, body):
-   dispatch(body)
 
 def init_consumer(channel):
-    channel.exchange_declare(exchange='commits', exchange_type='fanout')
-    channel.queue_declare(queue='commit_issues', exclusive=False)
-    channel.queue_bind(exchange='commits', queue='commit_issues')
-    channel.basic_consume(dispatch_callback, queue='commit_issues', no_ack=True)
+    commits_topic = CommitsTopic(channel, create=True)
+    commits_topic.add_subscriber(
+        subscriber_queue='commits_work_items',
+        message_classes=[
+            CommitHistoryImported
+        ],
+        callback=commits_topic_dispatch,
+        exclusive=False,
+        no_ack=True
+    )
+
+
+
+
 
 def cleanup(channel, connection):
     channel.stop_consuming()

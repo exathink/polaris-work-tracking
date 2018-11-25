@@ -13,9 +13,12 @@ import json
 
 from test.constants import *
 from polaris.work_tracking import message_listener
-from polaris.messaging.messages import CommitWorkItemsResolved, MessageTypes
+from polaris.messaging.messages import CommitHistoryImported, CommitWorkItemsResolved
 from polaris.messaging.utils import pack_message, unpack_message
 from unittest.mock import patch
+from collections import namedtuple
+
+method_shim = namedtuple('method_shim', 'routing_key')
 
 class TestCommitHistoryImportedMessage:
     # fixtures for fields in the input message that are not used by the
@@ -42,50 +45,44 @@ class TestCommitHistoryImportedMessage:
         author_alias='',
         author_name=''
     )
-    payload = json.dumps(
-        dict(
-            organization_key=rails_organization_key.hex,
-            repository_name='rails',
-            branch=branch_ignored_fields,
-            commit_summaries=[
-                dict(
-                    commit_key='A',
-                    commit_message='Made a change. Fixes issue #1002 and #1003',
-                    **commit_summary_ignored_fields
-                ),
-                dict(
-                    commit_key='B',
-                    commit_message='Made another change. Fixes issue #1005',
-                    **commit_summary_ignored_fields
-                )
-            ]
-        )
+    payload = dict(
+        organization_key=rails_organization_key.hex,
+        repository_name='rails',
+        branch=branch_ignored_fields,
+        commit_summaries=[
+            dict(
+                commit_key='A',
+                commit_message='Made a change. Fixes issue #1002 and #1003',
+                **commit_summary_ignored_fields
+            ),
+            dict(
+                commit_key='B',
+                commit_message='Made another change. Fixes issue #1005',
+                **commit_summary_ignored_fields
+            )
+        ]
     )
-    message = pack_message(MessageTypes.commit_history_imported, payload)
+
+    message = CommitHistoryImported(send=payload).message_body
 
     def it_returns_a_valid_response(self, setup_work_items):
-        with patch('polaris.work_tracking.message_listener.publish'):
-            response = message_listener.dispatch(self.message)
-            message_type, payload = unpack_message(response)
-            assert message_type == MessageTypes.commit_work_items_resolved
-            assert payload
-            response_message = CommitWorkItemsResolved().loads(payload)
+        with patch('polaris.messaging.topics.Topic.publish'):
+            response_message = message_listener.commits_topic_dispatch(None, method_shim(routing_key=CommitHistoryImported.message_type), None, self.message)
             assert response_message
+            assert response_message.message_type == CommitWorkItemsResolved.message_type
+            assert CommitWorkItemsResolved(receive=response_message.message_body).dict
 
     def it_publishes_the_response_correctly(self, setup_work_items):
-        with patch('polaris.work_tracking.message_listener.publish') as publish:
-            response = message_listener.dispatch(self.message)
+        with patch('polaris.messaging.topics.Topic.publish') as publish:
+            response = message_listener.commits_topic_dispatch(None, method_shim(routing_key=CommitHistoryImported.message_type), None, self.message)
             publish.assert_called_with(
-                exchange='commits',
-                message=response,
-                routing_key=MessageTypes.commit_work_items_resolved
+                message=response
             )
 
     def it_returns_the_correct_work_item_mapping(self, setup_work_items):
-        with patch('polaris.work_tracking.message_listener.publish'):
-            response = message_listener.dispatch(self.message)
-            message_type, payload = unpack_message(response)
-            response_message = CommitWorkItemsResolved().loads(payload)
+        with patch('polaris.messaging.topics.Topic.publish'):
+            response = message_listener.commits_topic_dispatch(None, method_shim(routing_key=CommitHistoryImported.message_type), None, self.message)
+            response_message = CommitWorkItemsResolved(receive=response.message_body).dict
             commit_work_items = response_message['commit_work_items']
             assert len(commit_work_items) == 2
             assert {'1002', '1003'} == {
@@ -103,6 +100,3 @@ class TestCommitHistoryImportedMessage:
                 for work_item in entry['work_items']
                 if entry['commit_key'] == 'B'
             }
-
-
-
