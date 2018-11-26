@@ -1,5 +1,27 @@
 version: '3.1'
 
+services:
+  package-base:
+    environment:
+      POLARIS_TEST_DB_URL: postgres://polaris:polaris@polaris-db/polaris_test
+    depends_on:
+      - polaris-db
+
+  package:
+    environment:
+      POLARIS_TEST_DB_URL: postgres://polaris:polaris@polaris-db/polaris_test
+    depends_on:
+      - polaris-db
+
+
+  polaris-db:
+    image: ${POLARIS_DB_IMAGE}
+    environment:
+      POSTGRES_USER: polaris
+      POSTGRES_PASSWORD: polaris
+      POSTGRES_DB: polaris
+    ports:
+      - "5432"
 
 
 
