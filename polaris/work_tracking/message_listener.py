@@ -14,9 +14,10 @@ import signal
 
 from polaris.utils.logging import config_logging
 from polaris.utils.config import get_config_provider
-from polaris.messaging.utils import polaris_mq_connection
+from polaris.messaging.utils import polaris_mq_connection, shutdown
 from polaris.messaging.messages import CommitHistoryImported, CommitWorkItemsResolved
 from polaris.messaging.topics import CommitsTopic
+from polaris.messaging.message_consumer import MessageConsumer
 
 from polaris.work_tracking import work_tracker
 from polaris.common import db
@@ -78,10 +79,8 @@ def init_consumer(channel):
 
 
 
-def cleanup(channel, connection):
-    channel.stop_consuming()
-    channel.close()
-    connection.close()
+
+
 
 if __name__ == "__main__":
     config_logging()
@@ -90,15 +89,10 @@ if __name__ == "__main__":
     logger.info('Connecting to polaris db...')
     db.init(config_provider.get('POLARIS_DB_URL'))
 
-    with polaris_mq_connection() as connection:
-        channel = connection.channel()
-        init_consumer(channel)
-        signal.signal(signal.SIGTERM, lambda: cleanup(channel, connection))
-        logger.info('Listening for messages..')
-        try:
-            channel.start_consuming()
-        except Exception as exc:
-            logger.warning(str(exc))
+    MessageConsumer(
+        name='polaris.work_tracking.message_listener',
+        init_consumer = init_consumer
+    ).start_consuming()
 
 
 
