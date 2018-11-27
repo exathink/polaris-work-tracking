@@ -24,19 +24,16 @@ from polaris.common import db
 
 logger = logging.getLogger('polaris.work_tracking.message_listener')
 
-def process_commit_history_imported(received):
-    message = CommitHistoryImported(receive=received)
-    payload = message.dict
-    organization_key = payload['organization_key']
-    repository_name = payload['repository_name']
-    logger.info(f"Processing  "
-                f"{message.message_type} for "
+def process_commit_history_imported(message):
+    organization_key = message['organization_key']
+    repository_name = message['repository_name']
+    logger.info(f"Processing  commit_history_imported"
                 f"Organization: {organization_key}"
                 f"Repository: {repository_name}")
 
     resolved_work_items = work_tracker.resolve_work_items_from_commit_summaries(
         organization_key,
-        payload['commit_summaries']
+        message['commit_summaries']
     )
     if resolved_work_items is not None:
         logger.info(f'Resolved new work_items for {len(resolved_work_items[0])} commits for organization {organization_key} and repository {repository_name}')
@@ -53,12 +50,13 @@ def process_commit_history_imported(received):
 
 def commits_topic_dispatch(channel, method, properties, body):
     if CommitHistoryImported.message_type == method.routing_key:
-       resolved = process_commit_history_imported(body)
-       if resolved:
-           commit_work_items_resolved_message = CommitWorkItemsResolved(send=resolved[0])
+        message = CommitHistoryImported(receive=body)
+        resolved = process_commit_history_imported(message.dict)
+        if resolved:
+           commit_work_items_resolved_message = CommitWorkItemsResolved(send=resolved[0], in_response_to=message)
            CommitsTopic(channel).publish(message=commit_work_items_resolved_message)
 
-           work_items_commits_resolved_message = WorkItemsCommitsResolved(send=resolved[1])
+           work_items_commits_resolved_message = WorkItemsCommitsResolved(send=resolved[1], in_response_to=message)
            WorkItemsTopic(channel).publish(message=work_items_commits_resolved_message)
            return commit_work_items_resolved_message, work_items_commits_resolved_message
 
