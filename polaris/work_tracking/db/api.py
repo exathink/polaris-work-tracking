@@ -64,7 +64,13 @@ def resolve_work_items_by_display_ids(organization_key, display_ids):
     if len(display_ids) > 0:
         with db.create_session() as session:
             resolved = {
-                work_item['display_id']: work_item
+                work_item['display_id']: dict(
+                    key=work_item.key,
+                    display_id=work_item.display_id,
+                    url=work_item.url,
+                    name=work_item.name,
+                    work_items_source_key=work_item.work_items_source_key
+                )
                 for work_item in session.connection.execute(
                     select([
                         work_items.c.key,

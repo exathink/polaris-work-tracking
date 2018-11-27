@@ -27,34 +27,61 @@ def sync_work_items(token_provider, work_items_source_key):
 def resolve_work_items_from_commit_summaries(organization_key, commit_summaries):
     work_item_resolver = get_work_items_resolver(organization_key)
     if work_item_resolver:
-        commit_work_items_to_resolve = {}
-        for commit_summary in commit_summaries:
-            display_ids = work_item_resolver.resolve(commit_summary['commit_message'])
-            if len(display_ids) > 0:
-                commit_work_items_to_resolve[commit_summary['commit_key']] = display_ids
-
+        # hash commit summaries by commit key for downstream processing
+        # and map each commit to the display_ids of any work_item references in
+        # the commit message.
+        commit_summaries_to_resolve = {
+            commit_summary['commit_key']:
+                dict(
+                    commit_summary=commit_summary,
+                    work_item_display_ids=work_item_resolver.resolve(commit_summary['commit_message'])
+                )
+            for commit_summary in commit_summaries
+        }
+        # Take the union of all the display_ids in the commit messages above
         work_items_to_resolve = set()
-        for display_ids in commit_work_items_to_resolve.values():
-            work_items_to_resolve.update(display_ids)
+        for resolve_data in commit_summaries_to_resolve.values():
+                work_items_to_resolve.update(resolve_data['work_item_display_ids'])
 
+        # resolve the display ids to work_items, we will interpolate commits into this
+        # work items returned here.
         work_items_map = api.resolve_work_items_by_display_ids(organization_key, work_items_to_resolve)
-
-        resolved = []
-        for commit_key, display_ids in commit_work_items_to_resolve.items():
-            resolved_work_items = []
-            for display_id in display_ids:
+        # initialize the list that will hold the reverse mapping of commits to work items.
+        commits_to_work_items = []
+        # Do the bidirectional resoution of work items to commits and commits to work items.
+        for commit_key, resolve_data in commit_summaries_to_resolve.items():
+            commit_work_items = []
+            for display_id in resolve_data['work_item_display_ids']:
                 if display_id in work_items_map:
-                    resolved_work_items.append(work_items_map[display_id])
+                    work_item = work_items_map[display_id]
+                    # associate work_item with commit
+                    commit_work_items.append(work_item)
+                    # associate commit summary with work_items
+                    work_item['commit_summaries'] = work_item.get('commit_summaries', [])
+                    work_item['commit_summaries'].append(
+                        commit_summaries_to_resolve[commit_key]['commit_summary']
+                    )
 
-            if len(resolved_work_items) > 0:
-                resolved.append(
+
+            if len(commit_work_items) > 0:
+                commits_to_work_items.append(
                     dict(
                         commit_key=commit_key,
-                        work_items=resolved_work_items
+                        work_items=commit_work_items
                     )
                 )
+        # build the reverse mapping output data structure
+        work_items_to_commits = [
+            dict(
+                work_item_key=work_item['key'],
+                commit_summaries=work_item['commit_summaries']
+            )
+            for work_item in work_items_map.values()
+        ]
 
-        return resolved
+        # return both mappings.
+        return commits_to_work_items, work_items_to_commits
+
 
 
 

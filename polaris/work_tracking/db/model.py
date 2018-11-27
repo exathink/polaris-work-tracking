@@ -113,12 +113,23 @@ class WorkItem(Base):
     # Work Items Source relationship
     work_items_source_id = Column(Integer, ForeignKey('work_items_sources.id'))
     work_items_source = relationship('WorkItemsSource', back_populates='work_items')
+    commits = relationship('WorkItemsCommit')
 
 
 work_items = WorkItem.__table__
 Index('ix_work_items_work_item_source_id_source_display_id', work_items.c.work_items_source_id, work_items.c.source_display_id)
 UniqueConstraint(work_items.c.work_items_source_id, work_items.c.source_id)
 
+class WorkItemsCommit(Base):
+    __tablename__ = 'work_items_commits'
+
+    work_items_id = Column(BigInteger, ForeignKey('work_items.id'), index=True, primary_key=True)
+    commit_key = Column(String, primary_key=True)
+    repository_name = Column(String, nullable=False)
+    commit_date = Column(TIMESTAMP, nullable=False)
+    commit_branch = Column(String)
+    commit_message = Column(String)
+    work_item = relationship('WorkItem', back_populates='commits')
 
 
 def recreate_all(engine):
