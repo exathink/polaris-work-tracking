@@ -14,7 +14,7 @@ import signal
 
 from polaris.utils.logging import config_logging
 from polaris.utils.config import get_config_provider
-from polaris.messaging.messages import CommitHistoryImported, CommitWorkItemsResolved, WorkItemsCommitsResolved
+from polaris.messaging.messages import CommitsCreated, CommitWorkItemsResolved, WorkItemsCommitsResolved
 from polaris.messaging.topics import CommitsTopic, WorkItemsTopic
 from polaris.messaging.message_consumer import MessageConsumer
 
@@ -24,7 +24,7 @@ from polaris.common import db
 
 logger = logging.getLogger('polaris.work_tracking.message_listener')
 
-def process_commit_history_imported(message):
+def process_commits_created(message):
     organization_key = message['organization_key']
     repository_name = message['repository_name']
     logger.info(f"Processing  commit_history_imported"
@@ -33,7 +33,7 @@ def process_commit_history_imported(message):
 
     resolved_work_items = work_tracker.resolve_work_items_from_commit_summaries(
         organization_key,
-        message['commit_summaries']
+        message['new_commits']
     )
     if resolved_work_items is not None:
         logger.info(f'Resolved new work_items for {len(resolved_work_items[0])} commits for organization {organization_key} and repository {repository_name}')
@@ -49,9 +49,9 @@ def process_commit_history_imported(message):
 
 
 def commits_topic_dispatch(channel, method, properties, body):
-    if CommitHistoryImported.message_type == method.routing_key:
-        message = CommitHistoryImported(receive=body)
-        resolved = process_commit_history_imported(message.dict)
+    if CommitsCreated.message_type == method.routing_key:
+        message = CommitsCreated(receive=body)
+        resolved = process_commits_created(message.dict)
         if resolved:
            commit_work_items_resolved_message = CommitWorkItemsResolved(send=resolved[0], in_response_to=message)
            CommitsTopic(channel).publish(message=commit_work_items_resolved_message)
@@ -84,7 +84,7 @@ def init_consumer(channel):
     commits_topic.add_subscriber(
         subscriber_queue='commits_work_items',
         message_classes=[
-            CommitHistoryImported
+            CommitsCreated
         ],
         callback=commits_topic_dispatch,
         exclusive=False,
