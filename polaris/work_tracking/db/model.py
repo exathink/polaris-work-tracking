@@ -31,6 +31,14 @@ from polaris.common import db
 Base = db.polaris_declarative_base(metadata=MetaData(schema='work_tracking'))
 
 
+# many-many relationship table
+work_items_commits = Table(
+    'work_items_commits', Base.metadata,
+    Column('work_item_id', ForeignKey('work_items.id'), primary_key=True, index=True),
+    Column('commit_id', ForeignKey('cached_commits.id'), primary_key=True, index=True)
+)
+
+
 class WorkItemsSource(Base):
     __tablename__ = 'work_items_sources'
 
@@ -113,23 +121,39 @@ class WorkItem(Base):
     # Work Items Source relationship
     work_items_source_id = Column(Integer, ForeignKey('work_items_sources.id'))
     work_items_source = relationship('WorkItemsSource', back_populates='work_items')
-    commits = relationship('WorkItemsCommit')
+    commits = relationship("CachedCommit",
+                                 secondary=work_items_commits,
+                                 back_populates="work_items")
 
 
 work_items = WorkItem.__table__
 Index('ix_work_items_work_item_source_id_source_display_id', work_items.c.work_items_source_id, work_items.c.source_display_id)
 UniqueConstraint(work_items.c.work_items_source_id, work_items.c.source_id)
 
-class WorkItemsCommit(Base):
-    __tablename__ = 'work_items_commits'
 
-    work_items_id = Column(BigInteger, ForeignKey('work_items.id'), index=True, primary_key=True)
-    commit_key = Column(String, primary_key=True)
+class CachedCommit(Base):
+    __tablename__ = 'cached_commits'
+
+    id = Column(BigInteger, primary_key=True)
+    commit_key = Column(String, nullable=False)
     repository_name = Column(String, nullable=False)
-    commit_date = Column(TIMESTAMP, nullable=False)
-    commit_branch = Column(String)
-    commit_message = Column(String)
-    work_item = relationship('WorkItem', back_populates='commits')
+    commit_date = Column(DateTime, nullable=False)
+    commit_date_tz_offset = Column(Integer, nullable=False)
+    committer_contributor_name = Column(String, nullable=False)
+    committer_contributor_key = Column(UUID(as_uuid=True), nullable=False)
+    author_date = Column(DateTime, nullable=False)
+    author_date_tz_offset = Column(Integer, nullable=False)
+    author_contributor_key = Column(UUID(as_uuid=True),nullable=False)
+    author_contributor_name = Column(String, nullable=False)
+    commit_message = Column(Text, nullable=False)
+    created_on_branch = Column(String, nullable=True)
+
+    work_items = relationship('WorkItem',
+                            secondary=work_items_commits,
+                            back_populates="commits")
+
+cached_commits = CachedCommit.__table__
+UniqueConstraint(cached_commits.c.repository_name, cached_commits.c.commit_key)
 
 
 def recreate_all(engine):

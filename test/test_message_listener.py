@@ -10,7 +10,7 @@
 
 import pytest
 import json
-
+import uuid
 from test.constants import *
 from polaris.work_tracking import message_listener
 from polaris.messaging.messages import CommitsCreated, CommitWorkItemsResolved, WorkItemsCommitsResolved
@@ -26,16 +26,14 @@ method_shim = namedtuple('method_shim', 'routing_key')
     # is the message contract
 
 commit_header_ignored_fields = dict(
-    commit_date_raw=0,
     commit_date=datetime.utcnow(),
     commit_date_tz_offset=0,
-    committer_contributor_key='',
-    committer_contributor_name='',
-    author_date_raw=0,
+    committer_contributor_key=uuid.uuid4().hex,
+    committer_contributor_name='Joe Blow',
     author_date=datetime.utcnow(),
     author_date_tz_offset=0,
-    author_contributor_key='',
-    author_contributor_name=''
+    author_contributor_key=uuid.uuid4().hex,
+    author_contributor_name='Billy Bob'
 )
 payload = dict(
     organization_key=rails_organization_key.hex,

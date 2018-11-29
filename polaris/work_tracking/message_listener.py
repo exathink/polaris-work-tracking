@@ -31,7 +31,7 @@ def process_commits_created(message):
                 f"Organization: {organization_key}"
                 f"Repository: {repository_name}")
 
-    resolved_work_items = work_tracker.resolve_work_items_from_commit_summaries(
+    resolved_work_items = work_tracker.resolve_work_items_from_commit_headers(
         organization_key,
         message['new_commits']
     )

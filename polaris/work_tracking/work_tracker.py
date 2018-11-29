@@ -24,23 +24,23 @@ def sync_work_items(token_provider, work_items_source_key):
 
     return import_count
 
-def resolve_work_items_from_commit_summaries(organization_key, commit_summaries):
+def resolve_work_items_from_commit_headers(organization_key, commit_headers):
     work_item_resolver = get_work_items_resolver(organization_key)
     if work_item_resolver:
         # hash commit summaries by commit key for downstream processing
         # and map each commit to the display_ids of any work_item references in
         # the commit message.
-        commit_summaries_to_resolve = {
+        commit_headers_to_resolve = {
             commit_summary['commit_key']:
                 dict(
                     commit_summary=commit_summary,
                     work_item_display_ids=work_item_resolver.resolve(commit_summary['commit_message'])
                 )
-            for commit_summary in commit_summaries
+            for commit_summary in commit_headers
         }
         # Take the union of all the display_ids in the commit messages above
         work_items_to_resolve = set()
-        for resolve_data in commit_summaries_to_resolve.values():
+        for resolve_data in commit_headers_to_resolve.values():
                 work_items_to_resolve.update(resolve_data['work_item_display_ids'])
 
         # resolve the display ids to work_items, we will interpolate commits into this
@@ -49,7 +49,7 @@ def resolve_work_items_from_commit_summaries(organization_key, commit_summaries)
         # initialize the list that will hold the reverse mapping of commits to work items.
         commits_to_work_items = []
         # Do the bidirectional resoution of work items to commits and commits to work items.
-        for commit_key, resolve_data in commit_summaries_to_resolve.items():
+        for commit_key, resolve_data in commit_headers_to_resolve.items():
             commit_work_items = []
             for display_id in resolve_data['work_item_display_ids']:
                 if display_id in work_items_map:
@@ -57,9 +57,9 @@ def resolve_work_items_from_commit_summaries(organization_key, commit_summaries)
                     # associate work_item with commit
                     commit_work_items.append(work_item)
                     # associate commit summary with work_items
-                    work_item['commit_summaries'] = work_item.get('commit_summaries', [])
-                    work_item['commit_summaries'].append(
-                        commit_summaries_to_resolve[commit_key]['commit_summary']
+                    work_item['commit_headers'] = work_item.get('commit_headers', [])
+                    work_item['commit_headers'].append(
+                        commit_headers_to_resolve[commit_key]['commit_summary']
                     )
 
 
@@ -74,7 +74,7 @@ def resolve_work_items_from_commit_summaries(organization_key, commit_summaries)
         work_items_to_commits = [
             dict(
                 work_item_key=work_item['key'],
-                commit_summaries=work_item['commit_summaries']
+                commit_headers=work_item['commit_headers']
             )
             for work_item in work_items_map.values()
         ]
@@ -85,7 +85,8 @@ def resolve_work_items_from_commit_summaries(organization_key, commit_summaries)
 
 
 
-
+def update_work_items_commits(organization_key, repository_name, work_items_commits):
+    return api.update_work_items_commits(organization_key, repository_name, work_items_commits)
 
 
 
