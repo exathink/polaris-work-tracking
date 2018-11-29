@@ -137,6 +137,7 @@ class CachedCommit(Base):
     id = Column(BigInteger, primary_key=True)
     commit_key = Column(String, nullable=False)
     repository_name = Column(String, nullable=False)
+    organization_key = Column(UUID(as_uuid=True), nullable=False)
     commit_date = Column(DateTime, nullable=False)
     commit_date_tz_offset = Column(Integer, nullable=False)
     committer_contributor_name = Column(String, nullable=False)
@@ -153,7 +154,7 @@ class CachedCommit(Base):
                             back_populates="commits")
 
 cached_commits = CachedCommit.__table__
-UniqueConstraint(cached_commits.c.repository_name, cached_commits.c.commit_key)
+UniqueConstraint(cached_commits.c.organization_key, cached_commits.c.repository_name, cached_commits.c.commit_key)
 
 
 def recreate_all(engine):

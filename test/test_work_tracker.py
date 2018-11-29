@@ -11,6 +11,8 @@ import pytest
 from datetime import datetime
 from polaris.work_tracking import work_tracker
 from test.constants import *
+from .helpers import find_work_items
+
 from polaris.common import db
 from polaris.work_tracking.db.model import WorkItemsSource, cached_commits
 
@@ -186,13 +188,7 @@ class TestResolveWorkItemsFromCommits:
             assert len(resolved) == 1
 
 
-def find_work_items(work_items_source_key, source_ids):
-    with db.orm_session() as session:
-        return WorkItemsSource.find_by_work_items_source_key(
-            session, work_items_source_key
-        ).find_work_items_by_source_id(
-            session, source_ids
-        )
+
 
 
 class TestResolveCommitsForWorkItems:
@@ -435,6 +431,7 @@ class TestUpdateWorkItemsCommits:
                 dict(
                     commit_key='XXXX',
                     repository_name='rails',
+                    organization_key=rails_organization_key,
                     **commit_header_common
                 )
             ])

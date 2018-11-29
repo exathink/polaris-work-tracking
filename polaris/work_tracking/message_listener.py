@@ -14,8 +14,14 @@ import signal
 
 from polaris.utils.logging import config_logging
 from polaris.utils.config import get_config_provider
-from polaris.messaging.messages import CommitsCreated, CommitWorkItemsResolved, WorkItemsCommitsResolved
-from polaris.messaging.topics import CommitsTopic, WorkItemsTopic
+from polaris.messaging.messages import \
+    Message, \
+    CommitsCreated, \
+    CommitWorkItemsResolved, \
+    WorkItemsCommitsResolved, \
+    WorkItemsCommitsUpdated
+
+from polaris.messaging.topics import PolarisErrorsTopic, CommitsTopic, WorkItemsTopic
 from polaris.messaging.message_consumer import MessageConsumer
 
 from polaris.work_tracking import work_tracker
@@ -25,15 +31,16 @@ from polaris.common import db
 logger = logging.getLogger('polaris.work_tracking.message_listener')
 
 def process_commits_created(message):
-    organization_key = message['organization_key']
-    repository_name = message['repository_name']
-    logger.info(f"Processing  commit_history_imported"
-                f"Organization: {organization_key}"
-                f"Repository: {repository_name}")
+    commits_created=message.dict
+    organization_key = commits_created['organization_key']
+    repository_name = commits_created['repository_name']
+    logger.info(f"Processing  {message.message_type}: "
+                f" Organization: {organization_key}"
+                f" Repository: {repository_name}")
 
     resolved_work_items = work_tracker.resolve_work_items_from_commit_headers(
         organization_key,
-        message['new_commits']
+        commits_created['new_commits']
     )
     if resolved_work_items is not None:
         logger.info(f'Resolved new work_items for {len(resolved_work_items[0])} commits for organization {organization_key} and repository {repository_name}')
@@ -49,37 +56,64 @@ def process_commits_created(message):
 
 
 def commits_topic_dispatch(channel, method, properties, body):
-    if CommitsCreated.message_type == method.routing_key:
-        message = CommitsCreated(receive=body)
-        resolved = process_commits_created(message.dict)
-        if resolved:
-           commit_work_items_resolved_message = CommitWorkItemsResolved(send=resolved[0], in_response_to=message)
-           CommitsTopic(channel).publish(message=commit_work_items_resolved_message)
+    message = None
+    try:
+        if CommitsCreated.message_type == method.routing_key:
+            message = CommitsCreated(receive=body)
+            resolved = process_commits_created(message)
+            if resolved:
+               commit_work_items_resolved_message = CommitWorkItemsResolved(send=resolved[0], in_response_to=message)
+               CommitsTopic(channel).publish(message=commit_work_items_resolved_message)
 
-           work_items_commits_resolved_message = WorkItemsCommitsResolved(send=resolved[1], in_response_to=message)
-           WorkItemsTopic(channel).publish(message=work_items_commits_resolved_message)
-           return commit_work_items_resolved_message, work_items_commits_resolved_message
+               work_items_commits_resolved_message = WorkItemsCommitsResolved(send=resolved[1], in_response_to=message)
+               WorkItemsTopic(channel).publish(message=work_items_commits_resolved_message)
+               return commit_work_items_resolved_message, work_items_commits_resolved_message
+
+    except Exception as exc:
+        logger.error(f"Error processing message on topic commits: {str(exc)})")
 
 #-------------------------------------------------
 #
 # ------------------------------------------------
 
-def process_work_items_commits_resolved(received):
-    logger.info("Received message work_items_commits_resolved")
+def process_work_items_commits_resolved(message):
+    work_items_commits_resolved = message.dict
+    organization_key = work_items_commits_resolved['organization_key']
+    repository_name = work_items_commits_resolved['repository_name']
+    logger.info(f"Processing  {message.message_type}: "
+                f" Organization: {organization_key}"
+                f" Repository: {repository_name}")
+
+    work_tracker.update_work_items_commits(organization_key, repository_name, work_items_commits_resolved['work_items_commits'])
+    return work_items_commits_resolved
+
+
 
 def work_items_topic_dispatch(channel, method, properties, body):
-    if WorkItemsCommitsResolved.message_type == method.routing_key:
-        resolved = process_work_items_commits_resolved(body)
+    try:
+        if WorkItemsCommitsResolved.message_type == method.routing_key:
+            work_items_commits_resolved_message = WorkItemsCommitsResolved(receive=body)
+            result = process_work_items_commits_resolved(work_items_commits_resolved_message)
+            if result:
+                work_items_commits_updated_message = WorkItemsCommitsUpdated(
+                    send=result,
+                    in_response_to=work_items_commits_resolved_message
+                )
+                WorkItemsTopic(channel).publish(message=work_items_commits_updated_message)
+                return work_items_commits_updated_message
 
-        return resolved
-
-# ----------
+    except Exception as exc:
+        logger.error(f"Error processing message on topic work_items: {str(exc)})")
+# ------
+# ----
 # Initialization
 # --------------
 
 
 
 def init_consumer(channel):
+    PolarisErrorsTopic(channel, create=True)
+
     commits_topic = CommitsTopic(channel, create=True)
     commits_topic.add_subscriber(
         subscriber_queue='commits_work_items',
