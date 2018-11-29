@@ -13,6 +13,7 @@ from datetime import datetime
 from unittest.mock import patch
 
 import pytest
+from polaris.messaging.utils import unpack_message
 
 from polaris.messaging.messages import CommitsCreated, CommitWorkItemsResolved, WorkItemsCommitsResolved, WorkItemsCommitsUpdated
 from polaris.work_tracking import message_listener
@@ -123,6 +124,16 @@ class TestCommitsCreatedMessage:
                 )
 
 
+    def it_publishes_processing_errors(self, commit_created_message):
+        with patch('polaris.messaging.topics.PolarisErrorsTopic.publish') as error_topic_publish:
+            with patch('polaris.work_tracking.message_listener.process_commits_created') as processing:
+                processing.side_effect = Exception('oops')
+                message_listener.commits_topic_dispatch(None, method_shim(routing_key=CommitsCreated.message_type), None, commit_created_message)
+
+                error_topic_publish.assert_called()
+                processing_error_message = error_topic_publish.call_args[0][0]
+                assert processing_error_message.dict.get('error') == 'oops'
+                assert processing_error_message.dict.get('original_message') == unpack_message(commit_created_message)
 
 # ----------------------------------------
 # Test WorkItemCommitsResolved
@@ -192,3 +203,18 @@ class TestWorkItemsCommitsResolved:
             ).message_body
             response_message = message_listener.work_items_topic_dispatch(None, method_shim(routing_key=WorkItemsCommitsResolved.message_type), None, no_work_items_message )
             work_item_topic_publish.assert_called_with(message=response_message)
+
+    def it_publishes_processing_errors(self, work_items_commits_resolved_message):
+        with patch('polaris.messaging.topics.PolarisErrorsTopic.publish') as error_topic_publish:
+            with patch('polaris.work_tracking.message_listener.process_work_items_commits_resolved') as processing:
+                processing.side_effect = Exception('oops')
+
+                response_message = message_listener.work_items_topic_dispatch(None, method_shim(routing_key=WorkItemsCommitsResolved.message_type), None, work_items_commits_resolved_message)
+
+                error_topic_publish.assert_called()
+                processing_error_message = error_topic_publish.call_args[0][0]
+                assert processing_error_message.dict.get('error') == 'oops'
+                assert processing_error_message.dict.get('original_message') == unpack_message(work_items_commits_resolved_message)
+
+
+

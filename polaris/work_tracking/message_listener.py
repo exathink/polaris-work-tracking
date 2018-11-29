@@ -15,7 +15,7 @@ import signal
 from polaris.utils.logging import config_logging
 from polaris.utils.config import get_config_provider
 from polaris.messaging.messages import \
-    Message, \
+    ProcessingErrorMessage, \
     CommitsCreated, \
     CommitWorkItemsResolved, \
     WorkItemsCommitsResolved, \
@@ -71,6 +71,7 @@ def commits_topic_dispatch(channel, method, properties, body):
 
     except Exception as exc:
         logger.error(f"Error processing message on topic commits: {str(exc)})")
+        ProcessingErrorMessage.publish(channel, message, str(exc))
 
 #-------------------------------------------------
 #
@@ -90,20 +91,23 @@ def process_work_items_commits_resolved(message):
 
 
 def work_items_topic_dispatch(channel, method, properties, body):
+    message = None
     try:
         if WorkItemsCommitsResolved.message_type == method.routing_key:
-            work_items_commits_resolved_message = WorkItemsCommitsResolved(receive=body)
-            result = process_work_items_commits_resolved(work_items_commits_resolved_message)
+            message = WorkItemsCommitsResolved(receive=body)
+            result = process_work_items_commits_resolved(message)
             if result:
                 work_items_commits_updated_message = WorkItemsCommitsUpdated(
                     send=result,
-                    in_response_to=work_items_commits_resolved_message
+                    in_response_to=message
                 )
                 WorkItemsTopic(channel).publish(message=work_items_commits_updated_message)
                 return work_items_commits_updated_message
 
     except Exception as exc:
         logger.error(f"Error processing message on topic work_items: {str(exc)})")
+        ProcessingErrorMessage.publish(channel, message, str(exc))
+
 # ------
 # ----
 # Initialization
