@@ -183,11 +183,13 @@ def resolve_work_items_by_display_ids(organization_key, display_ids):
         with db.create_session() as session:
             resolved = {
                 work_item['display_id']: dict(
-                    key=work_item.key,
+                    integration_type=work_item.integration_type,
+                    work_item_key=work_item.key,
                     display_id=work_item.display_id,
                     url=work_item.url,
                     name=work_item.name,
-                    work_items_source_key=work_item.work_items_source_key
+                    is_bug=work_item.is_bug,
+                    tags=work_item.tags
                 )
                 for work_item in session.connection.execute(
                     select([
@@ -195,7 +197,9 @@ def resolve_work_items_by_display_ids(organization_key, display_ids):
                         work_items.c.source_display_id.label('display_id'),
                         work_items.c.url,
                         work_items.c.name,
-                        work_items_sources.c.key.label('work_items_source_key'),
+                        work_items.c.is_bug,
+                        work_items.c.tags,
+                        work_items_sources.c.integration_type
                     ]).select_from(
                         work_items.join(work_items_sources, work_items.c.work_items_source_id == work_items_sources.c.id)
                     ).where(

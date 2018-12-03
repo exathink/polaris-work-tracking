@@ -16,7 +16,7 @@ import pytest
 from pika.channel import Channel
 
 
-from polaris.messaging.messages import CommitsCreated, CommitWorkItemsResolved, WorkItemsCommitsResolved, WorkItemsCommitsUpdated
+from polaris.messaging.messages import CommitsCreated, CommitsWorkItemsResolved, WorkItemsCommitsResolved, WorkItemsCommitsUpdated
 from polaris.work_tracking.message_listener import CommitsTopicSubscriber, WorkItemsTopicSubscriber
 from polaris.common import db
 from test.constants import *
@@ -99,8 +99,8 @@ class TestCommitsTopicSubscriber:
             with patch('polaris.messaging.topics.Topic.publish'):
                 response_messages = CommitsTopicSubscriber(mock_channel).dispatch(mock_channel, commit_created_message)
                 assert len(response_messages) == 2
-                assert response_messages[0].message_type == CommitWorkItemsResolved.message_type
-                assert CommitWorkItemsResolved(receive=response_messages[0].message_body).dict
+                assert response_messages[0].message_type == CommitsWorkItemsResolved.message_type
+                assert CommitsWorkItemsResolved(receive=response_messages[0].message_body).dict
                 assert response_messages[1].message_type == WorkItemsCommitsResolved.message_type
                 assert WorkItemsCommitsResolved(receive=response_messages[1].message_body).dict
 

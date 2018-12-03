@@ -14,7 +14,7 @@ from polaris.utils.logging import config_logging
 from polaris.utils.config import get_config_provider
 from polaris.messaging.messages import \
     CommitsCreated, \
-    CommitWorkItemsResolved, \
+    CommitsWorkItemsResolved, \
     WorkItemsCommitsResolved, \
     WorkItemsCommitsUpdated
 
@@ -45,7 +45,7 @@ class CommitsTopicSubscriber(TopicSubscriber):
         if CommitsCreated.message_type == message.message_type:
             resolved = self.process_commits_created(message)
             if resolved:
-               commit_work_items_resolved_message = CommitWorkItemsResolved(send=resolved[0], in_response_to=message)
+               commit_work_items_resolved_message = CommitsWorkItemsResolved(send=resolved[0], in_response_to=message)
                CommitsTopic(channel).publish(message=commit_work_items_resolved_message)
 
                work_items_commits_resolved_message = WorkItemsCommitsResolved(send=resolved[1], in_response_to=message)
@@ -71,7 +71,7 @@ class CommitsTopicSubscriber(TopicSubscriber):
             return dict(
                organization_key=organization_key,
                repository_name=repository_name,
-               commit_work_items=resolved_work_items[0]
+               commits_work_items=resolved_work_items[0]
            ), dict(
                 organization_key=organization_key,
                 repository_name=repository_name,
@@ -86,7 +86,7 @@ class CommitsTopicSubscriber(TopicSubscriber):
 class WorkItemsTopicSubscriber(TopicSubscriber):
     def __init__(self, channel):
         super().__init__(
-            topic = CommitsTopic(channel, create=True),
+            topic = WorkItemsTopic(channel, create=True),
             subscriber_queue='work_items_work_items',
             message_classes=[
                 WorkItemsCommitsResolved

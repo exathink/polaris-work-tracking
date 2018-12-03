@@ -73,7 +73,7 @@ def resolve_work_items_from_commit_headers(organization_key, commit_headers):
         # build the reverse mapping output data structure
         work_items_to_commits = [
             dict(
-                work_item_key=work_item['key'],
+                work_item_key=work_item['work_item_key'],
                 commit_headers=work_item['commit_headers']
             )
             for work_item in work_items_map.values()
