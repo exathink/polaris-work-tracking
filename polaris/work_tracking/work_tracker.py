@@ -17,12 +17,23 @@ from polaris.work_tracking.work_items_source_factory import create_work_items_so
 def sync_work_items(token_provider, work_items_source_key):
     work_items_source = create_work_items_source(token_provider, work_items_source_key)
 
-    import_count = 0
+    total = 0
+    created = []
+    updated_count = 0
     for work_items in work_items_source.fetch_work_items_to_sync():
-        api.sync_work_items(work_items_source_key, work_items)
-        import_count = import_count + len(work_items)
+        new_items = api.sync_work_items(work_items_source_key, work_items)
+        total = total + len(work_items)
+        updated_count = updated_count + len(work_items) - len(new_items)
+        created.extend(
+            new_items
+        )
 
-    return import_count
+    return dict(
+        total=total,
+        updated=updated_count,
+        created=len(created),
+        new_work_items=created
+    )
 
 def resolve_work_items_from_commit_headers(organization_key, commit_headers):
     work_item_resolver = get_work_items_resolver(organization_key)
