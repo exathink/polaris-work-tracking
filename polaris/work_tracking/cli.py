@@ -19,9 +19,13 @@ from polaris.common import db
 logger = logging.getLogger('polaris.work_tracking.cli')
 token_provider = get_token_provider()
 
-def import_work_items(workitems_source_key):
-    imported_items = api_import_work_items(token_provider, workitems_source_key)
-    logger.log(logging.INFO, f'{imported_items} work items imported')
+def import_work_items(work_items_source_key):
+    result = api_import_work_items(token_provider, work_items_source_key)
+    if result['total'] > 0:
+        logger.log(logging.INFO, f"{len(result['created'])} new work items created")
+        logger.log(logging.INFO, f"{result['updated']} work items updated")
+    else:
+        logger.log(logging.INFO, f"No updates found for work items source {work_items_source_key}")
 
 
 if __name__ == '__main__':
