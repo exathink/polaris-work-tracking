@@ -16,13 +16,18 @@ from polaris.messaging.messages import \
     CommitsCreated, \
     CommitsWorkItemsResolved, \
     WorkItemsCommitsResolved, \
-    WorkItemsCommitsUpdated
+    WorkItemsCommitsUpdated, \
+    ImportWorkItems, \
+    WorkItemsImported, \
+    WorkItemsCreated
 
-from polaris.messaging.topics import CommitsTopic, WorkItemsTopic, TopicSubscriber
+from polaris.messaging.topics import CommitsTopic, WorkItemsTopic, TopicSubscriber, CommandsTopic
 from polaris.messaging.message_consumer import MessageConsumer
 
 from polaris.work_tracking import work_tracker
 from polaris.common import db
+from polaris.utils.token_provider import get_token_provider
+from polaris.utils.collections import dict_select
 
 
 logger = logging.getLogger('polaris.work_tracking.message_listener')
@@ -51,6 +56,8 @@ class CommitsTopicSubscriber(TopicSubscriber):
                work_items_commits_resolved_message = WorkItemsCommitsResolved(send=resolved[1], in_response_to=message)
                WorkItemsTopic(channel).publish(message=work_items_commits_resolved_message)
                return commit_work_items_resolved_message, work_items_commits_resolved_message
+
+
 
 
     @staticmethod
@@ -89,7 +96,11 @@ class WorkItemsTopicSubscriber(TopicSubscriber):
             topic = WorkItemsTopic(channel, create=True),
             subscriber_queue='work_items_work_items',
             message_classes=[
-                WorkItemsCommitsResolved
+                #Events
+                WorkItemsCommitsResolved,
+                #Commands
+                ImportWorkItems
+
             ],
             exclusive=False,
             no_ack=True
@@ -106,6 +117,8 @@ class WorkItemsTopicSubscriber(TopicSubscriber):
                 WorkItemsTopic(channel).publish(message=work_items_commits_updated_message)
                 return work_items_commits_updated_message
 
+
+
     @staticmethod
     def process_work_items_commits_resolved(message):
         work_items_commits_resolved = message.dict
@@ -118,6 +131,56 @@ class WorkItemsTopicSubscriber(TopicSubscriber):
         work_tracker.update_work_items_commits(organization_key, repository_name, work_items_commits_resolved['work_items_commits'])
         return work_items_commits_resolved
 
+# -------------------------------
+# Commands
+# -------------------------------
+
+class CommandsTopicSubscriber(TopicSubscriber):
+    def __init__(self, channel):
+        super().__init__(
+            topic=CommandsTopic(channel, create=True),
+            subscriber_queue='work_items_commands',
+            message_classes=[
+                ImportWorkItems
+            ],
+            exclusive=False,
+            no_ack=True
+        )
+
+    def dispatch(self, channel, message ):
+
+        if ImportWorkItems.message_type == message.message_type:
+            result = self.process_import_work_items(message)
+            if result:
+                work_items_imported = WorkItemsImported(send=result, in_response_to=message)
+                WorkItemsTopic(channel).publish(message=work_items_imported)
+
+                work_items_created = None
+                if result['created'] > 0:
+                    work_items_created = WorkItemsCreated(send=result, in_response_to=message)
+                    WorkItemsTopic(channel).publish(message=work_items_created)
+                return work_items_imported, work_items_created
+
+
+
+
+    def process_import_work_items(self, message):
+        import_work_items = message.dict
+        organization_key = import_work_items['organization_key']
+        work_items_source_key = import_work_items['work_items_source_key']
+        logger.info(f"Processing  {message.message_type}: "
+                    f" Organization: {organization_key}"
+                    f" Work Items Source Key : {work_items_source_key}")
+
+
+        result = work_tracker.sync_work_items(self.consumer_context.token_provider, work_items_source_key)
+        return dict(
+            organization_key=organization_key,
+            work_items_source_key=work_items_source_key,
+            **result
+        )
+
+
 
 
 if __name__ == "__main__":
@@ -126,13 +189,16 @@ if __name__ == "__main__":
 
     logger.info('Connecting to polaris db...')
     db.init(config_provider.get('POLARIS_DB_URL'))
+    token_provider = get_token_provider()
 
     MessageConsumer(
         name='polaris.work_tracking.message_listener',
         topic_subscriber_classes=[
             CommitsTopicSubscriber,
-            WorkItemsTopicSubscriber
-        ]
+            WorkItemsTopicSubscriber,
+            CommandsTopicSubscriber
+        ],
+        token_provider=token_provider
     ).start_consuming()
 
 
