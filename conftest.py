@@ -39,7 +39,7 @@ def setup_work_item_sources(setup_schema):
             key=rails_work_items_source_key,
             integration_type='github',
             work_items_source_type='repository_issues',
-            parameters='{"repository": "rails", "organization": "rails"}',
+            parameters=dict(repository='rails', organization='rails'),
             name='rails repository issues',
             account_key=exathink_account_key,
             organization_key=rails_organization_key,
@@ -49,12 +49,24 @@ def setup_work_item_sources(setup_schema):
             key=polaris_work_items_source_key,
             integration_type='pivotal_tracker',
             work_items_source_type='project',
-            parameters='{"id": "1934657", "name": "polaris-web"}',
+            parameters=dict(id="1934657", name="polaris-web"),
             name='polaris-web',
             account_key=exathink_account_key,
             organization_key=polaris_organization_key,
             repository_key=None
         )
+        # This will have no work_items set up initially
+        work_items_sources['empty'] = model.WorkItemsSource(
+            key=empty_work_items_source_key,
+            integration_type='pivotal_tracker',
+            work_items_source_type='project',
+            parameters=dict(id="1934657", name="polaris-web"),
+            name='polaris-web2',
+            account_key=exathink_account_key,
+            organization_key=polaris_organization_key,
+            repository_key=None
+        )
+
         session.add_all(work_items_sources.values())
         session.flush()
         yield session, work_items_sources
@@ -111,5 +123,32 @@ def setup_pivotal_work_items(work_item_source):
 
 
 
+work_items_common = dict(
+    description='Foo',
+    is_bug=True,
+    tags=['acre'],
+    source_last_updated=datetime.utcnow(),
+    source_created_at=datetime.utcnow(),
+    source_state='open'
+)
+
+@pytest.fixture
+def new_work_items():
+    return [
+        dict(
+            name=f'Issue {i}',
+            source_id=str(i),
+            source_display_id=str(i),
+            url=f'http://foo.com/{i}',
+            **work_items_common
+        )
+        for i in range(100, 110)
+    ]
+
+@pytest.yield_fixture
+def cleanup_empty(setup_work_items):
+    yield
+    _, work_items_sources = setup_work_items
+    db.connection().execute(f"delete from work_tracking.work_items where work_items_source_id={work_items_sources['empty'].id}")
 
 

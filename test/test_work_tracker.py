@@ -12,10 +12,55 @@ from datetime import datetime
 from polaris.work_tracking import work_tracker
 from test.constants import *
 from .helpers import find_work_items
-
+from polaris.utils.token_provider import get_token_provider
 from polaris.common import db
 from polaris.work_tracking.db.model import WorkItemsSource, cached_commits
+from unittest.mock import patch
 
+token_provider = get_token_provider()
+
+class TestSyncWorkItems:
+
+
+    def it_imports_work_items_when_the_source_has_no_work_items(self, setup_work_items, new_work_items,
+                                                                cleanup_empty):
+        _, work_items_sources = setup_work_items
+        empty_source = work_items_sources['empty']
+        with patch('polaris.work_tracking.integrations.pivotal_tracker.PivotalTrackerProject.fetch_work_items_to_sync') as fetch_work_items_to_sync:
+            fetch_work_items_to_sync.return_value = [new_work_items]
+
+            result = work_tracker.sync_work_items(token_provider, empty_source.key)
+            assert len(result['new_work_items']) == len(new_work_items)
+            assert result['created'] == len(new_work_items)
+            assert result['updated'] == 0
+            assert result['total'] == 10
+
+    def it_updates_work_items_that_already_exist(self, setup_work_items, new_work_items,
+                                                                cleanup_empty):
+        _, work_items_sources = setup_work_items
+        empty_source = work_items_sources['empty']
+        with patch('polaris.work_tracking.integrations.pivotal_tracker.PivotalTrackerProject.fetch_work_items_to_sync') as fetch_work_items_to_sync:
+            fetch_work_items_to_sync.return_value = [new_work_items]
+            # import once
+            work_tracker.sync_work_items(token_provider, empty_source.key)
+            # import again
+            result = work_tracker.sync_work_items(token_provider, empty_source.key)
+            assert result['new_work_items'] == []
+            assert result['created'] == 0
+            assert result['updated'] == len(new_work_items)
+            assert result['total'] == 10
+
+
+
+
+
+
+
+
+
+# -------------------------------------------
+# Resolve work items from commits
+#--------------------------------------------
 class TestResolveWorkItemsFromCommits:
 
     class ContextGithubWorkItems:
@@ -464,3 +509,6 @@ class TestUpdateWorkItemsCommits:
         with db.create_session() as session:
             assert session.connection.execute('select count(id) from work_tracking.cached_commits').scalar() == 2
             assert session.connection.execute('select count(*) from work_tracking.work_items_commits').scalar() == 2
+
+
+

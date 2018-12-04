@@ -54,39 +54,40 @@ class PivotalTrackerProject(PivotalTrackerWorkItemsSource):
             headers={"X-TrackerToken":self.access_token},
             params=query_params
         )
-        offset = 0
-        total = int(response.headers.get('X-Tracker-Pagination-Total'))
-        while offset < total and response.ok:
-            stories = response.json()
-            if len(stories) == 0:
-                break
-
-            work_items = [
-                dict(
-                    name=story.get('name'),
-                    description=story.get('description'),
-                    is_bug=story.get('story_type')=='bug',
-                    tags=[story.get('story_type')] + [label.get('name') for label in story.get('labels')],
-                    url=story.get('url'),
-                    source_id=str(story.get('id')),
-                    source_last_updated=story.get('updated_at'),
-                    source_created_at=story.get('created_at'),
-                    source_display_id=story.get('id'),
-                    source_state=story.get('current_state')
-
-                )
-                for story in stories
-            ]
-            yield work_items
-
-            offset = offset + len(work_items)
-            query_params['offset']=offset
-            response = requests.get(
-                f'{self.base_url}/projects/{self.project_id}/stories',
-                headers={"X-TrackerToken": self.access_token},
-                params=query_params
-            )
+        if response.ok:
+            offset = 0
             total = int(response.headers.get('X-Tracker-Pagination-Total'))
+            while offset < total and response.ok:
+                stories = response.json()
+                if len(stories) == 0:
+                    break
+
+                work_items = [
+                    dict(
+                        name=story.get('name'),
+                        description=story.get('description'),
+                        is_bug=story.get('story_type')=='bug',
+                        tags=[story.get('story_type')] + [label.get('name') for label in story.get('labels')],
+                        url=story.get('url'),
+                        source_id=str(story.get('id')),
+                        source_last_updated=story.get('updated_at'),
+                        source_created_at=story.get('created_at'),
+                        source_display_id=story.get('id'),
+                        source_state=story.get('current_state')
+
+                    )
+                    for story in stories
+                ]
+                yield work_items
+
+                offset = offset + len(work_items)
+                query_params['offset']=offset
+                response = requests.get(
+                    f'{self.base_url}/projects/{self.project_id}/stories',
+                    headers={"X-TrackerToken": self.access_token},
+                    params=query_params
+                )
+                total = int(response.headers.get('X-Tracker-Pagination-Total'))
 
 
 
