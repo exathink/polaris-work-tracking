@@ -8,18 +8,20 @@
 
 # Author: Krishna Kumar
 
-import uuid
 import logging
-from polaris.common import db
-from .model import WorkItem, WorkItemsSource, work_items, work_items_sources, cached_commits, work_items_commits as work_items_commits_table
-from sqlalchemy import select, and_, literal_column, Column, BigInteger, text
+import uuid
+
+from sqlalchemy import select, and_, Column, BigInteger
 from sqlalchemy.dialects.postgresql import insert, UUID
+
+from polaris.common import db
+from .model import WorkItemsSource, work_items, work_items_sources, cached_commits, \
+    work_items_commits as work_items_commits_table
 
 logger = logging.getLogger('polaris.work_tracker.db.api')
 
 
 def sync_work_items(work_items_source_key, work_item_list, join_this=None):
-    rows = 0
     if len(work_item_list) > 0:
         with db.orm_session(join_this) as session:
             work_items_source = WorkItemsSource.find_by_work_items_source_key(session, work_items_source_key)
@@ -30,17 +32,40 @@ def sync_work_items(work_items_source_key, work_item_list, join_this=None):
             )
             work_items_temp.create(session.connection(), checkfirst=True)
 
-            upsert = insert(work_items).values([
-                dict(
-                    key=uuid.uuid4(),
-                    work_items_source_id=work_items_source.id,
-                    **work_item
+
+            session.connection().execute(
+                insert(work_items_temp).values(
+                    [
+                        dict(
+                            key=uuid.uuid4(),
+                            work_items_source_id=work_items_source.id,
+                            **work_item
+                        )
+                        for work_item in work_item_list
+                    ]
                 )
-                for work_item in work_item_list
-            ]
             )
 
-            rows = session.connection().execute(
+            new_work_items = session.connection().execute(
+                select(work_items_temp.columns).select_from(
+                    work_items_temp.outerjoin(
+                        work_items,
+                        and_(
+                            work_items_temp.c.work_items_source_id == work_items.c.work_items_source_id,
+                            work_items_temp.c.source_id == work_items.c.source_id
+                        )
+                    )
+                ).where(
+                    work_items.c.id == None
+                )
+            )
+
+            upsert = insert(work_items).from_select(
+                [column.name for column in work_items_temp.columns],
+                select([work_items_temp])
+            )
+
+            session.connection().execute(
                 upsert.on_conflict_do_update(
                     index_elements=['work_items_source_id','source_id'],
                     set_=dict(
@@ -54,9 +79,20 @@ def sync_work_items(work_items_source_key, work_item_list, join_this=None):
                         source_state=upsert.excluded.source_state
                     )
                 )
-            ).rowcount
+            )
 
-    return rows
+            return [
+                dict(
+                    integration_type=work_items_source.integration_type,
+                    work_item_key=work_item.key,
+                    display_id= work_item.source_display_id,
+                    url = work_item.url,
+                    name = work_item.name,
+                    is_bug = work_item.is_bug,
+                    tags = work_item.tags
+                )
+                for work_item in new_work_items
+            ]
 
 def update_work_items_commits(organization_key, repository_name, work_items_commits):
     if len(work_items_commits) > 0:
