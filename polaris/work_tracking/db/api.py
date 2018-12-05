@@ -10,6 +10,7 @@
 
 import logging
 import uuid
+from datetime import datetime
 
 from sqlalchemy import select, and_, Column, BigInteger
 from sqlalchemy.dialects.postgresql import insert, UUID
@@ -32,13 +33,14 @@ def sync_work_items(work_items_source_key, work_item_list, join_this=None):
             )
             work_items_temp.create(session.connection(), checkfirst=True)
 
-
+            last_sync = datetime.utcnow()
             session.connection().execute(
                 insert(work_items_temp).values(
                     [
                         dict(
                             key=uuid.uuid4(),
                             work_items_source_id=work_items_source.id,
+                            last_sync=last_sync,
                             **work_item
                         )
                         for work_item in work_item_list
@@ -76,7 +78,8 @@ def sync_work_items(work_items_source_key, work_item_list, join_this=None):
                         url=upsert.excluded.url,
                         source_last_updated=upsert.excluded.source_last_updated,
                         source_display_id=upsert.excluded.source_display_id,
-                        source_state=upsert.excluded.source_state
+                        source_state=upsert.excluded.source_state,
+                        last_sync=upsert.excluded.last_sync
                     )
                 )
             )
@@ -89,7 +92,10 @@ def sync_work_items(work_items_source_key, work_item_list, join_this=None):
                     url = work_item.url,
                     name = work_item.name,
                     is_bug = work_item.is_bug,
-                    tags = work_item.tags
+                    tags = work_item.tags,
+                    created_at=work_item.source_created_at,
+                    updated_at=work_item.source_last_updated,
+                    last_sync=work_item.last_sync
                 )
                 for work_item in new_work_items
             ]
@@ -225,7 +231,10 @@ def resolve_work_items_by_display_ids(organization_key, display_ids):
                     url=work_item.url,
                     name=work_item.name,
                     is_bug=work_item.is_bug,
-                    tags=work_item.tags
+                    tags=work_item.tags,
+                    created_at=work_item.source_created_at,
+                    updated_at=work_item.source_last_updated,
+                    last_sync=work_item.last_sync
                 )
                 for work_item in session.connection.execute(
                     select([
@@ -235,6 +244,9 @@ def resolve_work_items_by_display_ids(organization_key, display_ids):
                         work_items.c.name,
                         work_items.c.is_bug,
                         work_items.c.tags,
+                        work_items.c.source_created_at,
+                        work_items.c.source_last_updated,
+                        work_items.c.last_sync,
                         work_items_sources.c.integration_type
                     ]).select_from(
                         work_items.join(work_items_sources, work_items.c.work_items_source_id == work_items_sources.c.id)

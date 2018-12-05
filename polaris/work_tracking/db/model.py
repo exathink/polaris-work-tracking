@@ -118,6 +118,7 @@ class WorkItem(Base):
     source_last_updated = Column(DateTime, nullable=True)
     source_display_id = Column(String, nullable=False)
     source_state=Column(String, nullable=False)
+    last_sync=Column(DateTime, nullable=True)
     # Work Items Source relationship
     work_items_source_id = Column(Integer, ForeignKey('work_items_sources.id'))
     work_items_source = relationship('WorkItemsSource', back_populates='work_items')

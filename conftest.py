@@ -95,7 +95,9 @@ def setup_github_work_items(work_item_source):
                 source_display_id=str(display_id),
                 source_state='',
                 url='',
-                source_created_at=datetime.utcnow()
+                source_created_at=datetime.utcnow(),
+                source_last_updated=datetime.utcnow(),
+                last_sync=datetime.utcnow()
             )
         )
 
@@ -114,7 +116,9 @@ def setup_pivotal_work_items(work_item_source):
                 source_display_id=str(display_id),
                 source_state='',
                 url='',
-                source_created_at=datetime.utcnow()
+                source_created_at=datetime.utcnow(),
+                source_last_updated=datetime.utcnow(),
+                last_sync=datetime.utcnow()
             )
         )
 
