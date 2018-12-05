@@ -20,12 +20,7 @@ logger = logging.getLogger('polaris.work_tracking.github')
 
 class GithubIssuesWorkItemsSource:
 
-    class WorkItemResolver:
-        matcher = re.compile('#(\d+)')
 
-        @classmethod
-        def resolve(cls,commit_message):
-            return cls.matcher.findall(commit_message)
 
 
     @staticmethod

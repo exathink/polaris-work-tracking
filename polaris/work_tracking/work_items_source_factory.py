@@ -13,6 +13,8 @@ from polaris.work_tracking.db.model import WorkItemsSource
 from polaris.work_tracking.integrations.github import GithubIssuesWorkItemsSource
 from polaris.work_tracking.integrations.pivotal_tracker import PivotalTrackerWorkItemsSource
 
+from polaris.utils.work_tracking import WorkItemResolver
+
 def get_work_items_source_impl(token_provider, work_items_source):
     work_items_source_impl = None
 
@@ -30,9 +32,6 @@ def get_work_items_resolver(organization_key):
         work_item_sources = WorkItemsSource.find_by_organization_key(session, organization_key)
         if work_item_sources:
             work_items_source = work_item_sources[0]
-            if work_items_source.integration_type in ['github', 'github_enterprise']:
-                resolver = GithubIssuesWorkItemsSource.WorkItemResolver
-            elif work_items_source.integration_type in ['pivotal_tracker']:
-                resolver = PivotalTrackerWorkItemsSource.WorkItemResolver
+            resolver = WorkItemResolver.get_resolver(work_items_source.integration_type)
 
     return resolver

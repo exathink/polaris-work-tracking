@@ -8,7 +8,7 @@
 
 # Author: Krishna Kumar
 
-from polaris.work_tracking.integrations.github import GithubIssuesWorkItemsSource
+from polaris.utils.work_tracking import GithubWorkItemResolver
 
 class TestCommitWorkItemResolution:
 
@@ -16,9 +16,8 @@ class TestCommitWorkItemResolution:
     def it_resolves_a_commit_with_a_single_work_item_id(self):
         commit_message = "This fixes issue #2378. No other animals were harmed"
 
-        resolver = GithubIssuesWorkItemsSource.WorkItemResolver
 
-        resolved = resolver.resolve(commit_message)
+        resolved = GithubWorkItemResolver.resolve(commit_message)
 
         assert len(resolved) == 1
         assert resolved[0] == '2378'
@@ -26,9 +25,9 @@ class TestCommitWorkItemResolution:
     def it_resolves_a_commit_with_multiple_work_item_ids(self):
         commit_message = "This fixes issue #2378 and #24532 No other animals were harmed"
 
-        resolver = GithubIssuesWorkItemsSource.WorkItemResolver
 
-        resolved = resolver.resolve(commit_message)
+
+        resolved = GithubWorkItemResolver.resolve(commit_message)
 
         assert len(resolved) == 2
         assert resolved == ['2378', '24532']
