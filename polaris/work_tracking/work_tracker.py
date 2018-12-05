@@ -9,31 +9,36 @@
 # Author: Krishna Kumar
 
 
-
+from polaris.common import db
 from polaris.work_tracking.db import api
+from polaris.work_tracking.db.model import WorkItemsSource
 
-from polaris.work_tracking.work_items_source_factory import create_work_items_source, get_work_items_resolver
+from polaris.work_tracking.work_items_source_factory import get_work_items_source_impl, get_work_items_resolver
 
 def sync_work_items(token_provider, work_items_source_key):
-    work_items_source = create_work_items_source(token_provider, work_items_source_key)
+    with db.orm_session() as session:
+        session.expire_on_commit = False
+        work_items_source = WorkItemsSource.find_by_work_items_source_key(session, work_items_source_key)
+        work_items_source_impl = get_work_items_source_impl(token_provider, work_items_source)
 
-    total = 0
-    created = []
-    updated_count = 0
-    for work_items in work_items_source.fetch_work_items_to_sync():
-        new_items = api.sync_work_items(work_items_source_key, work_items)
-        total = total + len(work_items)
-        updated_count = updated_count + len(work_items) - len(new_items)
-        created.extend(
-            new_items
+        total = 0
+        created = []
+        updated_count = 0
+        for work_items in work_items_source_impl.fetch_work_items_to_sync():
+            new_items = api.sync_work_items(work_items_source_key, work_items, join_this=session)
+            total = total + len(work_items)
+            updated_count = updated_count + len(work_items) - len(new_items)
+            created.extend(
+                new_items
+            )
+
+        return dict(
+            total=total,
+            updated=updated_count,
+            created=len(created),
+            work_items_source=work_items_source.get_summary_info(),
+            new_work_items=created
         )
-
-    return dict(
-        total=total,
-        updated=updated_count,
-        created=len(created),
-        new_work_items=created
-    )
 
 def resolve_work_items_from_commit_headers(organization_key, commit_headers):
     work_item_resolver = get_work_items_resolver(organization_key)

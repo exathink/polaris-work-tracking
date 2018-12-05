@@ -54,12 +54,16 @@ class WorkItemsSource(Base):
     # User facing display name for the instance.
     name = Column(String, nullable=False)
     description = Column(Text, nullable=True)
-    # An instance must be tied to an account at the very least.
+    # An instance must be tied to an account and an organization
     account_key = Column(UUID(as_uuid=True), nullable=False)
     organization_key = Column(UUID(as_uuid=True), nullable=False)
-    # Optionally, it can be tied to a project and/or a specific repository.
-    project_key = Column(UUID(as_uuid=True), nullable=True)
-    repository_key = Column(UUID(as_uuid=True), nullable=True)
+    # Commit mapping scope specifies the repositories that are mapped to this
+    # work item source. The valid values are ('organization', 'project', 'repository')
+    # Given the commit mapping scope key, commits originating from all repositories
+    # within that specific scope (instance of org, project or repository) will be evaluated to
+    # see if they can be mapped to a given work item originating from this work items source.
+    commit_mapping_scope = Column(String, nullable=False, default='organization', server_default="'organization'")
+    commit_mapping_scope_key = Column(UUID(as_uuid=True), nullable=False)
 
     work_items = relationship('WorkItem')
 
@@ -89,6 +93,14 @@ class WorkItemsSource(Base):
             )
         )
 
+    def get_summary_info(self):
+        return dict(
+            work_items_source_key=self.key,
+            name=self.name,
+            integration_type=self.integration_type,
+            commit_mapping_scope=self.commit_mapping_scope,
+            commit_mapping_scope_key=self.commit_mapping_scope_key
+        )
 
     def find_work_items_by_source_id(self, session, source_ids):
         return session.query(WorkItem).filter(

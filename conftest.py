@@ -43,7 +43,8 @@ def setup_work_item_sources(setup_schema):
             name='rails repository issues',
             account_key=exathink_account_key,
             organization_key=rails_organization_key,
-            repository_key=rails_repository_key
+            commit_mapping_scope='organization',
+            commit_mapping_scope_key=rails_organization_key
         )
         work_items_sources['pivotal'] = model.WorkItemsSource(
             key=polaris_work_items_source_key,
@@ -53,7 +54,8 @@ def setup_work_item_sources(setup_schema):
             name='polaris-web',
             account_key=exathink_account_key,
             organization_key=polaris_organization_key,
-            repository_key=None
+            commit_mapping_scope='organization',
+            commit_mapping_scope_key=polaris_organization_key
         )
         # This will have no work_items set up initially
         work_items_sources['empty'] = model.WorkItemsSource(
@@ -64,7 +66,8 @@ def setup_work_item_sources(setup_schema):
             name='polaris-web2',
             account_key=exathink_account_key,
             organization_key=polaris_organization_key,
-            repository_key=None
+            commit_mapping_scope='organization',
+            commit_mapping_scope_key=polaris_organization_key
         )
 
         session.add_all(work_items_sources.values())
