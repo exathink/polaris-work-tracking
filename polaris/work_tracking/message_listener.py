@@ -139,7 +139,7 @@ class CommandsTopicSubscriber(TopicSubscriber):
     def __init__(self, channel):
         super().__init__(
             topic=CommandsTopic(channel, create=True),
-            subscriber_queue='work_items_commands',
+            subscriber_queue='commands_work_items',
             message_classes=[
                 ImportWorkItems
             ],
