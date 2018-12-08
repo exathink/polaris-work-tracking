@@ -60,7 +60,7 @@ def sync_work_items(work_items_source_key, work_item_list, join_this=None):
                 ).where(
                     work_items.c.id == None
                 )
-            )
+            ).fetchall()
 
             upsert = insert(work_items).from_select(
                 [column.name for column in work_items_temp.columns],
