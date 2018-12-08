@@ -42,4 +42,14 @@ class TestCommitWorkItemResolution:
         assert len(resolved) == 3
         assert resolved == ['2378', '24532', '23167']
 
+    def it_resolves_a_commit_with_no_text_other_than_issue_reference(self):
+        commit_message = "This fixes [#24532]."
+
+
+
+        resolved = PivotalTrackerWorkItemResolver.resolve(commit_message)
+
+        assert len(resolved) == 1
+        assert resolved == ['24532']
+
 
