@@ -50,7 +50,15 @@ def commit_created_message(setup_work_items):
         author_date=datetime.utcnow(),
         author_date_tz_offset=0,
         author_contributor_key=uuid.uuid4().hex,
-        author_contributor_name='Billy Bob'
+        author_contributor_name='Billy Bob',
+        stats=dict(
+            files=10,
+            insertions=2,
+            deletions=9,
+            lines=11
+        ),
+        parents=['0000', '1111'],
+        created_at=datetime.utcnow(),
     )
     payload = dict(
         organization_key=rails_organization_key.hex,
@@ -82,7 +90,16 @@ def commit_created_no_work_items_to_resolve_message(setup_work_items):
         author_date=datetime.utcnow(),
         author_date_tz_offset=0,
         author_contributor_key=uuid.uuid4().hex,
-        author_contributor_name='Billy Bob'
+        author_contributor_name='Billy Bob',
+        stats=dict(
+            files=10,
+            insertions=2,
+            deletions=9,
+            lines=11
+        ),
+        parents=['0000', '1111'],
+        created_at=datetime.utcnow(),
+
     )
     payload = dict(
         organization_key=rails_organization_key.hex,
@@ -156,7 +173,15 @@ def work_items_commits_resolved_message(setup_work_items):
         author_date=datetime.utcnow(),
         author_date_tz_offset=0,
         author_contributor_key=uuid.uuid4().hex,
-        author_contributor_name='Billy Bob'
+        author_contributor_name='Billy Bob',
+        stats=dict(
+            files=10,
+            insertions=2,
+            deletions=9,
+            lines=11
+        ),
+        parents=['0000', '1111'],
+        created_at=datetime.utcnow(),
     )
     payload = dict(
         organization_key=rails_organization_key.hex,

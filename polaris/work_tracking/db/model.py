@@ -161,7 +161,9 @@ class CachedCommit(Base):
     author_contributor_name = Column(String, nullable=False)
     commit_message = Column(Text, nullable=False)
     created_on_branch = Column(String, nullable=True)
-
+    stats = Column(JSONB, nullable=False)
+    parents = Column(ARRAY(String), nullable=False)
+    created_at = Column(DateTime, nullable=False)
     work_items = relationship('WorkItem',
                             secondary=work_items_commits,
                             back_populates="commits")

@@ -114,7 +114,7 @@ def update_work_items_commits(organization_key, repository_name, work_items_comm
             )
             wc_temp.create(session.connection, checkfirst=True)
 
-            # insert tuples in form (work_item_key, commit_header*) into the temp table.
+            # insert tuples in form (work_item_key, commit_summary*) into the temp table.
             # the same commit might appear more than once in this table.
             session.connection.execute(
                 wc_temp.insert([
@@ -122,10 +122,10 @@ def update_work_items_commits(organization_key, repository_name, work_items_comm
                         work_item_key=work_item['work_item_key'],
                         repository_name=repository_name,
                         organization_key=organization_key,
-                        **commit_header
+                        **commit_summary
                     )
                     for work_item in work_items_commits
-                    for commit_header in work_item['commit_headers']
+                    for commit_summary in work_item['commit_headers']
                 ])
             )
             # extract distinct commits that dont exist in the cached_commits table
@@ -145,7 +145,10 @@ def update_work_items_commits(organization_key, repository_name, work_items_comm
                         'author_contributor_name',
                         'author_contributor_key',
                         'commit_message',
-                        'created_on_branch'
+                        'created_on_branch',
+                        'stats',
+                        'parents',
+                        'created_at'
                     ],
                     select(
                         [
@@ -161,7 +164,10 @@ def update_work_items_commits(organization_key, repository_name, work_items_comm
                             wc_temp.c.author_contributor_name,
                             wc_temp.c.author_contributor_key,
                             wc_temp.c.commit_message,
-                            wc_temp.c.created_on_branch
+                            wc_temp.c.created_on_branch,
+                            wc_temp.c.stats,
+                            wc_temp.c.parents,
+                            wc_temp.c.created_at
                         ]
                     ).distinct().select_from(
                         wc_temp.outerjoin(

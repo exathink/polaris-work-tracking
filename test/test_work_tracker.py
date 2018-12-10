@@ -340,7 +340,15 @@ commit_header_common = dict(
     author_date=datetime.utcnow(),
     author_date_tz_offset=0,
     author_contributor_key=uuid.uuid4().hex,
-    author_contributor_name='Billy Bob'
+    author_contributor_name='Billy Bob',
+    stats=dict(
+        files=10,
+        lines=10,
+        insertions=8,
+        deletions=2
+    ),
+    parents=["0001", "0003"],
+    created_at=datetime.utcnow()
 )
 
 
