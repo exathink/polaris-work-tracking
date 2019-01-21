@@ -8,12 +8,15 @@
 
 # Author: Krishna Kumar
 
+import logging
 
 from polaris.common import db
 from polaris.work_tracking.db import api
 from polaris.work_tracking.db.model import WorkItemsSource
-
 from polaris.work_tracking.work_items_source_factory import get_work_items_source_impl, get_work_items_resolver
+
+logger = logging.getLogger('polaris.work_tracking.work_tracker')
+
 
 def sync_work_items(token_provider, work_items_source_key):
     with db.orm_session() as session:
@@ -31,6 +34,9 @@ def sync_work_items(token_provider, work_items_source_key):
             created.extend(
                 new_items
             )
+        logger.info(f"Imported {total} work_items for {work_items_source.name}: "
+                    f"new: { len(created)} "
+                    f"updated: {updated_count}")
 
         return dict(
             total=total,
