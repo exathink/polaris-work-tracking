@@ -92,6 +92,7 @@ def setup_github_work_items(work_item_source):
             model.WorkItem(
                 key=uuid.uuid4(),
                 name=f"Issue {display_id}",
+                description="An issue in detail",
                 is_bug=False,
                 tags=[],
                 source_id=str(display_id),

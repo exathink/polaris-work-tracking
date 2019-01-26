@@ -23,8 +23,8 @@ logger = logging.getLogger('polaris.work_tracking.cli')
 token_provider = get_token_provider()
 
 
-def import_work_items(work_items_source_key):
-    publish(WorkItemsTopic, ImportWorkItems(send=dict(work_items_source_key=work_items_source_key)))
+def import_work_items(organization_key=None, work_items_source_key=None):
+    publish(WorkItemsTopic, ImportWorkItems(send=dict(organization_key=organization_key, work_items_source_key=work_items_source_key)))
 
 
 if __name__ == '__main__':

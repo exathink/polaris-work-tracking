@@ -24,27 +24,11 @@ def sync_work_items(token_provider, work_items_source_key):
         work_items_source = WorkItemsSource.find_by_work_items_source_key(session, work_items_source_key)
         work_items_source_impl = get_work_items_source_impl(token_provider, work_items_source)
 
-        total = 0
-        created = []
-        updated_count = 0
-        for work_items in work_items_source_impl.fetch_work_items_to_sync():
-            new_items = api.sync_work_items(work_items_source_key, work_items, join_this=session)
-            total = total + len(work_items)
-            updated_count = updated_count + len(work_items) - len(new_items)
-            created.extend(
-                new_items
-            )
-        logger.info(f"Imported {total} work_items for {work_items_source.name}: "
-                    f"new: { len(created)} "
-                    f"updated: {updated_count}")
+    for work_items in work_items_source_impl.fetch_work_items_to_sync():
+        yield api.sync_work_items(work_items_source_key, work_items)
 
-        return dict(
-            total=total,
-            updated=updated_count,
-            created=len(created),
-            work_items_source=work_items_source.get_summary_info(),
-            new_work_items=created
-        )
+
+
 
 def resolve_work_items_from_commit_headers(organization_key, commit_headers):
     work_item_resolver = get_work_items_resolver(organization_key)

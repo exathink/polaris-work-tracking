@@ -12,9 +12,7 @@ import logging
 
 from polaris.common import db
 from polaris.messaging.message_consumer import MessageConsumer
-from polaris.messaging.messages import \
-    ImportWorkItems, \
-    WorkItemsCreated
+from polaris.messaging.messages import ImportWorkItems, WorkItemsCreated, WorkItemsUpdated
 from polaris.messaging.topics import WorkItemsTopic, TopicSubscriber
 from polaris.utils.config import get_config_provider
 from polaris.utils.logging import config_logging
@@ -48,25 +46,49 @@ class WorkItemsTopicSubscriber(TopicSubscriber):
     def dispatch(self, channel, message):
 
         if ImportWorkItems.message_type == message.message_type:
-            result = self.process_import_work_items(message)
-            if result:
-                work_items_created = None
-                if result['created'] > 0:
-                    work_items_created = WorkItemsCreated(send=result, in_response_to=message)
-                    WorkItemsTopic(channel).publish(work_items_created)
-                return work_items_created
+            total = 0
+            messages = []
+            for created, updated in self.process_import_work_items(message):
+                if len(created) > 0:
+                    total = total + len(created)
+                    logger.info(f'{len(created)} new work_items')
+                    created_message = WorkItemsCreated(send=dict(
+                        organization_key=message['organization_key'],
+                        work_items_source_key=message['work_items_source_key'],
+                        new_work_items=created
+                    ))
+                    WorkItemsTopic(channel).publish(created_message)
+                    messages.append(created_message)
 
+                if len(updated) > 0:
+                    total = total + len(updated)
+                    logger.info(f'{len(updated)} updated work_items')
+                    updated_message = WorkItemsUpdated(send=dict(
+                        organization_key=message['organization_key'],
+                        work_items_source_key=message['work_items_source_key'],
+                        updated_work_items=updated
+                    ))
+                    WorkItemsTopic(channel).publish(updated_message)
+                    messages.append(updated_message)
+
+            logger.info(f'{total} work items processed')
+            return messages
 
     def process_import_work_items(self, message):
         work_items_source_key = message['work_items_source_key']
         logger.info(f"Processing  {message.message_type}: "
                     f" Work Items Source Key : {work_items_source_key}")
 
-        result = work_tracker.sync_work_items(self.consumer_context.token_provider, work_items_source_key)
-        return dict(
-            work_items_source_key=work_items_source_key,
-            **result
-        )
+        for work_items in work_tracker.sync_work_items(self.consumer_context.token_provider, work_items_source_key):
+            created = []
+            updated = []
+            for work_item in work_items:
+                if work_item['is_new']:
+                    created.append(work_item)
+                else:
+                    updated.append(work_item)
+
+            yield created, updated
 
 
 if __name__ == "__main__":

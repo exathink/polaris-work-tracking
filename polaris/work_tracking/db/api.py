@@ -47,8 +47,8 @@ def sync_work_items(work_items_source_key, work_item_list, join_this=None):
                 )
             )
 
-            new_work_items = session.connection().execute(
-                select(work_items_temp.columns).select_from(
+            work_items_before_insert = session.connection().execute(
+                select([*work_items_temp.columns, work_items.c.key.label('current_key')]).select_from(
                     work_items_temp.outerjoin(
                         work_items,
                         and_(
@@ -56,8 +56,6 @@ def sync_work_items(work_items_source_key, work_item_list, join_this=None):
                             work_items_temp.c.source_id == work_items.c.source_id
                         )
                     )
-                ).where(
-                    work_items.c.id == None
                 )
             ).fetchall()
 
@@ -85,18 +83,21 @@ def sync_work_items(work_items_source_key, work_item_list, join_this=None):
 
             return [
                 dict(
+                    is_new=work_item.current_key is None,
+                    key=work_item.key if work_item.current_key is None else work_item.current_key,
                     integration_type=work_items_source.integration_type,
-                    work_item_key=work_item.key,
-                    display_id= work_item.source_display_id,
-                    url = work_item.url,
-                    name = work_item.name,
-                    is_bug = work_item.is_bug,
-                    tags = work_item.tags,
+                    display_id=work_item.source_display_id,
+                    url=work_item.url,
+                    name=work_item.name,
+                    description=work_item.description,
+                    is_bug=work_item.is_bug,
+                    tags=work_item.tags,
+                    state=work_item.source_state,
                     created_at=work_item.source_created_at,
                     updated_at=work_item.source_last_updated,
                     last_sync=work_item.last_sync
                 )
-                for work_item in new_work_items
+                for work_item in work_items_before_insert
             ]
 
 
