@@ -13,6 +13,23 @@ services:
     depends_on:
       - polaris-db
 
+  polaris-work-tracking-service:
+    image: ${PACKAGE_DEPLOYABLE_IMAGE}
+    build:
+      dockerfile: docker/polaris-work-tracking-service-deploy/Dockerfile
+      context: .
+      args:
+        PACKAGE_UWSGI_IMAGE: ${PACKAGE_UWSGI_IMAGE}
+    ports:
+      - "8300:8300"
+
+    environment:
+      ENVIRONMENT: development
+      PROCESSES: 1
+      AUTH_SERVICE_URL: http://polaris-services.exathink.localdev:8000
+      POLARIS_DB_URL: postgres://polaris:polaris@polaris-db/polaris
+    depends_on:
+      - polaris-db
 
   polaris-db:
     image: ${POLARIS_DB_IMAGE}
