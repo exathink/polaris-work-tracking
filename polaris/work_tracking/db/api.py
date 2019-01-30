@@ -145,3 +145,19 @@ def resolve_work_items_by_display_ids(organization_key, display_ids):
             }
 
     return resolved
+
+
+def get_work_items_sources_to_sync():
+    with db.create_session() as session:
+        return [
+            dict(
+                organization_key=row.organization_key,
+                work_items_source_key=row.key,
+            )
+            for row in session.connection.execute(
+                select([
+                    work_items_sources.c.key,
+                    work_items_sources.c.organization_key
+                ])
+            ).fetchall()
+        ]

@@ -25,7 +25,7 @@ def sync_work_items(token_provider, work_items_source_key):
         work_items_source_impl = get_work_items_source_impl(token_provider, work_items_source)
 
     for work_items in work_items_source_impl.fetch_work_items_to_sync():
-        yield api.sync_work_items(work_items_source_key, work_items)
+        yield api.sync_work_items(work_items_source_key, work_items) or []
 
 
 
