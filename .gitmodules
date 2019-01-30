@@ -7,3 +7,12 @@
 [submodule "polaris-common-db"]
 	path = polaris-common-db
 	url = ../../polaris-common/polaris-common-db.git
+[submodule "polaris-utils"]
+	path = polaris-utils
+	url = ../../polaris-common/polaris-utils.git
+[submodule "polaris-flask"]
+	path = polaris-flask
+	url = ../../polaris-common/polaris-flask.git
+[submodule "polaris-graphql"]
+	path = polaris-graphql
+	url = ../../polaris-common/polaris-graphql.git
