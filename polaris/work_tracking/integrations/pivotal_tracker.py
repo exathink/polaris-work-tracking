@@ -9,12 +9,12 @@
 # Author: Krishna Kumar
 
 import requests
-import re
+import logging
+
+logger = logging.getLogger('polaris.work_tracking.pivotal_tracker')
+
 
 class PivotalTrackerWorkItemsSource:
-
-
-
 
     @staticmethod
     def create(token_provider, work_items_source):
@@ -26,23 +26,22 @@ class PivotalTrackerWorkItemsSource:
 class PivotalTrackerProject(PivotalTrackerWorkItemsSource):
 
     def __init__(self, token_provider, work_items_source):
-        self.access_token = token_provider.get_token(work_items_source.account_key, work_items_source.organization_key, 'pivotal_tracker_api_key')
+        self.access_token = token_provider.get_token(work_items_source.account_key, work_items_source.organization_key,
+                                                     'pivotal_tracker_api_key')
         self.work_items_source = work_items_source
-        self.project_id=work_items_source.parameters.get('id')
-        self.base_url='https://www.pivotaltracker.com/services/v5'
+        self.project_id = work_items_source.parameters.get('id')
+        self.base_url = 'https://www.pivotaltracker.com/services/v5'
         self.last_updated = work_items_source.latest_work_item_update_timestamp
 
     def fetch_work_items_to_sync(self):
         if self.work_items_source.should_sync():
-            query_params=dict(limit=100)
+            query_params = dict(limit=100)
             if self.last_updated:
                 query_params['updated_after'] = self.last_updated.isoformat()
 
-
-
             response = requests.get(
                 f'{self.base_url}/projects/{self.project_id}/stories',
-                headers={"X-TrackerToken":self.access_token},
+                headers={"X-TrackerToken": self.access_token},
                 params=query_params
             )
             if response.ok:
@@ -57,7 +56,7 @@ class PivotalTrackerProject(PivotalTrackerWorkItemsSource):
                         dict(
                             name=story.get('name'),
                             description=story.get('description'),
-                            is_bug=story.get('story_type')=='bug',
+                            is_bug=story.get('story_type') == 'bug',
                             tags=[story.get('story_type')] + [label.get('name') for label in story.get('labels')],
                             url=story.get('url'),
                             source_id=str(story.get('id')),
@@ -72,7 +71,7 @@ class PivotalTrackerProject(PivotalTrackerWorkItemsSource):
                     yield work_items
 
                     offset = offset + len(work_items)
-                    query_params['offset']=offset
+                    query_params['offset'] = offset
                     response = requests.get(
                         f'{self.base_url}/projects/{self.project_id}/stories',
                         headers={"X-TrackerToken": self.access_token},
@@ -80,9 +79,6 @@ class PivotalTrackerProject(PivotalTrackerWorkItemsSource):
                     )
                     total = int(response.headers.get('X-Tracker-Pagination-Total'))
 
-
-
-
-
-
-
+        else:
+            logger.info(f'Work Item source does not need to be synced. Last synced: '
+                        f'{self.work_items_source.last_synced}')
