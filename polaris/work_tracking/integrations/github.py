@@ -41,42 +41,43 @@ class GithubRepositoryIssues(GithubIssuesWorkItemsSource):
 
 
     def fetch_work_items_to_sync(self):
-        organization = self.work_items_source.parameters.get('organization')
-        repository = self.work_items_source.parameters.get('repository')
-        bug_tags =  ['bug', *self.work_items_source.parameters.get('bug_tags', [])]
+        if self.work_items_source.should_sync():
+            organization = self.work_items_source.parameters.get('organization')
+            repository = self.work_items_source.parameters.get('repository')
+            bug_tags =  ['bug', *self.work_items_source.parameters.get('bug_tags', [])]
 
-        #query terms
-        repository_query_term = f'repo:{organization}/{repository}'
-        state_query_term='state:open' if self.last_updated is None else ''
-        updated_after_query_term = f'updated:>{self.last_updated.isoformat()}' if self.last_updated else ''
-        query=f'type:issue  {state_query_term} {repository_query_term} {updated_after_query_term}'
+            #query terms
+            repository_query_term = f'repo:{organization}/{repository}'
+            state_query_term='state:open' if self.last_updated is None else ''
+            updated_after_query_term = f'updated:>{self.last_updated.isoformat()}' if self.last_updated else ''
+            query=f'type:issue  {state_query_term} {repository_query_term} {updated_after_query_term}'
 
-        logger.info(f"Importing issues for {repository_query_term}: query={query}")
-        issues_iterator = self.github.search_issues(query=query)
+            logger.info(f"Importing issues for {repository_query_term}: query={query}")
+            issues_iterator = self.github.search_issues(query=query)
 
-        fetched = 0
-        while issues_iterator._couldGrow():
-            issues = [
-                dict(
-                    name=issue.title,
-                    description=issue.body,
-                    is_bug=find(issue.labels, lambda label: label.name in bug_tags) is not None,
-                    tags=[label.name for label in issue.labels],
-                    url=issue.url,
-                    source_id=str(issue.id),
-                    source_last_updated=issue.updated_at,
-                    source_created_at=issue.created_at,
-                    source_display_id=issue.number,
-                    source_state=issue.state
+            fetched = 0
+            while issues_iterator._couldGrow():
+                issues = [
+                    dict(
+                        name=issue.title,
+                        description=issue.body,
+                        is_bug=find(issue.labels, lambda label: label.name in bug_tags) is not None,
+                        tags=[label.name for label in issue.labels],
+                        url=issue.url,
+                        source_id=str(issue.id),
+                        source_last_updated=issue.updated_at,
+                        source_created_at=issue.created_at,
+                        source_display_id=issue.number,
+                        source_state=issue.state
 
-                )
-                for issue in issues_iterator._fetchNextPage()
-            ]
-            if len(issues) == 0:
-                logger.info('There are no issues to import')
+                    )
+                    for issue in issues_iterator._fetchNextPage()
+                ]
+                if len(issues) == 0:
+                    logger.info('There are no issues to import')
 
-            fetched = fetched + len(issues)
-            yield issues
+                fetched = fetched + len(issues)
+                yield issues
 
 
 

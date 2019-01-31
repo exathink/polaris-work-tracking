@@ -10,7 +10,7 @@
 
 
 
-import uuid
+from datetime import datetime
 import logging
 
 logger = logging.getLogger('polaris.work_tracking.db.model')
@@ -20,6 +20,7 @@ from sqlalchemy import \
     Boolean, MetaData, ForeignKey, TIMESTAMP, and_, UniqueConstraint
 
 
+from polaris.utils.config import get_config_provider
 
 from sqlalchemy.orm import relationship, object_session
 from sqlalchemy.sql import cast, select, func
@@ -30,6 +31,7 @@ from polaris.common import db
 
 Base = db.polaris_declarative_base(metadata=MetaData(schema='work_tracking'))
 
+config = get_config_provider()
 
 class WorkItemsSource(Base):
     __tablename__ = 'work_items_sources'
@@ -57,6 +59,10 @@ class WorkItemsSource(Base):
     commit_mapping_scope = Column(String, nullable=False, default='organization', server_default="'organization'")
     commit_mapping_scope_key = Column(UUID(as_uuid=True), nullable=False)
 
+    # Sync Status
+    last_synced = Column(DateTime, nullable=True)
+
+    # Relationships
     work_items = relationship('WorkItem')
 
 
@@ -101,6 +107,12 @@ class WorkItemsSource(Base):
                 work_items.c.source_id.in_(source_ids)
             )
         )
+
+    def should_sync(self, sync_interval=int(config.get('work_item_sync_interval', 300))):
+        return self.last_synced is None or (datetime.utcnow() - self.last_synced).total_seconds() > sync_interval
+
+    def set_synced(self):
+        self.last_synced = datetime.utcnow()
 
 
 work_items_sources = WorkItemsSource.__table__

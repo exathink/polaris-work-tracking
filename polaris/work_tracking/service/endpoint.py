@@ -14,8 +14,8 @@ import logging
 from polaris.utils.config import get_config_provider
 from polaris.flask.common import PolarisSecuredService
 
-from polaris.flask.gql import graphql
-from polaris.work_tracking.service.graphql import schema
+from polaris.flask import gql
+from polaris.work_tracking.service import graphql
 
 from polaris.utils.logging import config_logging
 
@@ -44,7 +44,7 @@ if config_provider.get('DEBUG_SQL') == 'true':
     logging.getLogger('sqlalchemy.engine').setLevel(logging.INFO)
 
 # Register endpoints
-app.register_blueprint(graphql, url_prefix='/graphql', schema=schema)
+app.register_blueprint(gql.api, url_prefix='/graphql', schema=graphql.schema)
 
 
 if app.env == 'production':

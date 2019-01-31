@@ -30,7 +30,7 @@ def setup_schema(db_up):
     model.recreate_all(db.engine())
 
 
-@pytest.yield_fixture(scope='session')
+@pytest.yield_fixture()
 def setup_work_item_sources(setup_schema):
     work_items_sources = {}
     with db.orm_session() as session:
@@ -74,8 +74,8 @@ def setup_work_item_sources(setup_schema):
         session.flush()
         yield session, work_items_sources
 
-@pytest.yield_fixture(scope='session')
-def setup_work_items(setup_work_item_sources):
+@pytest.yield_fixture()
+def setup_work_items(setup_work_item_sources, cleanup):
     session, work_items_sources = setup_work_item_sources
     work_items = []
     with db.orm_session(session) as session:
@@ -154,9 +154,10 @@ def new_work_items():
     ]
 
 @pytest.yield_fixture
-def cleanup_empty(setup_work_items):
+def cleanup():
     yield
-    _, work_items_sources = setup_work_items
-    db.connection().execute(f"delete from work_tracking.work_items where work_items_source_id={work_items_sources['empty'].id}")
+    db.connection().execute(f"delete from work_tracking.work_items")
+    db.connection().execute(f"delete from work_tracking.work_items_sources")
+
 
 

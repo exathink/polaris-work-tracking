@@ -121,8 +121,7 @@ mock_consumer.token_provider = get_token_provider()
 class TestWorkItemsTopicSubscriber:
     class TestImportWorkItems:
 
-        def it_returns_a_valid_response_when_there_are_new_work_items(self, setup_work_items, new_work_items,
-                                                                      cleanup_empty):
+        def it_returns_a_valid_response_when_there_are_new_work_items(self, setup_work_items, new_work_items):
             _, work_items_sources = setup_work_items
             empty_source = work_items_sources['empty']
             with patch(
@@ -141,8 +140,7 @@ class TestWorkItemsTopicSubscriber:
                     assert_is_valid_message(WorkItemsCreated, messages[0])
 
 
-        def it_publishes_responses_when_there_are_new_work_items(self, setup_work_items, new_work_items,
-                                                                 cleanup_empty):
+        def it_publishes_responses_when_there_are_new_work_items(self, setup_work_items, new_work_items):
             _, work_items_sources = setup_work_items
             empty_source = work_items_sources['empty']
             with patch(
@@ -159,8 +157,7 @@ class TestWorkItemsTopicSubscriber:
                     messages = subscriber.dispatch(mock_channel, import_work_items_message)
                     work_item_topic_publish.assert_any_call(messages[0])
 
-        def it_returns_a_valid_response_when_there_are_updated_work_items(self, setup_work_items, new_work_items,
-                                                                         cleanup_empty):
+        def it_returns_a_valid_response_when_there_are_updated_work_items(self, setup_work_items, new_work_items):
             _, work_items_sources = setup_work_items
             empty_source = work_items_sources['empty']
             with patch(
@@ -180,8 +177,7 @@ class TestWorkItemsTopicSubscriber:
                     assert len(messages) == 1
                     assert_is_valid_message(WorkItemsUpdated, messages[0])
 
-        def it_publishes_a_response_when_there_are_updated_work_items(self, setup_work_items, new_work_items,
-                                                                   cleanup_empty):
+        def it_publishes_a_response_when_there_are_updated_work_items(self, setup_work_items, new_work_items):
             _, work_items_sources = setup_work_items
             empty_source = work_items_sources['empty']
             with patch(
@@ -200,8 +196,7 @@ class TestWorkItemsTopicSubscriber:
                     messages = subscriber.dispatch(mock_channel, import_work_items_message)
                     work_item_topic_publish.assert_called_with(messages[0])
 
-        def it_returns_a_valid_response_when_there_are_no_work_items(self, setup_work_items, new_work_items,
-                                                                     cleanup_empty):
+        def it_returns_a_valid_response_when_there_are_no_work_items(self, setup_work_items, new_work_items):
             _, work_items_sources = setup_work_items
             empty_source = work_items_sources['empty']
             with patch(
@@ -218,8 +213,7 @@ class TestWorkItemsTopicSubscriber:
                     messages = subscriber.dispatch(mock_channel, import_work_items_message)
                     assert len(messages) == 0
 
-        def it_does_not_publish_a_response_when_there_are_no_work_items(self, setup_work_items, new_work_items,
-                                                                 cleanup_empty):
+        def it_does_not_publish_a_response_when_there_are_no_work_items(self, setup_work_items, new_work_items):
             _, work_items_sources = setup_work_items
             empty_source = work_items_sources['empty']
             with patch(

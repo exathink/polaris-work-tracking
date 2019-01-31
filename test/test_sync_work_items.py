@@ -19,8 +19,7 @@ token_provider = get_token_provider()
 
 class TestSyncWorkItems:
 
-    def it_imports_work_items_when_the_source_has_no_work_items(self, setup_work_items, new_work_items,
-                                                                cleanup_empty):
+    def it_imports_work_items_when_the_source_has_no_work_items(self, setup_work_items, new_work_items):
         _, work_items_sources = setup_work_items
         empty_source = work_items_sources['empty']
         with patch('polaris.work_tracking.integrations.pivotal_tracker.PivotalTrackerProject.fetch_work_items_to_sync') as fetch_work_items_to_sync:
@@ -30,8 +29,7 @@ class TestSyncWorkItems:
                 assert len(result) == len(new_work_items)
                 assert all(map(lambda item: item['is_new'], result))
 
-    def it_assigns_work_item_keys_to_new_work_items(self, setup_work_items, new_work_items,
-                                                                cleanup_empty):
+    def it_assigns_work_item_keys_to_new_work_items(self, setup_work_items, new_work_items):
         _, work_items_sources = setup_work_items
         empty_source = work_items_sources['empty']
         with patch('polaris.work_tracking.integrations.pivotal_tracker.PivotalTrackerProject.fetch_work_items_to_sync') as fetch_work_items_to_sync:
@@ -42,8 +40,7 @@ class TestSyncWorkItems:
                 assert all(map(lambda item: item['key'] is not None, result))
 
 
-    def it_updates_work_items_that_already_exist(self, setup_work_items, new_work_items,
-                                                                cleanup_empty):
+    def it_updates_work_items_that_already_exist(self, setup_work_items, new_work_items):
         _, work_items_sources = setup_work_items
         empty_source = work_items_sources['empty']
         with patch('polaris.work_tracking.integrations.pivotal_tracker.PivotalTrackerProject.fetch_work_items_to_sync') as fetch_work_items_to_sync:
@@ -57,8 +54,7 @@ class TestSyncWorkItems:
                 assert len(result) == len(new_work_items)
                 assert all(map(lambda item: not item['is_new'], result))
 
-    def it_generates_multiple_results_sets_if_the_input_has_multiple_batches(self, setup_work_items, new_work_items,
-                                                                cleanup_empty):
+    def it_generates_multiple_results_sets_if_the_input_has_multiple_batches(self, setup_work_items, new_work_items):
         _, work_items_sources = setup_work_items
         empty_source = work_items_sources['empty']
         with patch('polaris.work_tracking.integrations.pivotal_tracker.PivotalTrackerProject.fetch_work_items_to_sync') as fetch_work_items_to_sync:
