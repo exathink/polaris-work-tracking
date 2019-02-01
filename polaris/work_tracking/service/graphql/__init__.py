@@ -13,6 +13,8 @@ import graphene
 
 from polaris.graphql.interfaces import NamedNode
 
+from .mutations import CreateWorkItemsSource
+
 
 class Query(graphene.ObjectType):
     node = NamedNode.Field()
@@ -21,4 +23,9 @@ class Query(graphene.ObjectType):
     def resolve_ping(self, info, **kwargs):
         return 'pong'
 
-schema = graphene.Schema(query=Query)
+
+class Mutations(graphene.ObjectType):
+    create_work_items_source = CreateWorkItemsSource.Field()
+
+
+schema = graphene.Schema(query=Query, mutation=Mutations)
