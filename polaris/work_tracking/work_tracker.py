@@ -14,6 +14,7 @@ from polaris.common import db
 from polaris.work_tracking.db import api
 from polaris.work_tracking.db.model import WorkItemsSource
 from polaris.work_tracking.work_items_source_factory import get_work_items_source_impl, get_work_items_resolver
+from polaris.work_tracking import publish
 
 logger = logging.getLogger('polaris.work_tracking.work_tracker')
 config = get_config_provider()
@@ -33,8 +34,10 @@ def sync_work_items(token_provider, work_items_source_key):
         session.add(work_items_source)
 
 
-
-
+def create_work_items_source(work_items_source_input, channel=None):
+    work_items_source = api.create_work_items_source(work_items_source_input)
+    publish.work_items_source_created(work_items_source, channel)
+    return work_items_source
 
 
 

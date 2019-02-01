@@ -14,9 +14,11 @@ from datetime import datetime
 
 from sqlalchemy import select, and_
 from sqlalchemy.dialects.postgresql import insert
+from polaris.utils.collections import dict_select
+from polaris.utils.exceptions import IllegalArgumentError
 
 from polaris.common import db
-from .model import WorkItemsSource, work_items, work_items_sources
+from .model import WorkItemsSource, WorkItemSourceType, work_items, work_items_sources
 
 logger = logging.getLogger('polaris.work_tracker.db.api')
 
@@ -66,7 +68,7 @@ def sync_work_items(work_items_source_key, work_item_list, join_this=None):
 
             session.connection().execute(
                 upsert.on_conflict_do_update(
-                    index_elements=['work_items_source_id','source_id'],
+                    index_elements=['work_items_source_id', 'source_id'],
                     set_=dict(
                         name=upsert.excluded.name,
                         description=upsert.excluded.description,
@@ -101,9 +103,6 @@ def sync_work_items(work_items_source_key, work_item_list, join_this=None):
             ]
 
 
-
-
-
 def resolve_work_items_by_display_ids(organization_key, display_ids):
     resolved = {}
     if len(display_ids) > 0:
@@ -122,26 +121,26 @@ def resolve_work_items_by_display_ids(organization_key, display_ids):
                     last_sync=work_item.last_sync
                 )
                 for work_item in session.connection.execute(
-                    select([
-                        work_items.c.key,
-                        work_items.c.source_display_id.label('display_id'),
-                        work_items.c.url,
-                        work_items.c.name,
-                        work_items.c.is_bug,
-                        work_items.c.tags,
-                        work_items.c.source_created_at,
-                        work_items.c.source_last_updated,
-                        work_items.c.last_sync,
-                        work_items_sources.c.integration_type
-                    ]).select_from(
-                        work_items.join(work_items_sources, work_items.c.work_items_source_id == work_items_sources.c.id)
-                    ).where(
-                        and_(
-                            work_items_sources.c.organization_key == organization_key,
-                            work_items.c.source_display_id.in_(display_ids)
-                        )
+                select([
+                    work_items.c.key,
+                    work_items.c.source_display_id.label('display_id'),
+                    work_items.c.url,
+                    work_items.c.name,
+                    work_items.c.is_bug,
+                    work_items.c.tags,
+                    work_items.c.source_created_at,
+                    work_items.c.source_last_updated,
+                    work_items.c.last_sync,
+                    work_items_sources.c.integration_type
+                ]).select_from(
+                    work_items.join(work_items_sources, work_items.c.work_items_source_id == work_items_sources.c.id)
+                ).where(
+                    and_(
+                        work_items_sources.c.organization_key == organization_key,
+                        work_items.c.source_display_id.in_(display_ids)
                     )
-                ).fetchall()
+                )
+            ).fetchall()
             }
 
     return resolved
@@ -161,3 +160,34 @@ def get_work_items_sources_to_sync():
                 ])
             ).fetchall()
         ]
+
+
+def get_parameters(work_items_source_input):
+    integration_type = work_items_source_input['integration_type']
+    if WorkItemSourceType.pivotal.value == integration_type:
+        return work_items_source_input['pivotal_parameters']
+    elif WorkItemSourceType.github.value == integration_type:
+        return work_items_source_input['github_parameters']
+    else:
+        raise IllegalArgumentError(f"Unknown integration type {integration_type}")
+
+
+def create_work_items_source(work_items_source_input):
+    with db.orm_session() as session:
+        session.expire_on_commit = False
+        work_item_source = WorkItemsSource(
+            key=work_items_source_input.get('key', uuid.uuid4()),
+            parameters=get_parameters(work_items_source_input),
+            **dict_select(work_items_source_input, [
+                'name',
+                'description',
+                'integration_type',
+                'work_items_source_type',
+                'account_key',
+                'organization_key',
+                'commit_mapping_scope',
+                'commit_mapping_scope_key'
+            ])
+        )
+        session.add(work_item_source)
+        return work_item_source
