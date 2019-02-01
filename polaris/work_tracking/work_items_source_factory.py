@@ -9,7 +9,7 @@
 # Author: Krishna Kumar
 
 from polaris.common import db
-from polaris.work_tracking.db.model import WorkItemsSource
+from polaris.work_tracking.db.model import WorkItemsSource, WorkItemSourceType
 from polaris.work_tracking.integrations.github import GithubIssuesWorkItemsSource
 from polaris.work_tracking.integrations.pivotal_tracker import PivotalTrackerWorkItemsSource
 
@@ -18,9 +18,9 @@ from polaris.utils.work_tracking import WorkItemResolver
 def get_work_items_source_impl(token_provider, work_items_source):
     work_items_source_impl = None
 
-    if work_items_source.integration_type in ['github', 'github_enterprise']:
+    if work_items_source.integration_type == WorkItemSourceType.github.value:
         work_items_source_impl = GithubIssuesWorkItemsSource.create(token_provider, work_items_source)
-    elif work_items_source.integration_type in ['pivotal_tracker']:
+    elif work_items_source.integration_type == WorkItemSourceType.pivotal.value:
         work_items_source_impl = PivotalTrackerWorkItemsSource.create(token_provider, work_items_source)
 
     assert work_items_source_impl is not None, f'Could not determine work_items_source_implementation for work_items_source_key {work_items_source_key}'

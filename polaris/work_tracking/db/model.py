@@ -12,6 +12,7 @@
 
 from datetime import datetime
 import logging
+from enum import Enum
 
 logger = logging.getLogger('polaris.work_tracking.db.model')
 
@@ -32,6 +33,12 @@ from polaris.common import db
 Base = db.polaris_declarative_base(metadata=MetaData(schema='work_tracking'))
 
 config = get_config_provider()
+
+
+class WorkItemSourceType(Enum):
+    pivotal = 'pivotal_tracker'
+    github = 'github'
+
 
 class WorkItemsSource(Base):
     __tablename__ = 'work_items_sources'

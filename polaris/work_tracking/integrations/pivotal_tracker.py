@@ -10,15 +10,19 @@
 
 import requests
 import logging
+from polaris.work_tracking.db.model import WorkItemSourceType
 
 logger = logging.getLogger('polaris.work_tracking.pivotal_tracker')
 
 
 class PivotalTrackerWorkItemsSource:
 
+
+
     @staticmethod
     def create(token_provider, work_items_source):
-        assert work_items_source.integration_type == 'pivotal_tracker'
+        assert work_items_source.integration_type == WorkItemSourceType.pivotal.value
+
         if work_items_source.work_items_source_type == 'project':
             return PivotalTrackerProject(token_provider, work_items_source)
 

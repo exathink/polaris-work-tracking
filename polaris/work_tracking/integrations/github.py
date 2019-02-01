@@ -12,7 +12,7 @@ import logging
 import re
 from github import Github
 from polaris.utils.collections import find
-
+from polaris.work_tracking.db.model import WorkItemSourceType
 
 def github_client(token_provider, work_items_source):
     return Github(per_page=100, login_or_token=token_provider.get_token(work_items_source.account_key,
@@ -27,7 +27,7 @@ class GithubIssuesWorkItemsSource:
 
     @staticmethod
     def create(token_provider, work_items_source):
-        assert work_items_source.integration_type in ['github', 'github_enterprise']
+        assert work_items_source.integration_type == WorkItemSourceType.github.value
 
         if work_items_source.work_items_source_type == 'repository_issues':
             return GithubRepositoryIssues(token_provider, work_items_source)
