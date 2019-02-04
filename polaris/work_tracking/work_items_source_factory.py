@@ -23,7 +23,7 @@ def get_work_items_source_impl(token_provider, work_items_source):
     elif work_items_source.integration_type == WorkItemSourceType.pivotal.value:
         work_items_source_impl = PivotalTrackerWorkItemsSource.create(token_provider, work_items_source)
 
-    assert work_items_source_impl is not None, f'Could not determine work_items_source_implementation for work_items_source_key {work_items_source_key}'
+    assert work_items_source_impl is not None, f'Could not determine work_items_source_implementation for work_items_source_key {work_items_source.key}'
     return work_items_source_impl
 
 def get_work_items_resolver(organization_key):
