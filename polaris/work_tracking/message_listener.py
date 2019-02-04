@@ -12,7 +12,7 @@ import logging
 
 from polaris.common import db
 from polaris.messaging.message_consumer import MessageConsumer
-from polaris.messaging.messages import ImportWorkItems, WorkItemsCreated, WorkItemsUpdated
+from polaris.messaging.messages import ImportWorkItems, WorkItemsCreated, WorkItemsUpdated, WorkItemsSourceCreated
 from polaris.messaging.topics import WorkItemsTopic, TopicSubscriber
 from polaris.utils.config import get_config_provider
 from polaris.utils.logging import config_logging
@@ -21,31 +21,37 @@ from polaris.work_tracking import work_tracker
 
 logger = logging.getLogger('polaris.work_tracking.message_listener')
 
-
-
-
-
-
-
 #-------------------------------------------------
 #
 # ------------------------------------------------
 
 class WorkItemsTopicSubscriber(TopicSubscriber):
-    def __init__(self, channel):
+    def __init__(self, channel, publisher=None):
         super().__init__(
             topic = WorkItemsTopic(channel, create=True),
             subscriber_queue='work_items_work_items',
             message_classes=[
+                #Events
+                WorkItemsSourceCreated,
                 #Commands
                 ImportWorkItems
             ],
+            publisher=publisher,
             exclusive=False
         )
 
     def dispatch(self, channel, message):
 
-        if ImportWorkItems.message_type == message.message_type:
+        if WorkItemsSourceCreated.message_type == message.message_type:
+            import_message = ImportWorkItems(send=dict(
+                    organization_key=message['organization_key'],
+                    work_items_source_key=message['work_items_source']['key']
+                ), in_response_to=message
+            )
+            self.publish(WorkItemsTopic, import_message)
+            return import_message
+
+        elif ImportWorkItems.message_type == message.message_type:
             total = 0
             messages = []
             for created, updated in self.process_import_work_items(message):
@@ -57,7 +63,7 @@ class WorkItemsTopicSubscriber(TopicSubscriber):
                         work_items_source_key=message['work_items_source_key'],
                         new_work_items=created
                     ))
-                    WorkItemsTopic(channel).publish(created_message)
+                    self.publish(WorkItemsTopic, created_message)
                     messages.append(created_message)
 
                 if len(updated) > 0:
@@ -68,7 +74,7 @@ class WorkItemsTopicSubscriber(TopicSubscriber):
                         work_items_source_key=message['work_items_source_key'],
                         updated_work_items=updated
                     ))
-                    WorkItemsTopic(channel).publish(updated_message)
+                    self.publish(WorkItemsTopic, updated_message)
                     messages.append(updated_message)
 
             logger.info(f'{total} work items processed')

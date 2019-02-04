@@ -14,6 +14,8 @@ from polaris.work_tracking.service.graphql import schema
 from polaris.messaging.topics import WorkItemsTopic
 from polaris.messaging.messages import WorkItemsSourceCreated
 from polaris.messaging.test_utils import assert_topic_and_message
+
+
 class TestCreateWorkItemSource:
 
     def it_creates_a_pivotal_source(self, setup_schema):
