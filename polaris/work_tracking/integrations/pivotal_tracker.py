@@ -8,24 +8,26 @@
 
 # Author: Krishna Kumar
 
+from enum import Enum
 import requests
 import logging
-from polaris.work_tracking.db.model import WorkItemSourceType
+from polaris.utils.exceptions import ProcessingException
 
 logger = logging.getLogger('polaris.work_tracking.pivotal_tracker')
 
 
+class PivotalWorkItemSourceType(Enum):
+    project = 'project'
+
+
 class PivotalTrackerWorkItemsSource:
-
-
 
     @staticmethod
     def create(token_provider, work_items_source):
-        assert work_items_source.integration_type == WorkItemSourceType.pivotal.value
-
-        if work_items_source.work_items_source_type == 'project':
+        if work_items_source.work_items_source_type == PivotalWorkItemSourceType.project.value:
             return PivotalTrackerProject(token_provider, work_items_source)
-
+        else:
+            raise ProcessingException(f"Unknown work items source type {work_items_source.work_items_source_type}")
 
 class PivotalTrackerProject(PivotalTrackerWorkItemsSource):
 

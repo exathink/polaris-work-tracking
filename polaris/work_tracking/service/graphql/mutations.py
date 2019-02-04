@@ -13,12 +13,15 @@ import graphene
 
 from polaris.work_tracking.db.model import WorkItemSourceType
 from polaris.work_tracking import work_tracker
+from polaris.work_tracking.integrations import pivotal_tracker, github
 
 logger = logging.getLogger('polaris.work_tracking.mutations')
 
 
 # Input Types
 IntegrationType = graphene.Enum.from_enum(WorkItemSourceType)
+GithubSourceType = graphene.Enum.from_enum(github.GithubWorkItemSourceType)
+PivotalSourceType = graphene.Enum.from_enum(pivotal_tracker.PivotalWorkItemSourceType)
 
 
 class CommitMappingScope(graphene.Enum):
@@ -28,21 +31,26 @@ class CommitMappingScope(graphene.Enum):
 
 
 class GithubWorkItemSourceParams(graphene.InputObjectType):
+    work_items_source_type = GithubSourceType(required=True)
+
     organization = graphene.String(required=True)
     repository = graphene.String(required=False)
     bug_tags = graphene.List(graphene.String)
 
 
 class PivotalWorkItemsSourceParams(graphene.InputObjectType):
+    work_items_source_type = PivotalSourceType(required=True)
+
     name = graphene.String(required=True)
     id = graphene.String(required=True)
+
+
 
 
 class WorkItemsSourceInput(graphene.InputObjectType):
     key = graphene.String(required=False)
     integration_type = IntegrationType(required=True)
     name = graphene.String(required=True)
-    work_items_source_type = graphene.String(required=True)
     pivotal_parameters = PivotalWorkItemsSourceParams(required=False)
     github_parameters = GithubWorkItemSourceParams(required=False)
     description = graphene.String(required=False)

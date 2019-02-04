@@ -175,14 +175,15 @@ def get_parameters(work_items_source_input):
 def create_work_items_source(work_items_source_input):
     with db.orm_session() as session:
         session.expire_on_commit = False
+        parameters = get_parameters(work_items_source_input)
         work_item_source = WorkItemsSource(
             key=work_items_source_input.get('key', uuid.uuid4()),
-            parameters=get_parameters(work_items_source_input),
+            work_items_source_type=parameters['work_items_source_type'],
+            parameters=parameters,
             **dict_select(work_items_source_input, [
                 'name',
                 'description',
                 'integration_type',
-                'work_items_source_type',
                 'account_key',
                 'organization_key',
                 'commit_mapping_scope',

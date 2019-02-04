@@ -9,11 +9,11 @@
 # Author: Krishna Kumar
 
 import logging
-import re
+from enum import Enum
+
 from github import Github
 from polaris.utils.collections import find
-from polaris.work_tracking.db.model import WorkItemSourceType
-
+from polaris.utils.exceptions import ProcessingException
 
 def github_client(token_provider, work_items_source):
     return Github(per_page=100, login_or_token=token_provider.get_token(work_items_source.account_key,
@@ -24,15 +24,19 @@ def github_client(token_provider, work_items_source):
 logger = logging.getLogger('polaris.work_tracking.github')
 
 
+class GithubWorkItemSourceType(Enum):
+    repository_issues = 'repository_issues'
+
+
 class GithubIssuesWorkItemsSource:
 
     @staticmethod
     def create(token_provider, work_items_source):
-        assert work_items_source.integration_type == WorkItemSourceType.github.value
-
-        if work_items_source.work_items_source_type == 'repository_issues':
+        if work_items_source.work_items_source_type == GithubWorkItemSourceType.repository_issues.value:
             return GithubRepositoryIssues(token_provider, work_items_source)
 
+        else:
+            raise ProcessingException(f"Unknown work items source type {work_items_source.work_items_source_type}")
 
 class GithubRepositoryIssues(GithubIssuesWorkItemsSource):
 

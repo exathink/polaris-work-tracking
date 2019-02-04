@@ -31,8 +31,8 @@ class TestCreateWorkItemSource:
                                 commitMappingScopeKey: "8850852b-9187-4284-bb1f-98ea89ae31fe",
                                 integrationType: pivotal,
                                 name: "polaris-web",
-                                workItemsSourceType:"project",
                                 pivotalParameters:{
+                                    workItemsSourceType: project,
                                     name: "polaris-web",
                                     id: "1934657"
                                 }
@@ -62,8 +62,8 @@ class TestCreateWorkItemSource:
                                 commitMappingScopeKey: "8850852b-9187-4284-bb1f-98ea89ae31fe",
                                 integrationType: github,
                                 name: "rails",
-                                workItemsSourceType:"repository_issues",
                                 githubParameters:{
+                                    workItemsSourceType: repository_issues,
                                     organization: "rails",
                                     repository: "rails",
                                     bugTags: ["With reproduction steps"]
@@ -95,8 +95,8 @@ class TestCreateWorkItemSource:
                                 commitMappingScopeKey: "8850852b-9187-4284-bb1f-98ea89ae31fe",
                                 integrationType: github,
                                 name: "rails",
-                                workItemsSourceType:"repository_issues",
                                 githubParameters:{
+                                    workItemsSourceType: repository_issues,
                                     organization: "rails",
                                     repository: "rails",
                                     bugTags: ["With reproduction steps"]
