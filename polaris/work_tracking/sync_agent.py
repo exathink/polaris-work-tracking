@@ -45,11 +45,11 @@ class WorkTrackingAgent(Agent):
         return True
 
 
-
-def start(name=None, poll_interval=None):
+def start(name=None, poll_interval=None, one_shot=False):
     agent = WorkTrackingAgent(
         name=name,
-        poll_interval=poll_interval
+        poll_interval=poll_interval,
+        one_shot=one_shot
     )
     logger.info("Starting agent.")
     agent.run()
