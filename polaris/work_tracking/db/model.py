@@ -115,7 +115,7 @@ class WorkItemsSource(Base):
             )
         )
 
-    def should_sync(self, sync_interval=int(config.get('work_item_sync_interval', 300))):
+    def should_sync(self, sync_interval=int(config.get('work_items_sources_min_secs_between_syncs', 30))):
         return self.last_synced is None or (datetime.utcnow() - self.last_synced).total_seconds() > sync_interval
 
     def set_synced(self):
