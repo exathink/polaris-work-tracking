@@ -53,3 +53,11 @@ class TestCommitWorkItemResolution:
         assert resolved == ['24532']
 
 
+    def it_resolves_a_commit_when_there_is_a_newline_in_the_story_mapping_string(self):
+        commit_message = """[story=#163732163 subject=work-items-on-commits-view story_url=https://www.pivotaltracker.com/story/show/163732163
+        ]"""
+
+        resolved = PivotalTrackerWorkItemResolver.resolve(commit_message)
+
+        assert len(resolved) == 1
+        assert resolved == ['163732163']
