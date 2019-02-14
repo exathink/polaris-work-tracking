@@ -18,7 +18,7 @@ from polaris.utils.config import get_config_provider
 from polaris.utils.logging import config_logging
 from polaris.utils.token_provider import get_token_provider
 from polaris.work_tracking import work_tracker
-
+from polaris.messaging.utils import raise_message_processing_error
 logger = logging.getLogger('polaris.work_tracking.message_listener')
 
 #-------------------------------------------------
@@ -84,17 +84,20 @@ class WorkItemsTopicSubscriber(TopicSubscriber):
         work_items_source_key = message['work_items_source_key']
         logger.info(f"Processing  {message.message_type}: "
                     f" Work Items Source Key : {work_items_source_key}")
+        try:
+            for work_items in work_tracker.sync_work_items(self.consumer_context.token_provider, work_items_source_key):
+                created = []
+                updated = []
+                for work_item in work_items:
+                    if work_item['is_new']:
+                        created.append(work_item)
+                    else:
+                        updated.append(work_item)
 
-        for work_items in work_tracker.sync_work_items(self.consumer_context.token_provider, work_items_source_key):
-            created = []
-            updated = []
-            for work_item in work_items:
-                if work_item['is_new']:
-                    created.append(work_item)
-                else:
-                    updated.append(work_item)
+                yield created, updated
 
-            yield created, updated
+        except Exception as exc:
+            raise_message_processing_error(message, 'Failed to sync work items', str(exc))
 
 
 if __name__ == "__main__":
