@@ -9,7 +9,8 @@
 # Author: Krishna Kumar
 
 from polaris.common import db
-from polaris.work_tracking.db.model import WorkItemsSource, WorkItemSourceType
+from polaris.work_tracking.db.model import WorkItemsSource
+from polaris.common.enums import WorkTrackingIntegrationType
 from polaris.work_tracking.integrations.github import GithubIssuesWorkItemsSource
 from polaris.work_tracking.integrations.pivotal_tracker import PivotalTrackerWorkItemsSource
 from polaris.utils.exceptions import ProcessingException
@@ -18,9 +19,9 @@ from polaris.utils.work_tracking import WorkItemResolver
 
 def get_work_items_source_impl(token_provider, work_items_source):
 
-    if work_items_source.integration_type == WorkItemSourceType.github.value:
+    if work_items_source.integration_type == WorkTrackingIntegrationType.github.value:
         work_items_source_impl = GithubIssuesWorkItemsSource.create(token_provider, work_items_source)
-    elif work_items_source.integration_type == WorkItemSourceType.pivotal.value:
+    elif work_items_source.integration_type == WorkTrackingIntegrationType.pivotal.value:
         work_items_source_impl = PivotalTrackerWorkItemsSource.create(token_provider, work_items_source)
     else:
         raise ProcessingException(

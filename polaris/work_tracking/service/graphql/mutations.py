@@ -11,7 +11,7 @@
 import logging
 import graphene
 
-from polaris.work_tracking.db.model import WorkItemSourceType
+from polaris.common.enums import WorkTrackingIntegrationType
 from polaris.work_tracking import work_tracker
 from polaris.work_tracking.integrations import pivotal_tracker, github
 
@@ -19,7 +19,7 @@ logger = logging.getLogger('polaris.work_tracking.mutations')
 
 
 # Input Types
-IntegrationType = graphene.Enum.from_enum(WorkItemSourceType)
+IntegrationType = graphene.Enum.from_enum(WorkTrackingIntegrationType)
 GithubSourceType = graphene.Enum.from_enum(github.GithubWorkItemSourceType)
 PivotalSourceType = graphene.Enum.from_enum(pivotal_tracker.PivotalWorkItemSourceType)
 

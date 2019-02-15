@@ -18,7 +18,8 @@ from polaris.utils.collections import dict_select
 from polaris.utils.exceptions import IllegalArgumentError
 
 from polaris.common import db
-from .model import WorkItemsSource, WorkItemSourceType, work_items, work_items_sources
+from .model import WorkItemsSource, work_items, work_items_sources
+from polaris.common.enums import WorkTrackingIntegrationType
 
 logger = logging.getLogger('polaris.work_tracker.db.api')
 
@@ -164,9 +165,9 @@ def get_work_items_sources_to_sync():
 
 def get_parameters(work_items_source_input):
     integration_type = work_items_source_input['integration_type']
-    if WorkItemSourceType.pivotal.value == integration_type:
+    if WorkTrackingIntegrationType.pivotal.value == integration_type:
         return work_items_source_input['pivotal_parameters']
-    elif WorkItemSourceType.github.value == integration_type:
+    elif WorkTrackingIntegrationType.github.value == integration_type:
         return work_items_source_input['github_parameters']
     else:
         raise IllegalArgumentError(f"Unknown integration type {integration_type}")

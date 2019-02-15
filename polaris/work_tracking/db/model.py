@@ -12,19 +12,18 @@
 
 from datetime import datetime
 import logging
-from enum import Enum
 
 logger = logging.getLogger('polaris.work_tracking.db.model')
 
 from sqlalchemy import \
-    Table, Index, Column, BigInteger, Integer, String, Text, DateTime, \
-    Boolean, MetaData, ForeignKey, TIMESTAMP, and_, UniqueConstraint
+    Index, Column, BigInteger, Integer, String, Text, DateTime, \
+    Boolean, MetaData, ForeignKey, and_, UniqueConstraint
 
 
 from polaris.utils.config import get_config_provider
 
 from sqlalchemy.orm import relationship, object_session
-from sqlalchemy.sql import cast, select, func
+from sqlalchemy.sql import select, func
 
 from sqlalchemy.dialects.postgresql import UUID, JSONB, ARRAY
 
@@ -33,11 +32,6 @@ from polaris.common import db
 Base = db.polaris_declarative_base(metadata=MetaData(schema='work_tracking'))
 
 config = get_config_provider()
-
-
-class WorkItemSourceType(Enum):
-    pivotal = 'pivotal_tracker'
-    github = 'github'
 
 
 class WorkItemsSource(Base):
