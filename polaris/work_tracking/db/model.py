@@ -38,7 +38,7 @@ class WorkItemsSource(Base):
     __tablename__ = 'work_items_sources'
 
     id = Column(Integer, primary_key=True)
-    key =  Column(UUID(as_uuid=True), nullable=False, unique=True)
+    key = Column(UUID(as_uuid=True), nullable=False, unique=True)
     # type of integration: github, github_enterprise, jira, pivotal_tracker etc..
     integration_type = Column(String, nullable=False)
 
@@ -126,6 +126,7 @@ class WorkItem(Base):
     key = Column(UUID(as_uuid=True), nullable=False, unique=True)
     name = Column(String(256), nullable=False)
     description = Column(Text, nullable=True)
+    work_item_type = Column(String, nullable=False)
     is_bug = Column(Boolean, nullable=False, default=False, server_default='FALSE')
     tags = Column(ARRAY(String), nullable=False, default=[], server_default='{}')
     # ID of the item in the source system, used to cross ref this instance for updates etc.

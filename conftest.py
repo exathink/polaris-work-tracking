@@ -16,6 +16,7 @@ from polaris.common.test_support import init_db
 from polaris.work_tracking.db import model
 from polaris.common import db
 from test.constants import *
+from polaris.common.enums import PivotalTrackerWorkItemType, GithubWorkItemType
 
 pytest_addoption = dbtest_addoption
 
@@ -93,6 +94,7 @@ def setup_github_work_items(work_item_source):
                 key=uuid.uuid4(),
                 name=f"Issue {display_id}",
                 description="An issue in detail",
+                work_item_type=GithubWorkItemType.issue.value,
                 is_bug=False,
                 tags=[],
                 source_id=str(display_id),
@@ -114,6 +116,7 @@ def setup_pivotal_work_items(work_item_source):
             model.WorkItem(
                 key=uuid.uuid4(),
                 name=f"Story {display_id}",
+                work_item_type=PivotalTrackerWorkItemType.story.value,
                 is_bug=False,
                 tags=[],
                 source_id=str(display_id),
@@ -129,9 +132,8 @@ def setup_pivotal_work_items(work_item_source):
     return work_item_source.work_items
 
 
-
-
 work_items_common = dict(
+    work_item_type=GithubWorkItemType.issue.value,
     description='Foo',
     is_bug=True,
     tags=['acre'],

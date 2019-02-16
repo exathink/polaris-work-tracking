@@ -12,7 +12,7 @@ from enum import Enum
 import requests
 import logging
 from polaris.utils.exceptions import ProcessingException
-
+from polaris.common.enums import PivotalTrackerWorkItemType
 logger = logging.getLogger('polaris.work_tracking.pivotal_tracker')
 
 
@@ -62,6 +62,7 @@ class PivotalTrackerProject(PivotalTrackerWorkItemsSource):
                         name=story.get('name'),
                         description=story.get('description'),
                         is_bug=story.get('story_type') == 'bug',
+                        work_item_type=PivotalTrackerWorkItemType.story.value,
                         tags=[story.get('story_type')] + [label.get('name') for label in story.get('labels')],
                         url=story.get('url'),
                         source_id=str(story.get('id')),
