@@ -88,7 +88,7 @@ def sync_work_items(work_items_source_key, work_item_list, join_this=None):
                 dict(
                     is_new=work_item.current_key is None,
                     key=work_item.key if work_item.current_key is None else work_item.current_key,
-                    integration_type=work_items_source.integration_type,
+                    work_item_type=work_item.work_item_type,
                     display_id=work_item.source_display_id,
                     url=work_item.url,
                     name=work_item.name,
