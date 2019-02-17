@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+set -e
 export DONT_PROMPT_FOR_CONFIRMATION=1
 echo "Deploying Image"
 package aws deploy-image
