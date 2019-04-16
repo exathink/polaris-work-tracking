@@ -94,6 +94,7 @@ class GithubRepositoryIssues(GithubIssuesWorkItemsSource):
             )
         else:
             issues_iterator = repo.get_issues(
+                state='all',
                 since=self.last_updated
             )
 
