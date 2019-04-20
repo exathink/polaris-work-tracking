@@ -13,7 +13,7 @@ import graphene
 
 from polaris.common.enums import WorkTrackingIntegrationType
 from polaris.work_tracking import work_tracker
-from polaris.work_tracking.integrations import pivotal_tracker, github
+from polaris.work_tracking.integrations import pivotal_tracker, github, jira
 
 logger = logging.getLogger('polaris.work_tracking.mutations')
 
@@ -22,7 +22,7 @@ logger = logging.getLogger('polaris.work_tracking.mutations')
 IntegrationType = graphene.Enum.from_enum(WorkTrackingIntegrationType)
 GithubSourceType = graphene.Enum.from_enum(github.GithubWorkItemSourceType)
 PivotalSourceType = graphene.Enum.from_enum(pivotal_tracker.PivotalWorkItemSourceType)
-
+JiraSourceType = graphene.Enum.from_enum(jira.JiraWorkItemSourceType)
 
 class CommitMappingScope(graphene.Enum):
     organization = 'organization'
@@ -45,6 +45,13 @@ class PivotalWorkItemsSourceParams(graphene.InputObjectType):
     id = graphene.String(required=True)
 
 
+class JiraWorkItemsSourceParams(graphene.InputObjectType):
+    work_items_source_type = JiraSourceType(required=True)
+
+    server_url = graphene.String(required=True)
+    project_id = graphene.String(required=True)
+    initial_import_days = graphene.Int(required=False)
+
 
 
 class WorkItemsSourceInput(graphene.InputObjectType):
@@ -53,6 +60,8 @@ class WorkItemsSourceInput(graphene.InputObjectType):
     name = graphene.String(required=True)
     pivotal_parameters = PivotalWorkItemsSourceParams(required=False)
     github_parameters = GithubWorkItemSourceParams(required=False)
+    jira_parameters = JiraWorkItemsSourceParams(required=False)
+
     description = graphene.String(required=False)
     account_key = graphene.String(required=True)
     organization_key = graphene.String(required=True)

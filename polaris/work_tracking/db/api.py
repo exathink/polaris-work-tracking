@@ -169,6 +169,8 @@ def get_parameters(work_items_source_input):
         return work_items_source_input['pivotal_parameters']
     elif WorkTrackingIntegrationType.github.value == integration_type:
         return work_items_source_input['github_parameters']
+    elif WorkTrackingIntegrationType.jira.value == integration_type:
+        return work_items_source_input['jira_parameters']
     else:
         raise IllegalArgumentError(f"Unknown integration type {integration_type}")
 
