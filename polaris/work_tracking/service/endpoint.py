@@ -16,6 +16,8 @@ from polaris.flask.common import PolarisSecuredService
 
 from polaris.flask import gql
 from polaris.work_tracking.service import graphql
+from polaris.work_tracking.service.atlassian import jira
+
 
 from polaris.utils.logging import config_logging
 
@@ -45,6 +47,9 @@ if config_provider.get('DEBUG_SQL') == 'true':
 
 # Register endpoints
 app.register_blueprint(gql.api, url_prefix='/graphql', schema=graphql.schema)
+
+jira.init_connector(app)
+
 
 
 if app.env == 'production':
