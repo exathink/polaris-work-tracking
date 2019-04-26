@@ -39,7 +39,10 @@ class PolarisWorkTrackingService(PolarisSecuredService):
 config_provider = get_config_provider()
 app = PolarisWorkTrackingService(
     __name__,
-    db_url=config_provider.get('POLARIS_DB_URL')
+    db_url=config_provider.get('POLARIS_DB_URL'),
+    public_paths=[
+        '/atlassian_connect'
+    ]
 )
 
 if config_provider.get('DEBUG_SQL') == 'true':
