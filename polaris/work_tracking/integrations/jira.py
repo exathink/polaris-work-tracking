@@ -13,7 +13,7 @@ import requests
 import logging
 from polaris.utils.exceptions import ProcessingException
 from polaris.common.enums import JiraWorkItemType
-
+from polaris.integrations.db.api import find_atlassian_connect_record_by_key
 logger = logging.getLogger('polaris.work_tracking.jira')
 
 
@@ -39,12 +39,12 @@ class JiraProject(JiraWorkItemsSource):
         self.access_token = token_provider.get_token(work_items_source.account_key, work_items_source.organization_key,
                                                      'jira_api_token')
         self.work_items_source = work_items_source
-        self.server_url = work_items_source.parameters.get('server_url')
-        self.base_url = f'{self.server_url}/rest/api/2'
         self.project_id = work_items_source.parameters.get('project_id')
         self.initial_import_days = int(work_items_source.parameters.get('initial_import_days', 90))
         self.last_updated = work_items_source.latest_work_item_update_timestamp
 
+        self.jira_connector = find_atlassian_connect_record_by_key(
+            self.work_items_source.parameters.get('jira_connector_key'))
         # map standard JIRA issue types to JiraWorkItemType enum values.
         self.work_item_type_map = dict(
             Story=JiraWorkItemType.story.value,
@@ -68,9 +68,8 @@ class JiraProject(JiraWorkItemsSource):
             maxResults=100
         )
 
-        response = requests.get(
-            f'{self.base_url}/search',
-            auth=('kkumar@exathink.com', self.access_token),
+        response = self.jira_connector.get(
+            self.jira_connector.api_url('/search'),
             headers={"Accept": "application/json"},
             params=query_params
         )
@@ -106,9 +105,8 @@ class JiraProject(JiraWorkItemsSource):
                 yield work_items
                 offset = offset + len(issues)
                 query_params['startAt'] = offset
-                response = requests.get(
-                    f'{self.base_url}/search',
-                    auth=('kkumar@exathink.com', self.access_token),
+                response = self.jira_connector.get(
+                    self.jira_connector.api_url('/search'),
                     headers={"Accept": "application/json"},
                     params=query_params
                 )
