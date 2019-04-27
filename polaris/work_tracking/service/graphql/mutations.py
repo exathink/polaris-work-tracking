@@ -47,8 +47,7 @@ class PivotalWorkItemsSourceParams(graphene.InputObjectType):
 
 class JiraWorkItemsSourceParams(graphene.InputObjectType):
     work_items_source_type = JiraSourceType(required=True)
-
-    server_url = graphene.String(required=True)
+    jira_connector_key = graphene.String(required=True)
     project_id = graphene.String(required=True)
     initial_import_days = graphene.Int(required=False)
 
