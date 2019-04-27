@@ -11,7 +11,7 @@
 
 from flask import jsonify
 from polaris.utils.config import get_config_provider
-from polaris.integrations.atlassian_connect import PolarisAtlassianConnect, PolarisAtlassianConnectClient
+from polaris.integrations.atlassian_connect import PolarisAtlassianConnect, _PolarisAtlassianConnectLoader
 
 config_provider = get_config_provider()
 
@@ -26,7 +26,7 @@ class JiraConnectorContext:
 
 
 def init_connector(app):
-    ac = PolarisAtlassianConnect(app, connector_context=JiraConnectorContext, client_class=PolarisAtlassianConnectClient)
+    ac = PolarisAtlassianConnect(app, connector_context=JiraConnectorContext)
 
     @ac.lifecycle("installed")
     def lifecycle_installed(client):
