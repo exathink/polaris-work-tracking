@@ -16,3 +16,6 @@
 [submodule "polaris-graphql"]
 	path = polaris-graphql
 	url = ../../polaris-common/polaris-graphql.git
+[submodule "polaris-integrations"]
+	path = polaris-integrations
+	url = ../../polaris-common/polaris-integrations

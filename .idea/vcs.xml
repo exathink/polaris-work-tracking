@@ -7,6 +7,7 @@
     <mapping directory="$PROJECT_DIR$/polaris-flask" vcs="Git" />
     <mapping directory="$PROJECT_DIR$/polaris-flask/polaris-auth-db" vcs="Git" />
     <mapping directory="$PROJECT_DIR$/polaris-graphql" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/polaris-integrations" vcs="Git" />
     <mapping directory="$PROJECT_DIR$/polaris-messaging" vcs="Git" />
     <mapping directory="$PROJECT_DIR$/polaris-messaging/pika-pool" vcs="Git" />
     <mapping directory="$PROJECT_DIR$/polaris-messaging/polaris-utils" vcs="Git" />
