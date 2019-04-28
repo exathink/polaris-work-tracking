@@ -23,6 +23,7 @@ class JiraConnectorContext:
     addon_key = "polaris.jira"
     addon_description = "Jira Connector for the Polaris Platform"
     addon_scopes = ["READ", "WRITE"]
+    addon_version = 1
 
 
 def init_connector(app):
@@ -46,6 +47,26 @@ def init_connector(app):
 
     @ac.webhook('jira:issue_created')
     def handle_jira_issue_created(client, event):
+        pass
+
+    @ac.webhook('jira:issue_updated')
+    def handle_jira_issue_updated(client, event):
+        pass
+
+    @ac.webhook('jira:issue_deleted')
+    def handle_jira_issue_deleted(client, event):
+        pass
+
+    @ac.webhook('project_created')
+    def handle_project_created(client, event):
+        pass
+
+    @ac.webhook('project_updated')
+    def handle_project_created(client, event):
+        pass
+
+    @ac.webhook('project_deleted')
+    def handle_project_created(client, event):
         pass
 
 
