@@ -14,7 +14,7 @@ from unittest.mock import patch
 import uuid
 from atlassian_jwt import encode_token
 from polaris.integrations.db.api import load_atlassian_connect_record
-from polaris.work_tracking.service.atlassian import jira
+from polaris.work_tracking.integrations.atlassian import jira_atlassian_connect
 from polaris.common import db
 from polaris.integrations.db import model
 
@@ -47,7 +47,7 @@ def app_fixture(setup_integrations_schema):
     app.testing = True
     client = app.test_client()
 
-    jira.init_connector(app)
+    jira_atlassian_connect.init_connector(app)
 
     # Install the app
     response = client.post(
@@ -73,7 +73,7 @@ class TestJiraConnector:
             shared_secret
         )
         json_payload = {**payload, **dict(eventType="jira:issue_created")}
-        with patch('polaris.work_tracking.service.atlassian.jira.publish') as publish:
+        with patch('polaris.work_tracking.integrations.atlassian.jira_atlassian_connect.publish') as publish:
             response = client.post(
                 url,
                 json=json_payload,

@@ -18,7 +18,7 @@ from polaris.messaging.topics import WorkItemsTopic
 from polaris.messaging.messages import ImportWorkItems
 from polaris.common import db
 
-from polaris.work_tracking.service.atlassian import jira_api
+from polaris.work_tracking.integrations.atlassian import jira_api
 
 logger = logging.getLogger('polaris.work_tracking.cli')
 token_provider = get_token_provider()

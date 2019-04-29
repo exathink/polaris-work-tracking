@@ -13,7 +13,8 @@ import graphene
 
 from polaris.common.enums import WorkTrackingIntegrationType
 from polaris.work_tracking import work_tracker
-from polaris.work_tracking.integrations import pivotal_tracker, github, jira
+from polaris.work_tracking.integrations import pivotal_tracker, github
+from polaris.work_tracking.integrations.atlassian import jira_work_items_source
 
 logger = logging.getLogger('polaris.work_tracking.mutations')
 
@@ -22,7 +23,7 @@ logger = logging.getLogger('polaris.work_tracking.mutations')
 IntegrationType = graphene.Enum.from_enum(WorkTrackingIntegrationType)
 GithubSourceType = graphene.Enum.from_enum(github.GithubWorkItemSourceType)
 PivotalSourceType = graphene.Enum.from_enum(pivotal_tracker.PivotalWorkItemSourceType)
-JiraSourceType = graphene.Enum.from_enum(jira.JiraWorkItemSourceType)
+JiraSourceType = graphene.Enum.from_enum(jira_work_items_source.JiraWorkItemSourceType)
 
 class CommitMappingScope(graphene.Enum):
     organization = 'organization'

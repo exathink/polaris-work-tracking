@@ -9,9 +9,8 @@
 # Author: Krishna Kumar
 
 
-import json
 from polaris.utils.config import get_config_provider
-from polaris.integrations.atlassian_connect import PolarisAtlassianConnect, _PolarisAtlassianConnectLoader
+from polaris.integrations.atlassian_connect import PolarisAtlassianConnect
 from polaris.work_tracking import publish
 config_provider = get_config_provider()
 

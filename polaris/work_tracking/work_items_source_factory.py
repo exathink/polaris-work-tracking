@@ -13,7 +13,7 @@ from polaris.work_tracking.db.model import WorkItemsSource
 from polaris.common.enums import WorkTrackingIntegrationType
 from polaris.work_tracking.integrations.github import GithubIssuesWorkItemsSource
 from polaris.work_tracking.integrations.pivotal_tracker import PivotalTrackerWorkItemsSource
-from polaris.work_tracking.integrations.jira import JiraWorkItemsSource
+from polaris.work_tracking.integrations.atlassian.jira_work_items_source import JiraWorkItemsSource
 from polaris.utils.exceptions import ProcessingException
 from polaris.utils.work_tracking import WorkItemResolver
 
