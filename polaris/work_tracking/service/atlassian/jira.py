@@ -9,10 +9,10 @@
 # Author: Krishna Kumar
 
 
-from flask import jsonify
+import json
 from polaris.utils.config import get_config_provider
 from polaris.integrations.atlassian_connect import PolarisAtlassianConnect, _PolarisAtlassianConnectLoader
-
+from polaris.work_tracking import publish
 config_provider = get_config_provider()
 
 
@@ -47,27 +47,51 @@ def init_connector(app):
 
     @ac.webhook('jira:issue_created')
     def handle_jira_issue_created(client, event):
-        pass
+        publish.atlassian_connect_work_item_event(
+            atlassian_connector_key=client.atlassianConnectorKey,
+            atlassian_event_type='issue_created',
+            atlassian_event=event
+        )
 
     @ac.webhook('jira:issue_updated')
     def handle_jira_issue_updated(client, event):
-        pass
+        publish.atlassian_connect_work_item_event(
+            atlassian_connector_key=client.atlassianConnectorKey,
+            atlassian_event_type='issue_updated',
+            atlassian_event=event
+        )
 
     @ac.webhook('jira:issue_deleted')
     def handle_jira_issue_deleted(client, event):
-        pass
+        publish.atlassian_connect_work_item_event(
+            atlassian_connector_key=client.atlassianConnectorKey,
+            atlassian_event_type='issue_deleted',
+            atlassian_event=event
+        )
 
     @ac.webhook('project_created')
     def handle_project_created(client, event):
-        pass
+        publish.atlassian_connect_work_item_event(
+            atlassian_connector_key=client.atlassianConnectorKey,
+            atlassian_event_type='project_created',
+            atlassian_event=event
+        )
 
     @ac.webhook('project_updated')
-    def handle_project_created(client, event):
-        pass
+    def handle_project_updated(client, event):
+        publish.atlassian_connect_work_item_event(
+            atlassian_connector_key=client.atlassianConnectorKey,
+            atlassian_event_type='project_updated',
+            atlassian_event=event
+        )
 
     @ac.webhook('project_deleted')
-    def handle_project_created(client, event):
-        pass
+    def handle_project_deleted(client, event):
+        publish.atlassian_connect_work_item_event(
+            atlassian_connector_key=client.atlassianConnectorKey,
+            atlassian_event_type='project_updated',
+            atlassian_event=event
+        )
 
 
 
