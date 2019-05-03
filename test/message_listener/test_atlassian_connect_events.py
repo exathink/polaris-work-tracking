@@ -170,3 +170,63 @@ class TestAtlassianConnectEvent:
                                        f"where "
                                        f"work_items_source_id={work_items_source.id} "
                                        f"and source_display_id='{issue_key}'").scalar() == 1
+
+    def it_handles_the_issue_deleted_event(self, jira_work_item_source_fixture, cleanup):
+        work_items_source, jira_project_id, connector_key = jira_work_item_source_fixture
+        issue_id="10001"
+        issue_key=f"PRJ-{issue_id}"
+
+        issue = create_issue(jira_project_id, issue_key, issue_id)
+
+        issue_event = dict(
+            timestamp=datetime.utcnow().isoformat(),
+            event='issue_created',
+            issue=issue
+        )
+
+        # First create the issue with a message
+        jira_issue_created_message = fake_send(
+            AtlassianConnectWorkItemEvent(send=dict(
+                atlassian_connector_key=connector_key,
+                atlassian_event_type='issue_created',
+                atlassian_event=json.dumps(issue_event)
+            ))
+        )
+
+        publisher = mock_publisher()
+        subscriber = WorkItemsTopicSubscriber(mock_channel(), publisher=publisher)
+        subscriber.consumer_context = mock_consumer
+
+        subscriber.dispatch(mock_channel, jira_issue_created_message)
+
+        # now delete this issue
+
+        delete_timestamp = datetime.utcnow().isoformat()
+        issue_deleted = dict(
+            timestamp=delete_timestamp,
+            event='issue_deleted',
+            issue=issue
+        )
+
+        jira_issue_deleted_message = fake_send(
+            AtlassianConnectWorkItemEvent(send=dict(
+                atlassian_connector_key=connector_key,
+                atlassian_event_type='issue_deleted',
+                atlassian_event=json.dumps(issue_deleted)
+            ))
+        )
+
+        publisher = mock_publisher()
+        subscriber = WorkItemsTopicSubscriber(mock_channel(), publisher=publisher)
+        subscriber.consumer_context = mock_consumer
+
+        message = subscriber.dispatch(mock_channel, jira_issue_deleted_message)
+        assert message
+        assert message['is_delete']
+        publisher.assert_topic_called_with_message(WorkItemsTopic, WorkItemsUpdated)
+
+        # check that the delete date is set
+        assert db.connection().execute(f"Select count(id) from work_tracking.work_items "
+                                       f"where "
+                                       f"work_items_source_id={work_items_source.id} "
+                                       f"and source_display_id='{issue_key}' and deleted_at is not NULL").scalar() == 1

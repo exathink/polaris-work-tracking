@@ -119,7 +119,7 @@ class WorkItemsTopicSubscriber(TopicSubscriber):
             if jira_event_type in ['issue_created', 'issue_updated', 'issue_deleted']:
                 work_item = jira_message_handler.handle_issue_events(jira_connector_key, jira_event_type, jira_event)
                 if work_item:
-                    if work_item['is_new']:
+                    if work_item.get('is_new'):
                         logger.info(f'new work_item created')
                         response_message = WorkItemsCreated(send=dict(
                             organization_key=work_item['organization_key'],
@@ -132,6 +132,7 @@ class WorkItemsTopicSubscriber(TopicSubscriber):
                         response_message = WorkItemsUpdated(send=dict(
                             organization_key=work_item['organization_key'],
                             work_items_source_key=work_item['work_items_source_key'],
+                            is_delete=work_item.get('is_delete') is not None,
                             updated_work_items=[work_item]
                         ))
                         self.publish(WorkItemsTopic, response_message)

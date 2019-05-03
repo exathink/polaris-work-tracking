@@ -146,20 +146,21 @@ class WorkItem(Base):
     # ID of the item in the source system, used to cross ref this instance for updates etc.
     source_id = Column(String, nullable=True)
     url=Column(String, nullable=True)
-    source_created_at=Column(DateTime, nullable=False)
+    source_created_at = Column(DateTime, nullable=False)
     source_last_updated = Column(DateTime, nullable=True)
     source_display_id = Column(String, nullable=False)
-    source_state=Column(String, nullable=False)
-    last_sync=Column(DateTime, nullable=True)
+    source_state = Column(String, nullable=False)
+    last_sync = Column(DateTime, nullable=True)
+    deleted_at = Column(DateTime, nullable=True)
     # Work Items Source relationship
     work_items_source_id = Column(Integer, ForeignKey('work_items_sources.id'))
     work_items_source = relationship('WorkItemsSource', back_populates='work_items')
 
     @classmethod
     def findBySourceDisplayId(cls, session, work_items_source_id, source_display_id):
-        return session.Query(cls).filter(and_(
+        return session.query(cls).filter(and_(
             cls.work_items_source_id == work_items_source_id,
-            cls.source_id == source_display_id
+            cls.source_display_id == source_display_id
         )).first()
 
 work_items = WorkItem.__table__

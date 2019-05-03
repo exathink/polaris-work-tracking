@@ -205,7 +205,35 @@ def update_work_item(work_items_source_key, work_item_data, join_this=None):
     return sync_work_items(work_items_source_key, [work_item_data], join_this)[0]
 
 
-def delete_work_item(work_items_source, work_item_data, join_this=None):
-    pass
+def delete_work_item(work_items_source_key, work_item_data, join_this=None):
+    with db.orm_session(join_this) as session:
+        session.expire_on_commit = False
+        work_items_source = WorkItemsSource.find_by_work_items_source_key(session, work_items_source_key)
+        if work_items_source:
+            work_item = WorkItem.findBySourceDisplayId(
+                session, work_items_source.id,
+                work_item_data.get('source_display_id')
+            )
+            if work_item:
+                work_item.deleted_at = work_item_data['deleted_at']
+                return dict(
+                    is_delete=True,
+                    key=work_item.key,
+                    work_item_type=work_item.work_item_type,
+                    display_id=work_item.source_display_id,
+                    url=work_item.url,
+                    name=work_item.name,
+                    description=work_item.description,
+                    is_bug=work_item.is_bug,
+                    tags=work_item.tags,
+                    state=work_item.source_state,
+                    created_at=work_item.source_created_at,
+                    updated_at=work_item.source_last_updated,
+                    last_sync=work_item.last_sync,
+                    deleted_at=work_item.deleted_at
+                )
+
+
+
 
 
