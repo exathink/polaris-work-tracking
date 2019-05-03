@@ -18,7 +18,7 @@ from polaris.utils.collections import dict_select
 from polaris.utils.exceptions import IllegalArgumentError
 
 from polaris.common import db
-from .model import WorkItemsSource, work_items, work_items_sources
+from .model import WorkItemsSource, work_items, work_items_sources, WorkItem
 from polaris.common.enums import WorkTrackingIntegrationType
 
 logger = logging.getLogger('polaris.work_tracker.db.api')
@@ -175,12 +175,12 @@ def get_parameters(work_items_source_input):
         raise IllegalArgumentError(f"Unknown integration type {integration_type}")
 
 
-def create_work_items_source(work_items_source_input):
-    with db.orm_session() as session:
+def create_work_items_source(work_items_source_input, join_this=None):
+    with db.orm_session(join_this) as session:
         session.expire_on_commit = False
         parameters = get_parameters(work_items_source_input)
         work_item_source = WorkItemsSource(
-            key=work_items_source_input.get('key', uuid.uuid4()),
+            key=work_items_source_input.get('key', uuid.uuid4().hex),
             work_items_source_type=parameters['work_items_source_type'],
             parameters=parameters,
             **dict_select(work_items_source_input, [
@@ -195,3 +195,17 @@ def create_work_items_source(work_items_source_input):
         )
         session.add(work_item_source)
         return work_item_source
+
+
+def insert_work_item(work_items_source_key, work_item_data, join_this=None):
+    return sync_work_items(work_items_source_key, [work_item_data], join_this)[0]
+
+
+def update_work_item(work_items_source_key, work_item_data, join_this=None):
+    return sync_work_items(work_items_source_key, [work_item_data], join_this)[0]
+
+
+def delete_work_item(work_items_source, work_item_data, join_this=None):
+    pass
+
+

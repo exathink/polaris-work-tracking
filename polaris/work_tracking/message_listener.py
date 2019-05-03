@@ -9,6 +9,7 @@
 # Author: Krishna Kumar
 
 import logging
+import json
 
 from polaris.common import db
 from polaris.messaging.message_consumer import MessageConsumer
@@ -18,22 +19,29 @@ from polaris.utils.config import get_config_provider
 from polaris.utils.logging import config_logging
 from polaris.utils.token_provider import get_token_provider
 from polaris.work_tracking import work_tracker
+from polaris.work_tracking.messages.atlassian_connect_work_item_event import AtlassianConnectWorkItemEvent
+from polaris.work_tracking.integrations.atlassian import jira_message_handler
 from polaris.messaging.utils import raise_message_processing_error
+from polaris.utils.exceptions import ProcessingException
+
 logger = logging.getLogger('polaris.work_tracking.message_listener')
 
-#-------------------------------------------------
+
+# -------------------------------------------------
 #
 # ------------------------------------------------
+
 
 class WorkItemsTopicSubscriber(TopicSubscriber):
     def __init__(self, channel, publisher=None):
         super().__init__(
-            topic = WorkItemsTopic(channel, create=True),
+            topic=WorkItemsTopic(channel, create=True),
             subscriber_queue='work_items_work_items',
             message_classes=[
-                #Events
+                # Events
                 WorkItemsSourceCreated,
-                #Commands
+                AtlassianConnectWorkItemEvent,
+                # Commands
                 ImportWorkItems
             ],
             publisher=publisher,
@@ -44,9 +52,9 @@ class WorkItemsTopicSubscriber(TopicSubscriber):
 
         if WorkItemsSourceCreated.message_type == message.message_type:
             import_message = ImportWorkItems(send=dict(
-                    organization_key=message['organization_key'],
-                    work_items_source_key=message['work_items_source']['key']
-                ), in_response_to=message
+                organization_key=message['organization_key'],
+                work_items_source_key=message['work_items_source']['key']
+            ), in_response_to=message
             )
             self.publish(WorkItemsTopic, import_message)
             return import_message
@@ -80,6 +88,9 @@ class WorkItemsTopicSubscriber(TopicSubscriber):
             logger.info(f'{total} work items processed')
             return messages
 
+        elif AtlassianConnectWorkItemEvent.message_type == message.message_type:
+            return self.process_atlassian_connect_event(message)
+
     def process_import_work_items(self, message):
         work_items_source_key = message['work_items_source_key']
         logger.info(f"Processing  {message.message_type}: "
@@ -99,6 +110,39 @@ class WorkItemsTopicSubscriber(TopicSubscriber):
         except Exception as exc:
             raise_message_processing_error(message, 'Failed to sync work items', str(exc))
 
+    def process_atlassian_connect_event(self, message):
+        jira_connector_key = message['atlassian_connector_key']
+        jira_event_type = message['atlassian_event_type']
+        jira_event = json.loads(message['atlassian_event'])
+
+        try:
+            if jira_event_type in ['issue_created', 'issue_updated', 'issue_deleted']:
+                work_item = jira_message_handler.handle_issue_events(jira_connector_key, jira_event_type, jira_event)
+                if work_item:
+                    if work_item['is_new']:
+                        logger.info(f'new work_item created')
+                        response_message = WorkItemsCreated(send=dict(
+                            organization_key=work_item['organization_key'],
+                            work_items_source_key=work_item['work_items_source_key'],
+                            new_work_items=[work_item]
+                        ))
+                        self.publish(WorkItemsTopic, response_message)
+                    else:
+                        logger.info(f'new work_item updated')
+                        response_message = WorkItemsUpdated(send=dict(
+                            organization_key=work_item['organization_key'],
+                            work_items_source_key=work_item['work_items_source_key'],
+                            updated_work_items=[work_item]
+                        ))
+                        self.publish(WorkItemsTopic, response_message)
+
+                    return response_message
+            else:
+                raise ProcessingException(f"Cannot determine how to handle event_type {jira_event_type}")
+
+        except Exception as exc:
+            raise_message_processing_error(message, 'Failed to handle atlassian_connect_message', str(exc))
+
 
 if __name__ == "__main__":
     config_logging()
@@ -115,9 +159,3 @@ if __name__ == "__main__":
         ],
         token_provider=token_provider
     ).start_consuming()
-
-
-
-
-
-

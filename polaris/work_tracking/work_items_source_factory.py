@@ -43,3 +43,8 @@ def get_work_items_resolver(organization_key):
             resolver = WorkItemResolver.get_resolver(work_items_source.integration_type)
 
     return resolver
+
+
+def get_from_message(integration_type, **kwargs):
+    if WorkTrackingIntegrationType.jira == integration_type:
+        return JiraWorkItemsSource.get_from_message(**kwargs)

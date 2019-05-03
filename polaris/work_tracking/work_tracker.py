@@ -13,9 +13,10 @@ from polaris.utils.config import get_config_provider
 from polaris.common import db
 from polaris.work_tracking.db import api
 from polaris.work_tracking.db.model import WorkItemsSource
-from polaris.work_tracking.work_items_source_factory import get_work_items_source_impl, get_work_items_resolver
+from polaris.work_tracking import work_items_source_factory
 from polaris.work_tracking import publish
 from polaris.utils.exceptions import ProcessingException
+
 
 logger = logging.getLogger('polaris.work_tracking.work_tracker')
 config = get_config_provider()
@@ -26,7 +27,7 @@ def sync_work_items(token_provider, work_items_source_key):
         session.expire_on_commit = False
         work_items_source = WorkItemsSource.find_by_work_items_source_key(session, work_items_source_key)
         if work_items_source is not None:
-            work_items_source_impl = get_work_items_source_impl(token_provider, work_items_source)
+            work_items_source_impl = work_items_source_factory.get_work_items_source_impl(token_provider, work_items_source)
         else:
             raise ProcessingException(f"Could not find work items source with key {work_items_source.key}")
 
@@ -44,6 +45,9 @@ def create_work_items_source(work_items_source_input, channel=None):
     work_items_source = api.create_work_items_source(work_items_source_input)
     publish.work_items_source_created(work_items_source, channel)
     return work_items_source
+
+
+
 
 
 

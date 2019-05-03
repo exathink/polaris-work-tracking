@@ -9,11 +9,13 @@
 # Author: Krishna Kumar
 
 from enum import Enum
-import requests
+import json
 import logging
 from polaris.utils.exceptions import ProcessingException
 from polaris.common.enums import JiraWorkItemType
 from polaris.integrations.atlassian_connect import PolarisAtlassianConnector
+from polaris.work_tracking.messages import AtlassianConnectWorkItemEvent
+from polaris.work_tracking.db.model import WorkItemsSource
 
 logger = logging.getLogger('polaris.work_tracking.jira')
 
@@ -27,18 +29,15 @@ class JiraWorkItemsSource:
     @staticmethod
     def create(token_provider, work_items_source):
         if work_items_source.work_items_source_type == JiraWorkItemSourceType.project.value:
-            return JiraProject(token_provider, work_items_source)
+            return JiraProject(work_items_source)
         else:
             raise ProcessingException(f"Unknown work items source type {work_items_source.work_items_source_type}")
 
 
 class JiraProject(JiraWorkItemsSource):
 
+    def __init__(self, work_items_source):
 
-
-    def __init__(self, token_provider, work_items_source):
-        self.access_token = token_provider.get_token(work_items_source.account_key, work_items_source.organization_key,
-                                                     'jira_api_token')
         self.work_items_source = work_items_source
         self.project_id = work_items_source.parameters.get('project_id')
         self.initial_import_days = int(work_items_source.parameters.get('initial_import_days', 90))
@@ -53,6 +52,26 @@ class JiraProject(JiraWorkItemsSource):
             Epic=JiraWorkItemType.epic.value,
             Epic2=JiraWorkItemType.epic.value
         )
+
+    def map_issue_to_work_item_data(self, issue):
+        fields = issue.get('fields')
+        issue_type = fields.get('issuetype').get('name')
+        if issue_type in self.work_item_type_map:
+            return(
+                dict(
+                    name=fields.get('summary'),
+                    description=fields.get('description'),
+                    is_bug=issue_type == 'Bug',
+                    work_item_type=self.work_item_type_map.get(issue_type),
+                    tags=[],
+                    url=issue.get('self'),
+                    source_id=str(issue.get('id')),
+                    source_display_id=issue.get('key'),
+                    source_last_updated=fields.get('updated'),
+                    source_created_at=fields.get('created'),
+                    source_state=fields.get('status').get('name')
+                )
+            )
 
     def fetch_work_items_to_sync(self):
 
@@ -84,24 +103,9 @@ class JiraProject(JiraWorkItemsSource):
                     break
                 work_items = []
                 for issue in issues:
-                    fields = issue.get('fields')
-                    issue_type = fields.get('issuetype').get('name')
-                    if issue_type in self.work_item_type_map:
-                        work_items.append(
-                            dict(
-                                name=fields.get('summary'),
-                                description=fields.get('description'),
-                                is_bug=issue_type == 'Bug',
-                                work_item_type=self.work_item_type_map.get(issue_type),
-                                tags=[],
-                                url=issue.get('self'),
-                                source_id=str(issue.get('id')),
-                                source_display_id=issue.get('key'),
-                                source_last_updated=fields.get('updated'),
-                                source_created_at=fields.get('created'),
-                                source_state=fields.get('status').get('name')
-                            )
-                        )
+                    work_item_data = self.map_issue_to_work_item_data(issue)
+                    if work_item_data:
+                        work_items.append(work_item_data)
 
                 yield work_items
                 offset = offset + len(issues)

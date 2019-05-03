@@ -11,10 +11,10 @@
 from polaris.messaging.messages import register_messages
 
 
-from .atlassian_connect_work_item_event import AtlassianConnectWorkItemEventMessage
+from .atlassian_connect_work_item_event import AtlassianConnectWorkItemEvent
 
 # Add this to the global message factory so that the messages can be desrialized on reciept.
 register_messages([
-    AtlassianConnectWorkItemEventMessage
+    AtlassianConnectWorkItemEvent
 ])
 

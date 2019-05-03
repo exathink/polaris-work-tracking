@@ -7,58 +7,12 @@
 # confidential.
 
 # Author: Krishna Kumar
-import pytest
+
+from .fixtures.jira_fixtures import *
+
 import json
-from flask import Flask
-from unittest.mock import patch
-import uuid
 from atlassian_jwt import encode_token
-from polaris.integrations.db.api import load_atlassian_connect_record
-from polaris.work_tracking.integrations.atlassian import jira_atlassian_connect
-from polaris.common import db
-from polaris.integrations.db import model
-
-key = uuid.uuid4().hex
-client_key = uuid.uuid4().hex
-shared_secret = 'my deep dark secret'
-public_key = uuid.uuid4().hex
-
-
-payload = dict(
-    key='polaris.jira',
-    clientKey=client_key,
-    sharedSecret=shared_secret,
-    publicKey=public_key,
-    serverVersion='1.0',
-    pluginsVersion='1.0',
-    baseUrl='https://exathinkdev.atlassian.net',
-    productType='JIRA',
-    description='Its JIRA dude..',
-    serviceEntitlementNumber='42'
-)
-
-@pytest.fixture(scope='module')
-def setup_integrations_schema(db_up):
-    model.recreate_all(db.engine())
-
-@pytest.yield_fixture
-def app_fixture(setup_integrations_schema):
-    app = Flask(__name__)
-    app.testing = True
-    client = app.test_client()
-
-    jira_atlassian_connect.init_connector(app)
-
-    # Install the app
-    response = client.post(
-        '/atlassian_connect/lifecycle/installed',
-        json={**payload, **dict(eventType="installed")}
-    )
-    assert response.status_code == 204
-
-    connector = load_atlassian_connect_record(client_key)
-
-    yield app, client, connector.key
+from unittest.mock import patch
 
 
 class TestJiraConnector:
@@ -86,3 +40,5 @@ class TestJiraConnector:
             assert call_args['atlassian_connector_key'] == connector_key
             assert call_args['atlassian_event_type'] == 'issue_created'
             assert json.loads(call_args['atlassian_event']) == json_payload
+
+

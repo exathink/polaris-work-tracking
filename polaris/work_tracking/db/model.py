@@ -17,7 +17,7 @@ logger = logging.getLogger('polaris.work_tracking.db.model')
 
 from sqlalchemy import \
     Index, Column, BigInteger, Integer, String, Text, DateTime, \
-    Boolean, MetaData, ForeignKey, and_, UniqueConstraint
+    Boolean, MetaData, ForeignKey, and_, UniqueConstraint,cast
 
 
 from polaris.utils.config import get_config_provider
@@ -76,6 +76,18 @@ class WorkItemsSource(Base):
     def find_by_work_items_source_key(cls, session, work_items_source_key):
         return session.query(cls).filter(cls.key == work_items_source_key).first()
 
+    @classmethod
+    def find_by_integration_type_and_parameters(cls, session, integration_type, **parameters):
+        return session.query(cls).filter(
+            and_(
+                cls.integration_type == integration_type,
+                *[
+                    cls.parameters[k] == cast(parameters[k], JSONB)
+                    for k in parameters
+                ]
+            )
+        ).all()
+
     @property
     def latest_work_item_creation_date(self):
         return object_session(self).scalar(
@@ -83,6 +95,8 @@ class WorkItemsSource(Base):
                 work_items.c.work_items_source_id == self.id
             )
         )
+
+
 
     @property
     def latest_work_item_update_timestamp(self):
@@ -141,6 +155,12 @@ class WorkItem(Base):
     work_items_source_id = Column(Integer, ForeignKey('work_items_sources.id'))
     work_items_source = relationship('WorkItemsSource', back_populates='work_items')
 
+    @classmethod
+    def findBySourceDisplayId(cls, session, work_items_source_id, source_display_id):
+        return session.Query(cls).filter(and_(
+            cls.work_items_source_id == work_items_source_id,
+            cls.source_id == source_display_id
+        )).first()
 
 work_items = WorkItem.__table__
 Index('ix_work_items_work_item_source_id_source_display_id', work_items.c.work_items_source_id, work_items.c.source_display_id)

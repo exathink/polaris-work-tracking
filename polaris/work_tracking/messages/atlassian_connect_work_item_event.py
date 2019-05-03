@@ -14,7 +14,7 @@ from marshmallow import fields
 from polaris.messaging.messages import Message
 
 
-class AtlassianConnectWorkItemEventMessage(Message):
+class AtlassianConnectWorkItemEvent(Message):
     message_type = 'work_items.atlassian_connect_event'
 
     atlassian_connector_key = fields.String(required=True)
@@ -22,3 +22,4 @@ class AtlassianConnectWorkItemEventMessage(Message):
 
     # the atlassian event is passed through as string and handled on the receiver end.
     atlassian_event = fields.String(required=True)
+
