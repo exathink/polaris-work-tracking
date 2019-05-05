@@ -8,14 +8,11 @@
 
 # Author: Krishna Kumar
 
-from polaris.common import db
-from polaris.work_tracking.db.model import WorkItemsSource
 from polaris.common.enums import WorkTrackingIntegrationType
+from polaris.utils.exceptions import ProcessingException
+from polaris.work_tracking.integrations.atlassian.jira_work_items_source import JiraWorkItemsSource
 from polaris.work_tracking.integrations.github import GithubIssuesWorkItemsSource
 from polaris.work_tracking.integrations.pivotal_tracker import PivotalTrackerWorkItemsSource
-from polaris.work_tracking.integrations.atlassian.jira_work_items_source import JiraWorkItemsSource
-from polaris.utils.exceptions import ProcessingException
-from polaris.utils.work_tracking import WorkItemResolver
 
 
 def get_work_items_source_impl(token_provider, work_items_source):
@@ -34,17 +31,7 @@ def get_work_items_source_impl(token_provider, work_items_source):
     return work_items_source_impl
 
 
-def get_work_items_resolver(organization_key):
-    resolver = None
-    with db.orm_session() as session:
-        work_item_sources = WorkItemsSource.find_by_organization_key(session, organization_key)
-        if work_item_sources:
-            work_items_source = work_item_sources[0]
-            resolver = WorkItemResolver.get_resolver(work_items_source.integration_type)
-
-    return resolver
 
 
-def get_from_message(integration_type, **kwargs):
-    if WorkTrackingIntegrationType.jira == integration_type:
-        return JiraWorkItemsSource.get_from_message(**kwargs)
+
+
