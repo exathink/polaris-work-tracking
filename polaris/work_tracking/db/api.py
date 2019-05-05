@@ -158,7 +158,12 @@ def get_work_items_sources_to_sync():
                 select([
                     work_items_sources.c.key,
                     work_items_sources.c.organization_key
-                ])
+                ]).where(
+                        work_items_sources.c.integration_type.in_([
+                            WorkTrackingIntegrationType.github.value,
+                            WorkTrackingIntegrationType.pivotal.value
+                        ])
+                )
             ).fetchall()
         ]
 
