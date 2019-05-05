@@ -30,26 +30,27 @@ def handle_issue_events(jira_connector_key, jira_event_type, jira_event):
                 jira_connector_key=jira_connector_key,
                 project_id=project_id
             )
-            if len(work_items_sources) == 1:
-                work_items_source = work_items_sources[0]
-                jira_project_source = JiraProject(work_items_source)
-                work_item_data = jira_project_source.map_issue_to_work_item_data(issue)
-                if work_item_data:
-                    if jira_event_type == 'issue_created':
-                        work_item = api.insert_work_item(work_items_source.key, work_item_data, join_this=session)
-                    elif jira_event_type == 'issue_updated':
-                        work_item = api.update_work_item(work_items_source.key, work_item_data, join_this=session)
-                    elif jira_event_type == 'issue_deleted':
-                        work_item_data['deleted_at'] = datetime.utcnow()
-                        work_item = api.delete_work_item(work_items_source.key, work_item_data, join_this=session)
+            if len(work_items_sources) > 0:
+                if len(work_items_sources) == 1:
+                    work_items_source = work_items_sources[0]
+                    jira_project_source = JiraProject(work_items_source)
+                    work_item_data = jira_project_source.map_issue_to_work_item_data(issue)
+                    if work_item_data:
+                        if jira_event_type == 'issue_created':
+                            work_item = api.insert_work_item(work_items_source.key, work_item_data, join_this=session)
+                        elif jira_event_type == 'issue_updated':
+                            work_item = api.update_work_item(work_items_source.key, work_item_data, join_this=session)
+                        elif jira_event_type == 'issue_deleted':
+                            work_item_data['deleted_at'] = datetime.utcnow()
+                            work_item = api.delete_work_item(work_items_source.key, work_item_data, join_this=session)
 
 
-                    work_item['organization_key'] = work_items_source.organization_key
-                    work_item['work_items_source_key'] = work_items_source.key
-                    return work_item
-            else:
-                raise ProcessingException(f"More than one work items source was f"
-                                          f"ound with connector key {jira_connector_key} and project_id {project_id}")
+                        work_item['organization_key'] = work_items_source.organization_key
+                        work_item['work_items_source_key'] = work_items_source.key
+                        return work_item
+                else:
+                    raise ProcessingException(f"More than one work items source was f"
+                                              f"ound with connector key {jira_connector_key} and project_id {project_id}")
 
     else:
         raise ProcessingException(f"Could not find issue field on jira issue event {jira_event}. ")
