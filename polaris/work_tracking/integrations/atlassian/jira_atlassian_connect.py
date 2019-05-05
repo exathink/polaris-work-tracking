@@ -20,7 +20,7 @@ config_provider = get_config_provider()
 
 class JiraConnectorContext:
     base_url = config_provider.get('JIRA_CONNECTOR_BASE_URL')
-    mount_path = config_provider.get('JIRA_CONNECTOR_MOUNT_PATH')
+    mount_path = config_provider.get('MOUNT_PATH')
 
     app_name = "Polaris Jira Connector"
     addon_name = "Polaris Jira Connector"
