@@ -12,16 +12,16 @@ __version__ = '0.0.1'
 import graphene
 
 from polaris.graphql.interfaces import NamedNode
-
+from polaris.integrations.graphql import IntegrationsQueryMixin
 from .mutations import CreateWorkItemsSource
 
 
-class Query(graphene.ObjectType):
-    node = NamedNode.Field()
-    ping = graphene.String()
+class Query(
+    IntegrationsQueryMixin,
+    graphene.ObjectType
+):
 
-    def resolve_ping(self, info, **kwargs):
-        return 'pong'
+    node = NamedNode.Field()
 
 
 class Mutations(graphene.ObjectType):
