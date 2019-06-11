@@ -12,7 +12,7 @@ __version__ = '0.0.1'
 import graphene
 
 from polaris.graphql.interfaces import NamedNode
-from polaris.integrations.graphql import IntegrationsQueryMixin
+from polaris.integrations.graphql import IntegrationsQueryMixin, IntegrationsMutationsMixin
 from .mutations import CreateWorkItemsSource
 
 
@@ -24,7 +24,10 @@ class Query(
     node = NamedNode.Field()
 
 
-class Mutations(graphene.ObjectType):
+class Mutations(
+    IntegrationsMutationsMixin,
+    graphene.ObjectType
+):
     create_work_items_source = CreateWorkItemsSource.Field()
 
 

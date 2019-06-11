@@ -9,6 +9,7 @@
 # Author: Krishna Kumar
 
 import logging
+
 import graphene
 
 from polaris.common.enums import WorkTrackingIntegrationType
@@ -85,3 +86,5 @@ class CreateWorkItemsSource(graphene.Mutation):
             name=work_items_source.name,
             key=work_items_source.key
         )
+
+
