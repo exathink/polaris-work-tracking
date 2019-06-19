@@ -38,22 +38,34 @@ def upgrade():
                existing_type=postgresql.UUID(),
                nullable=True,
                schema='work_tracking')
+    op.alter_column('work_items_sources', 'commit_mapping_scope_key',
+                    existing_type=postgresql.UUID(),
+                    nullable=True,
+                    schema='work_tracking')
     op.create_foreign_key('work_items_sources_projects_fk', 'work_items_sources', 'projects', ['project_id'], ['id'], source_schema='work_tracking', referent_schema='work_tracking')
 
     op.create_index(op.f('ix_work_tracking_work_items_sources_source_id'), 'work_items_sources', ['source_id'],
                     unique=False, schema='work_tracking')
+
+    op.create_unique_constraint('uq_work_items_sources_connector_key_source_id', 'work_items_sources', ['connector_key', 'source_id'], schema='work_tracking')
+
     # ### end Alembic commands ###
 
 
 def downgrade():
-
+    op.drop_constraint('uq_work_items_sources_connector_key_source_id', 'work_items_sources', schema='work_tracking', type_='unique')
     op.drop_constraint('work_items_sources_projects_fk', 'work_items_sources', schema='work_tracking', type_='foreignkey')
     op.drop_index(op.f('ix_work_tracking_work_items_sources_source_id'), table_name='work_items_sources',
                   schema='work_tracking')
+    op.alter_column('work_items_sources', 'commit_mapping_scope_key',
+                    existing_type=postgresql.UUID(),
+                    nullable=False,
+                    schema='work_tracking')
     op.alter_column('work_items_sources', 'organization_key',
                existing_type=postgresql.UUID(),
                nullable=False,
                schema='work_tracking')
+    op.drop_column('work_items_sources', 'url', schema='work_tracking')
     op.drop_column('work_items_sources', 'source_updated_at', schema='work_tracking')
     op.drop_column('work_items_sources', 'source_record', schema='work_tracking')
     op.drop_column('work_items_sources', 'source_id', schema='work_tracking')
@@ -61,4 +73,4 @@ def downgrade():
     op.drop_column('work_items_sources', 'project_id', schema='work_tracking')
     op.drop_column('work_items_sources', 'connector_key', schema='work_tracking')
     op.drop_table('projects', schema='work_tracking')
-    # ### end Alembic commands ###
+
