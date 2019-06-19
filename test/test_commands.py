@@ -15,7 +15,7 @@ from polaris.work_tracking import commands
 token_provider = get_token_provider()
 
 
-class TestSyncWorkItems:
+class TestPivotalSyncWorkItems:
 
     def it_imports_work_items_when_the_source_has_no_work_items(self, setup_work_items, new_work_items):
         _, work_items_sources = setup_work_items

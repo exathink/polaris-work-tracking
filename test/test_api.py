@@ -14,7 +14,7 @@ from polaris.work_tracking.db import api
 
 class TestSyncWorkItems:
 
-    def it_imports_work_items_when_the_source_has_no_work_items(self,setup_work_items, new_work_items):
+    def it_imports_work_items_when_the_source_has_no_work_items(self, setup_work_items, new_work_items):
         _, work_items_sources = setup_work_items
         empty_source = work_items_sources['empty']
         created = api.sync_work_items(empty_source.key, work_item_list=new_work_items)
@@ -26,7 +26,7 @@ class TestSyncWorkItems:
 
 
 
-    def it_updates_existing_work_items_that_match_incoming_items_by_source_id(self,setup_work_items, new_work_items):
+    def it_updates_existing_work_items_that_match_incoming_items_by_source_id(self, setup_work_items, new_work_items):
         _, work_items_sources = setup_work_items
         empty_source = work_items_sources['empty']
         # Import once
@@ -41,7 +41,7 @@ class TestSyncWorkItems:
             f"select count(id) from work_tracking.work_items where work_items_source_id={empty_source.id} and source_state='closed'"
         ).scalar() == len(new_work_items)
 
-    def it_returns_updated_elements_for_those_that_match_existing_items_by_source_id(self,setup_work_items, new_work_items):
+    def it_returns_updated_elements_for_those_that_match_existing_items_by_source_id(self, setup_work_items, new_work_items):
         _, work_items_sources = setup_work_items
         empty_source = work_items_sources['empty']
         # Import once

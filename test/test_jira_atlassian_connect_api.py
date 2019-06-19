@@ -8,14 +8,15 @@
 
 # Author: Krishna Kumar
 
-from .fixtures.jira_fixtures import *
-
 import json
-from atlassian_jwt import encode_token
 from unittest.mock import patch
 
+from atlassian_jwt import encode_token
 
-class TestJiraConnector:
+from .fixtures.jira_fixtures import *
+
+
+class TestJiraAtlassianConnectApi:
 
     def it_handles_the_issue_created_webhook(self, app_fixture):
         app, client, connector_key = app_fixture
