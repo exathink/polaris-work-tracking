@@ -8,14 +8,12 @@
 
 # Author: Krishna Kumar
 
-from enum import Enum
-import json
 import logging
-from polaris.utils.exceptions import ProcessingException
+from enum import Enum
+
+import polaris.work_tracking.connector_factory
 from polaris.common.enums import JiraWorkItemType
-from polaris.integrations.atlassian_connect import PolarisAtlassianConnector
-from polaris.work_tracking.messages import AtlassianConnectWorkItemEvent
-from polaris.work_tracking.db.model import WorkItemsSource
+from polaris.utils.exceptions import ProcessingException
 
 logger = logging.getLogger('polaris.work_tracking.jira')
 
@@ -43,7 +41,7 @@ class JiraProject(JiraWorkItemsSource):
         self.initial_import_days = int(work_items_source.parameters.get('initial_import_days', 90))
         self.last_updated = work_items_source.latest_work_item_update_timestamp
 
-        self.jira_connector = PolarisAtlassianConnector(
+        self.jira_connector = polaris.work_tracking.connector_factory.get_connector(
             self.work_items_source.parameters.get('jira_connector_key'))
         # map standard JIRA issue types to JiraWorkItemType enum values.
         self.work_item_type_map = dict(
@@ -57,7 +55,7 @@ class JiraProject(JiraWorkItemsSource):
         fields = issue.get('fields')
         issue_type = fields.get('issuetype').get('name')
         if issue_type in self.work_item_type_map:
-            return(
+            return (
                 dict(
                     name=fields.get('summary'),
                     description=fields.get('description'),
@@ -89,7 +87,7 @@ class JiraProject(JiraWorkItemsSource):
         )
 
         response = self.jira_connector.get(
-            self.jira_connector.api_url('/search'),
+            '/search',
             headers={"Accept": "application/json"},
             params=query_params
         )

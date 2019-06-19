@@ -9,16 +9,16 @@
 # Author: Krishna Kumar
 
 import logging
+
 import argh
-from polaris.utils.token_provider import get_token_provider
-from polaris.utils.logging import config_logging
 
-from polaris.messaging.utils import publish
-from polaris.messaging.topics import WorkItemsTopic
-from polaris.messaging.messages import ImportWorkItems
+import polaris.work_tracking.connector_factory
 from polaris.common import db
-
-from polaris.work_tracking.integrations.atlassian import jira_api
+from polaris.messaging.messages import ImportWorkItems
+from polaris.messaging.topics import WorkItemsTopic
+from polaris.messaging.utils import publish
+from polaris.utils.logging import config_logging
+from polaris.utils.token_provider import get_token_provider
 
 logger = logging.getLogger('polaris.work_tracking.cli')
 token_provider = get_token_provider()
@@ -29,8 +29,13 @@ def import_work_items(organization_key=None, work_items_source_key=None):
     publish(WorkItemsTopic, ImportWorkItems(send=dict(organization_key=organization_key, work_items_source_key=work_items_source_key)))
 
 
-def list_jira_projects(jira_connector_key):
-    print(jira_api.list_projects(jira_connector_key))
+def list_jira_projects(connector_key):
+    connector = polaris.work_tracking.connector_factory.get_connector(connector_key)
+
+    for work_items_sources  in connector.fetch_work_items_sources_to_sync(batch_size=50):
+        for source in work_items_sources:
+            print(source)
+
 
 
 if __name__ == '__main__':

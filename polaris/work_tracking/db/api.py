@@ -14,12 +14,12 @@ from datetime import datetime
 
 from sqlalchemy import select, and_
 from sqlalchemy.dialects.postgresql import insert
-from polaris.utils.collections import dict_select
-from polaris.utils.exceptions import IllegalArgumentError
 
 from polaris.common import db
-from .model import WorkItemsSource, work_items, work_items_sources, WorkItem
 from polaris.common.enums import WorkTrackingIntegrationType
+from polaris.utils.collections import dict_select
+from polaris.utils.exceptions import IllegalArgumentError
+from .model import WorkItemsSource, work_items, work_items_sources, WorkItem
 
 logger = logging.getLogger('polaris.work_tracker.db.api')
 
@@ -242,3 +242,5 @@ def delete_work_item(work_items_source_key, work_item_data, join_this=None):
 
 
 
+def sync_work_items_sources(connector_key, work_items_sources):
+    pass

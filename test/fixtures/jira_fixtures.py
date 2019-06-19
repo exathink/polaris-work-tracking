@@ -16,10 +16,10 @@ from flask import Flask
 
 from polaris.common import db
 from polaris.integrations.db import model as integrations
-from polaris.work_tracking.db import model as work_tracking
 from polaris.integrations.db.api import load_atlassian_connect_record
-from polaris.work_tracking.integrations.atlassian import jira_atlassian_connect
+from polaris.work_tracking.db import model as work_tracking
 from polaris.work_tracking.db.api import create_work_items_source
+from polaris.work_tracking.integrations.atlassian import jira_atlassian_connect
 from polaris.work_tracking.integrations.atlassian.jira_work_items_source import JiraWorkItemSourceType
 
 key = uuid.uuid4().hex
@@ -38,7 +38,7 @@ payload = dict(
     serverVersion='1.0',
     pluginsVersion='1.0',
     baseUrl='https://exathinkdev.atlassian.net',
-    productType='JIRA',
+    productType='jira',
     description='Its JIRA dude..',
     serviceEntitlementNumber='42'
 )

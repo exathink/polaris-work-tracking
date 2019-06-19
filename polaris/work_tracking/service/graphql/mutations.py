@@ -13,7 +13,7 @@ import logging
 import graphene
 
 from polaris.common.enums import WorkTrackingIntegrationType
-from polaris.work_tracking import work_tracker
+from polaris.work_tracking import commands
 from polaris.work_tracking.integrations import pivotal_tracker, github
 from polaris.work_tracking.integrations.atlassian import jira_work_items_source
 
@@ -81,7 +81,7 @@ class CreateWorkItemsSource(graphene.Mutation):
 
     def mutate(self, info, data):
         logger.info('CreateWorkItemsSource called')
-        work_items_source = work_tracker.create_work_items_source(work_items_source_input=data)
+        work_items_source = commands.create_work_items_source(work_items_source_input=data)
         return CreateWorkItemsSource(
             name=work_items_source.name,
             key=work_items_source.key
