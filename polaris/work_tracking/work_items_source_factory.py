@@ -33,5 +33,3 @@ def get_work_items_source_impl(token_provider, work_items_source):
 
 
 
-
-

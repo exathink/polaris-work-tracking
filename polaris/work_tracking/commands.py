@@ -9,14 +9,14 @@
 # Author: Krishna Kumar
 
 import logging
-from polaris.utils.config import get_config_provider
+
 from polaris.common import db
+from polaris.utils.config import get_config_provider
+from polaris.utils.exceptions import ProcessingException
+from polaris.work_tracking import publish
+from polaris.work_tracking import work_items_source_factory
 from polaris.work_tracking.db import api
 from polaris.work_tracking.db.model import WorkItemsSource
-from polaris.work_tracking import work_items_source_factory
-from polaris.work_tracking import publish
-from polaris.utils.exceptions import ProcessingException
-
 
 logger = logging.getLogger('polaris.work_tracking.work_tracker')
 config = get_config_provider()
@@ -48,7 +48,11 @@ def create_work_items_source(work_items_source_input, channel=None):
 
 
 
-
+def sync_work_items_sources(connector_key):
+    connector = work_items_source_factory.get_connector_impl(connector_key)
+    if connector:
+        for work_items_sources in connector.fetch_work_items_sources_to_sync():
+            yield api.sync_work_items_sources(connector_key, work_items_sources)
 
 
 

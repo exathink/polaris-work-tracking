@@ -8,21 +8,21 @@
 
 # Author: Krishna Kumar
 
-import logging
 import json
+import logging
 
 from polaris.common import db
 from polaris.messaging.message_consumer import MessageConsumer
 from polaris.messaging.messages import ImportWorkItems, WorkItemsCreated, WorkItemsUpdated, WorkItemsSourceCreated
 from polaris.messaging.topics import WorkItemsTopic, TopicSubscriber
+from polaris.messaging.utils import raise_message_processing_error
 from polaris.utils.config import get_config_provider
+from polaris.utils.exceptions import ProcessingException
 from polaris.utils.logging import config_logging
 from polaris.utils.token_provider import get_token_provider
-from polaris.work_tracking import work_tracker
-from polaris.work_tracking.messages.atlassian_connect_work_item_event import AtlassianConnectWorkItemEvent
+from polaris.work_tracking import commands
 from polaris.work_tracking.integrations.atlassian import jira_message_handler
-from polaris.messaging.utils import raise_message_processing_error
-from polaris.utils.exceptions import ProcessingException
+from polaris.work_tracking.messages.atlassian_connect_work_item_event import AtlassianConnectWorkItemEvent
 
 logger = logging.getLogger('polaris.work_tracking.message_listener')
 
@@ -96,7 +96,7 @@ class WorkItemsTopicSubscriber(TopicSubscriber):
         logger.info(f"Processing  {message.message_type}: "
                     f" Work Items Source Key : {work_items_source_key}")
         try:
-            for work_items in work_tracker.sync_work_items(self.consumer_context.token_provider, work_items_source_key):
+            for work_items in commands.sync_work_items(self.consumer_context.token_provider, work_items_source_key):
                 created = []
                 updated = []
                 for work_item in work_items:
