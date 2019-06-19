@@ -9,7 +9,6 @@
 # Author: Krishna Kumar
 
 
-
 import logging
 from datetime import datetime
 
@@ -18,7 +17,6 @@ logger = logging.getLogger('polaris.work_tracking.db.model')
 from sqlalchemy import \
     Index, Column, BigInteger, Integer, String, Text, DateTime, \
     Boolean, MetaData, ForeignKey, and_, UniqueConstraint, cast, text
-
 
 from polaris.utils.config import get_config_provider
 
@@ -78,7 +76,10 @@ class WorkItemsSource(Base):
     # within that specific scope (instance of org, project or repository) will be evaluated to
     # see if they can be mapped to a given work item originating from this work items source.
     commit_mapping_scope = Column(String, nullable=False, default='organization', server_default="'organization'")
-    commit_mapping_scope_key = Column(UUID(as_uuid=True), nullable=False)
+    # the scope mapping key may not be known at the time the work items source is created
+    # in an import scenario. At this point all that is guaranteed is that we know the account key
+    #
+    commit_mapping_scope_key = Column(UUID(as_uuid=True), nullable=True)
 
     # Sync Status
     last_synced = Column(DateTime, nullable=True)
@@ -95,10 +96,8 @@ class WorkItemsSource(Base):
     # will be kept updated with the source when synced. Replaces the old parameters field.
     source_record = Column(JSONB, nullable=True, default={}, server_default='{}')
 
-
     source_created_at = Column(DateTime, nullable=True)
     source_updated_at = Column(DateTime, nullable=True)
-
 
     # Relationships
     work_items = relationship('WorkItem')
@@ -106,11 +105,9 @@ class WorkItemsSource(Base):
     project_id = Column(Integer, ForeignKey('projects.id'), nullable=True)
     project = relationship('Project', back_populates='work_items_sources')
 
-
     @classmethod
     def find_by_organization_key(cls, session, organization_key):
         return session.query(cls).filter(cls.organization_key == organization_key).all()
-
 
     @classmethod
     def find_by_work_items_source_key(cls, session, work_items_source_key):
@@ -135,8 +132,6 @@ class WorkItemsSource(Base):
                 work_items.c.work_items_source_id == self.id
             )
         )
-
-
 
     @property
     def latest_work_item_update_timestamp(self):
@@ -171,6 +166,7 @@ class WorkItemsSource(Base):
 
 
 work_items_sources = WorkItemsSource.__table__
+UniqueConstraint(work_items_sources.c.connector_key, work_items_sources.c.source_id)
 
 
 class WorkItem(Base):
@@ -185,7 +181,7 @@ class WorkItem(Base):
     tags = Column(ARRAY(String), nullable=False, default=[], server_default='{}')
     # ID of the item in the source system, used to cross ref this instance for updates etc.
     source_id = Column(String, nullable=True)
-    url=Column(String, nullable=True)
+    url = Column(String, nullable=True)
     source_created_at = Column(DateTime, nullable=False)
     source_last_updated = Column(DateTime, nullable=True)
     source_display_id = Column(String, nullable=False)
@@ -203,11 +199,11 @@ class WorkItem(Base):
             cls.source_display_id == source_display_id
         )).first()
 
+
 work_items = WorkItem.__table__
-Index('ix_work_items_work_item_source_id_source_display_id', work_items.c.work_items_source_id, work_items.c.source_display_id)
+Index('ix_work_items_work_item_source_id_source_display_id', work_items.c.work_items_source_id,
+      work_items.c.source_display_id)
 UniqueConstraint(work_items.c.work_items_source_id, work_items.c.source_id)
-
-
 
 
 def recreate_all(engine):

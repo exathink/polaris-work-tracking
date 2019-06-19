@@ -159,10 +159,10 @@ def get_work_items_sources_to_sync():
                     work_items_sources.c.key,
                     work_items_sources.c.organization_key
                 ]).where(
-                        work_items_sources.c.integration_type.in_([
-                            WorkTrackingIntegrationType.github.value,
-                            WorkTrackingIntegrationType.pivotal.value
-                        ])
+                    work_items_sources.c.integration_type.in_([
+                        WorkTrackingIntegrationType.github.value,
+                        WorkTrackingIntegrationType.pivotal.value
+                    ])
                 )
             ).fetchall()
         ]
@@ -239,8 +239,68 @@ def delete_work_item(work_items_source_key, work_item_data, join_this=None):
                 )
 
 
+def sync_work_items_sources(connector, work_items_sources_list, join_this=None):
+    if len(work_items_sources_list) > 0:
+        with db.orm_session(join_this) as session:
+            work_items_sources_temp = db.temp_table_from(
+                work_items_sources,
+                table_name='work_items_sources_temp',
+                exclude_columns=[work_items_sources.c.id]
+            )
+            work_items_sources_temp.create(session.connection(), checkfirst=True)
 
+            session.connection().execute(
+                insert(work_items_sources_temp).values(
+                    [
+                        dict(
+                            key=uuid.uuid4(),
+                            connector_key=connector.key,
+                            account_key=connector.account_key,
+                            **work_items_source
+                        )
+                        for work_items_source in work_items_sources_list
+                    ]
+                )
+            )
 
+            work_items_sources_before_insert = session.connection().execute(
+                select([*work_items_sources_temp.columns, work_items_sources.c.key.label('current_key')]).select_from(
+                    work_items_sources_temp.outerjoin(
+                        work_items_sources,
+                        and_(
+                            work_items_sources_temp.c.connector_key == work_items_sources.c.connector_key,
+                            work_items_sources_temp.c.source_id == work_items_sources.c.source_id
+                        )
+                    )
+                )
+            ).fetchall()
 
-def sync_work_items_sources(connector_key, work_items_sources):
-    pass
+            upsert = insert(work_items_sources).from_select(
+                [column.name for column in work_items_sources_temp.columns],
+                select([work_items_sources_temp])
+            )
+
+            session.connection().execute(
+                upsert.on_conflict_do_update(
+                    index_elements=['connector_key', 'source_id'],
+                    set_=dict(
+                        name=upsert.excluded.name,
+                        description=upsert.excluded.description,
+                        url=upsert.excluded.url,
+                        source_record=upsert.excluded.source_record
+                    )
+                )
+            )
+
+            return [
+                dict(
+                    is_new=work_items_source.current_key is None,
+                    key=work_items_source.key if work_items_source.current_key is None else work_items_source.current_key,
+                    integration_type=work_items_source.integration_type,
+                    source_id=work_items_source.source_id,
+                    url=work_items_source.url,
+                    name=work_items_source.name,
+                    description=work_items_source.description
+                )
+                for work_items_source in work_items_sources_before_insert
+            ]
