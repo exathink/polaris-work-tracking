@@ -23,6 +23,7 @@ from polaris.utils.token_provider import get_token_provider
 from polaris.work_tracking import commands
 from polaris.work_tracking.integrations.atlassian import jira_message_handler
 from polaris.work_tracking.messages.atlassian_connect_work_item_event import AtlassianConnectWorkItemEvent
+from polaris.work_tracking.messages.connector_event import ConnectorEvent
 
 logger = logging.getLogger('polaris.work_tracking.message_listener')
 
@@ -41,6 +42,7 @@ class WorkItemsTopicSubscriber(TopicSubscriber):
                 # Events
                 WorkItemsSourceCreated,
                 AtlassianConnectWorkItemEvent,
+                ConnectorEvent,
                 # Commands
                 ImportWorkItems
             ],
@@ -90,6 +92,14 @@ class WorkItemsTopicSubscriber(TopicSubscriber):
 
         elif AtlassianConnectWorkItemEvent.message_type == message.message_type:
             return self.process_atlassian_connect_event(message)
+
+        elif ConnectorEvent.message_type == message.message_type:
+            for created, updated in self.process_connector_event(message):
+                if len(created) > 0:
+                    logger.info(f"{len(created)} work items sources created")
+
+                if len(updated) > 0:
+                    logger.info(f"{len(updated)} work items sources updated")
 
     def process_import_work_items(self, message):
         work_items_source_key = message['work_items_source_key']
@@ -143,6 +153,38 @@ class WorkItemsTopicSubscriber(TopicSubscriber):
 
         except Exception as exc:
             raise_message_processing_error(message, 'Failed to handle atlassian_connect_message', str(exc))
+
+    @staticmethod
+    def process_connector_event(message):
+        connector_key = message['connector_key']
+        event = message['event']
+        connector_type = message['connector_type']
+        product_type = message.get('product_type')
+
+        logger.info(
+            f"Processing  {message.message_type}: "
+            f" Connector Key : {connector_key}"
+            f" Event: {event}"
+            f" Connector Type: {connector_type}"
+            f" Product Type: {product_type}"
+        )
+        try:
+            if event == 'enabled':
+                for work_items_sources in commands.sync_work_items_sources(
+                        connector_key=connector_key
+                ):
+                    created = []
+                    updated = []
+                    for work_items_source in work_items_sources:
+                        if work_items_source['is_new']:
+                            created.append(work_items_source)
+                        else:
+                            updated.append(work_items_source)
+
+                    yield created, updated
+
+        except Exception as exc:
+            raise_message_processing_error(message, 'Failed to sync work items', str(exc))
 
 
 if __name__ == "__main__":

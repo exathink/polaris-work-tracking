@@ -10,11 +10,11 @@
 
 
 
-from polaris.messaging.utils import publish
-from polaris.messaging.topics import WorkItemsTopic
 from polaris.messaging.messages import WorkItemsSourceCreated
+from polaris.messaging.topics import WorkItemsTopic
+from polaris.messaging.utils import publish
+from polaris.work_tracking.messages import AtlassianConnectWorkItemEvent, ConnectorEvent
 
-from polaris.work_tracking.messages import AtlassianConnectWorkItemEvent
 
 def work_items_source_created(work_items_source, channel=None):
     message = WorkItemsSourceCreated(
@@ -52,3 +52,18 @@ def atlassian_connect_work_item_event(atlassian_connector_key, atlassian_event_t
     )
     return message
 
+
+def connector_event(connector_key, connector_type, event, product_type=None, channel=None):
+    message = ConnectorEvent(
+        send=dict(
+            connector_key=connector_key,
+            connector_type=connector_type,
+            product_type=product_type,
+            event=event
+        )
+    )
+    publish(
+        WorkItemsTopic,
+        message,
+        channel=channel
+    )

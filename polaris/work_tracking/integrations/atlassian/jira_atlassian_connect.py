@@ -9,8 +9,10 @@
 # Author: Krishna Kumar
 
 import logging
-from polaris.utils.config import get_config_provider
+
 from polaris.integrations.atlassian_connect import PolarisAtlassianConnect
+from polaris.integrations.db.api import load_atlassian_connect_record
+from polaris.utils.config import get_config_provider
 from polaris.work_tracking import publish
 
 log = logging.getLogger('polaris.work_tracking.jira_connector')
@@ -47,6 +49,15 @@ def init_connector(app):
     @ac.lifecycle("enabled")
     def lifecycle_enabled(client):
         log.info(f'Connector enabled: {client.baseUrl} ({client.clientKey})')
+        connector_record = load_atlassian_connect_record(client.clientKey)
+        if connector_record:
+            publish.connector_event(
+                connector_key=connector_record.key,
+                connector_type=connector_record.type,
+                product_type=connector_record.product_type,
+                event='enabled'
+            )
+
 
     @ac.lifecycle("disabled")
     def lifecycle_disabled(client):
