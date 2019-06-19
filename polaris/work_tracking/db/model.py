@@ -10,14 +10,14 @@
 
 
 
-from datetime import datetime
 import logging
+from datetime import datetime
 
 logger = logging.getLogger('polaris.work_tracking.db.model')
 
 from sqlalchemy import \
     Index, Column, BigInteger, Integer, String, Text, DateTime, \
-    Boolean, MetaData, ForeignKey, and_, UniqueConstraint,cast
+    Boolean, MetaData, ForeignKey, and_, UniqueConstraint, cast, text
 
 
 from polaris.utils.config import get_config_provider
@@ -34,6 +34,19 @@ Base = db.polaris_declarative_base(metadata=MetaData(schema='work_tracking'))
 config = get_config_provider()
 
 
+class Project(Base):
+    __tablename__ = 'projects'
+
+    id = Column(Integer, primary_key=True)
+    key = Column(UUID(as_uuid=True), nullable=False, unique=True)
+    name = Column(String, nullable=False)
+
+    account_key = Column(UUID(as_uuid=True), nullable=False)
+    organization_key = Column(UUID(as_uuid=True), nullable=False)
+
+    work_items_sources = relationship('WorkItemsSource')
+
+
 class WorkItemsSource(Base):
     __tablename__ = 'work_items_sources'
 
@@ -42,16 +55,23 @@ class WorkItemsSource(Base):
     # type of integration: github, github_enterprise, jira, pivotal_tracker etc..
     integration_type = Column(String, nullable=False)
 
+    connector_key = Column(UUID(as_uuid=True), nullable=False, server_default=text('uuid_generate_v4()'))
+
     # integration specific sub type: for example github_repository_issues, github_organization_issues
     # this type determines the shape of the expected parameters for an instance of the WorkItemsSource
     work_items_source_type = Column(String(128), nullable=False)
+
+    url = Column(String, nullable=True)
+
+    # TODO: Deprecate this in favor or source_record field.
     parameters = Column(JSONB, nullable=True, default={}, server_default='{}')
+
     # User facing display name for the instance.
     name = Column(String, nullable=False)
     description = Column(Text, nullable=True)
     # An instance must be tied to an account and an organization
     account_key = Column(UUID(as_uuid=True), nullable=False)
-    organization_key = Column(UUID(as_uuid=True), nullable=False)
+    organization_key = Column(UUID(as_uuid=True), nullable=True)
     # Commit mapping scope specifies the repositories that are mapped to this
     # work item source. The valid values are ('organization', 'project', 'repository')
     # Given the commit mapping scope key, commits originating from all repositories
@@ -63,8 +83,28 @@ class WorkItemsSource(Base):
     # Sync Status
     last_synced = Column(DateTime, nullable=True)
 
+    # Source data
+    # The unique id of this work_items_source in the source system.
+    # we expect this to be unique within the given connector id but wont enforce it
+    # as a DB constraint until we understand a few more integrations a bit better.
+    # we are leaving this nullable until we migrate github.
+    # TODO: Make this non-nullable when we migrate Github.
+    source_id = Column(String, nullable=True, index=True)
+
+    # This is the actual full JSON record returned by the API call for this instance.
+    # will be kept updated with the source when synced. Replaces the old parameters field.
+    source_record = Column(JSONB, nullable=True, default={}, server_default='{}')
+
+
+    source_created_at = Column(DateTime, nullable=True)
+    source_updated_at = Column(DateTime, nullable=True)
+
+
     # Relationships
     work_items = relationship('WorkItem')
+
+    project_id = Column(Integer, ForeignKey('projects.id'), nullable=True)
+    project = relationship('Project', back_populates='work_items_sources')
 
 
     @classmethod
