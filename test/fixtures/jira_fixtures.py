@@ -102,3 +102,4 @@ def cleanup():
     with db.create_session() as session:
         session.connection.execute("delete from work_tracking.work_items")
         session.connection.execute("delete from integrations.atlassian_connect")
+        session.connection.execute("delete from integrations.connectors")
