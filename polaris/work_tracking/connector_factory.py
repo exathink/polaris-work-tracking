@@ -9,14 +9,19 @@
 # Author: Krishna Kumar
 from polaris.common import db
 from polaris.common.enums import ConnectorType
-from polaris.integrations.db.api import find_connector
+from polaris.integrations.db.api import find_connector, find_connector_by_name
 from polaris.utils.exceptions import ProcessingException
 from polaris.work_tracking.integrations.atlassian.jira_connector import JiraConnector
 
 
-def get_connector(connector_key):
-    with db.orm_session() as session:
-        connector = find_connector(connector_key, join_this=session)
+def get_connector(connector_name=None, connector_key=None, join_this=None):
+    with db.orm_session(join_this) as session:
+        session.expire_on_commit = False
+
+        if connector_key is not None:
+            connector = find_connector(connector_key, join_this=session)
+        if connector_name is not None:
+            connector = find_connector_by_name(connector_name, join_this=session)
         if connector:
             if connector.type == ConnectorType.atlassian.value and connector.product_type == 'jira':
                 return JiraConnector(connector)

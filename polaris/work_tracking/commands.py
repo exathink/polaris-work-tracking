@@ -14,7 +14,7 @@ from polaris.common import db
 from polaris.utils.config import get_config_provider
 from polaris.utils.exceptions import ProcessingException
 from polaris.work_tracking import publish
-from polaris.work_tracking import work_items_source_factory
+from polaris.work_tracking import work_items_source_factory, connector_factory
 from polaris.work_tracking.db import api
 from polaris.work_tracking.db.model import WorkItemsSource
 
@@ -27,7 +27,8 @@ def sync_work_items(token_provider, work_items_source_key):
         session.expire_on_commit = False
         work_items_source = WorkItemsSource.find_by_work_items_source_key(session, work_items_source_key)
         if work_items_source is not None:
-            work_items_source_impl = work_items_source_factory.get_work_items_source_impl(token_provider, work_items_source)
+            work_items_source_impl = work_items_source_factory.get_work_items_source_impl(token_provider,
+                                                                                          work_items_source)
         else:
             raise ProcessingException(f"Could not find work items source with key {work_items_source.key}")
 
@@ -39,20 +40,14 @@ def sync_work_items(token_provider, work_items_source_key):
         session.add(work_items_source)
 
 
-
-
 def create_work_items_source(work_items_source_input, channel=None):
     work_items_source = api.create_work_items_source(work_items_source_input)
     publish.work_items_source_created(work_items_source, channel)
     return work_items_source
 
 
-
 def sync_work_items_sources(connector_key):
-    connector = work_items_source_factory.get_connector_impl(connector_key)
+    connector = connector_factory.get_connector(connector_key=connector_key)
     if connector:
         for work_items_sources in connector.fetch_work_items_sources_to_sync():
-            yield api.sync_work_items_sources(connector_key, work_items_sources)
-
-
-
+            yield api.sync_work_items_sources(connector, work_items_sources)
