@@ -8,6 +8,7 @@
 
 # Author: Krishna Kumar
 
+from polaris.common.enums import WorkTrackingIntegrationType, JiraWorkItemSourceType
 from polaris.integrations.atlassian_connect import PolarisAtlassianConnector
 from polaris.utils.exceptions import ProcessingException
 
@@ -39,11 +40,15 @@ class JiraConnector(PolarisAtlassianConnector):
     @staticmethod
     def map_project_to_work_items_sources_data(project):
         return dict(
+            integration_type=WorkTrackingIntegrationType.jira.value,
+            work_items_source_type=JiraWorkItemSourceType.project.value,
+            commit_mapping_scope='organization',
             source_id=project['id'],
             name=project['name'],
             url=project.get('url'),
             description=project.get('description'),
             source_record=project,
+
         )
 
     def fetch_work_items_sources_to_sync(self, batch_size=100):

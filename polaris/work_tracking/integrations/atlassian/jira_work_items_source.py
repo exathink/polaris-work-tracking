@@ -9,17 +9,15 @@
 # Author: Krishna Kumar
 
 import logging
-from enum import Enum
 
 import polaris.work_tracking.connector_factory
-from polaris.common.enums import JiraWorkItemType
+from polaris.common.enums import JiraWorkItemType, JiraWorkItemSourceType
 from polaris.utils.exceptions import ProcessingException
 
 logger = logging.getLogger('polaris.work_tracking.jira')
 
 
-class JiraWorkItemSourceType(Enum):
-    project = 'project'
+
 
 
 class JiraWorkItemsSource:
@@ -42,7 +40,7 @@ class JiraProject(JiraWorkItemsSource):
         self.last_updated = work_items_source.latest_work_item_update_timestamp
 
         self.jira_connector = polaris.work_tracking.connector_factory.get_connector(
-            self.work_items_source.parameters.get('jira_connector_key'))
+            connector_key=self.work_items_source.parameters.get('jira_connector_key'))
         # map standard JIRA issue types to JiraWorkItemType enum values.
         self.work_item_type_map = dict(
             Story=JiraWorkItemType.story.value,
