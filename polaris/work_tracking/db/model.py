@@ -114,6 +114,15 @@ class WorkItemsSource(Base):
         return session.query(cls).filter(cls.key == work_items_source_key).first()
 
     @classmethod
+    def find_by_connector_key_and_source_id(cls, session, connector_key, source_id):
+        return session.query(cls).filter(
+            and_(
+                cls.connector_key == connector_key,
+                cls.source_id == source_id
+            )
+        ).first()
+
+    @classmethod
     def find_by_integration_type_and_parameters(cls, session, integration_type, **parameters):
         return session.query(cls).filter(
             and_(
