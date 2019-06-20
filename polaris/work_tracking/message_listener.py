@@ -148,6 +148,15 @@ class WorkItemsTopicSubscriber(TopicSubscriber):
                         self.publish(WorkItemsTopic, response_message)
 
                     return response_message
+
+            elif jira_event_type in ['project_created', 'project_updated']:
+                work_items_source = jira_message_handler.handle_project_events(jira_connector_key, jira_event_type, jira_event)
+                if work_items_source:
+                    if work_items_source[0].get('is_new'):
+                        logger.info(f"new work_items source created {work_items_source.get('name')}")
+                    else:
+                        logger.info(f"work_items_source {work_items_source.get('name')} updated")
+
             else:
                 raise ProcessingException(f"Cannot determine how to handle event_type {jira_event_type}")
 

@@ -35,12 +35,13 @@ class JiraProject(JiraWorkItemsSource):
     def __init__(self, work_items_source):
 
         self.work_items_source = work_items_source
-        self.project_id = work_items_source.parameters.get('project_id')
-        self.initial_import_days = int(work_items_source.parameters.get('initial_import_days', 90))
+        self.project_id = work_items_source.source_id
+        self.initial_import_days = 90
         self.last_updated = work_items_source.latest_work_item_update_timestamp
 
         self.jira_connector = polaris.work_tracking.connector_factory.get_connector(
-            connector_key=self.work_items_source.parameters.get('jira_connector_key'))
+            connector_key=self.work_items_source.connector_key
+        )
         # map standard JIRA issue types to JiraWorkItemType enum values.
         self.work_item_type_map = dict(
             Story=JiraWorkItemType.story.value,
@@ -52,22 +53,22 @@ class JiraProject(JiraWorkItemsSource):
     def map_issue_to_work_item_data(self, issue):
         fields = issue.get('fields')
         issue_type = fields.get('issuetype').get('name')
-        if issue_type in self.work_item_type_map:
-            return (
-                dict(
-                    name=fields.get('summary'),
-                    description=fields.get('description'),
-                    is_bug=issue_type == 'Bug',
-                    work_item_type=self.work_item_type_map.get(issue_type),
-                    tags=[],
-                    url=issue.get('self'),
-                    source_id=str(issue.get('id')),
-                    source_display_id=issue.get('key'),
-                    source_last_updated=fields.get('updated'),
-                    source_created_at=fields.get('created'),
-                    source_state=fields.get('status').get('name')
-                )
+
+        return (
+            dict(
+                name=fields.get('summary'),
+                description=fields.get('description'),
+                is_bug=issue_type == 'Bug',
+                work_item_type=self.work_item_type_map.get(issue_type, JiraWorkItemType.story.value),
+                tags=[],
+                url=issue.get('self'),
+                source_id=str(issue.get('id')),
+                source_display_id=issue.get('key'),
+                source_last_updated=fields.get('updated'),
+                source_created_at=fields.get('created'),
+                source_state=fields.get('status').get('name')
             )
+        )
 
     def fetch_work_items_to_sync(self):
 

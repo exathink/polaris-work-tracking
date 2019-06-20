@@ -18,16 +18,33 @@ class JiraConnector(PolarisAtlassianConnector):
     def __init__(self, connector):
         super().__init__(connector)
 
+    def fetch_project(self, project_id):
+        fetch_project_url = f'/project/{project_id}'
+        query_params = dict(
+            expand='description, url'
+        )
+        response = self.get(
+            fetch_project_url,
+            params=query_params,
+            headers={"Accept": "application/json"},
+        )
+
+        if response.ok:
+            return response.json()
+        else:
+            raise ProcessingException(f'Failed to fetch projects from connnect {self.key} at offset {offset}: {response.text}')
+
+
     def fetch_projects(self, maxResults, offset):
         fetch_projects_url = '/project/search'
-        queryParams = dict(
+        query_params = dict(
             startAt=offset,
             maxResults=maxResults,
             expand='description,url'
         )
         response = self.get(
             fetch_projects_url,
-            params=queryParams,
+            params=query_params,
             headers={"Accept": "application/json"},
         )
 
@@ -69,7 +86,8 @@ class JiraConnector(PolarisAtlassianConnector):
             offset = offset + len(projects)
             projects, total = self.fetch_projects(maxResults=batch_size, offset=offset)
 
-
+    def fetch_work_items_source_data_for_project(self, project_id):
+        return self.map_project_to_work_items_sources_data(self.fetch_project(project_id))
 
 
 
