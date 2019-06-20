@@ -61,7 +61,7 @@ class WorkItemsSource(Base):
 
     url = Column(String, nullable=True)
 
-    # TODO: Deprecate this in favor or source_record field.
+    # stores provider specific attributes.
     parameters = Column(JSONB, nullable=True, default={}, server_default='{}')
 
     # User facing display name for the instance.
@@ -91,10 +91,6 @@ class WorkItemsSource(Base):
     # we are leaving this nullable until we migrate github.
     # TODO: Make this non-nullable when we migrate Github.
     source_id = Column(String, nullable=True, index=True)
-
-    # This is the actual full JSON record returned by the API call for this instance.
-    # will be kept updated with the source when synced. Replaces the old parameters field.
-    source_record = Column(JSONB, nullable=True, default={}, server_default='{}')
 
     source_created_at = Column(DateTime, nullable=True)
     source_updated_at = Column(DateTime, nullable=True)

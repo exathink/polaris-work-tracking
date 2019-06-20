@@ -63,8 +63,7 @@ class JiraConnector(PolarisAtlassianConnector):
             source_id=project['id'],
             name=project['name'],
             url=project.get('url'),
-            description=project.get('description'),
-            source_record=project,
+            description=project.get('description')
 
         )
 
