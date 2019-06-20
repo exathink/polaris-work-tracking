@@ -15,7 +15,7 @@ import pytest
 from flask import Flask
 
 from polaris.common import db
-from polaris.common.enums import JiraWorkItemSourceType
+from polaris.common.enums import JiraWorkItemSourceType, WorkItemsSourceImportState
 from polaris.integrations.db import model as integrations
 from polaris.integrations.db.api import load_atlassian_connect_record
 from polaris.work_tracking.db import model as work_tracking
@@ -86,7 +86,8 @@ def jira_work_item_source_fixture(app_fixture, setup_work_tracking_schema):
             parameters=dict(),
             account_key=account_key,
             organization_key=organization_key,
-            commit_mapping_scope='organization'
+            commit_mapping_scope='organization',
+            import_state=WorkItemsSourceImportState.check_for_updates.value
         )
         session.add(work_items_source)
 

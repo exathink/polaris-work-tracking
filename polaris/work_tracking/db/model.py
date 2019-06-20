@@ -19,7 +19,7 @@ from sqlalchemy import \
     Boolean, MetaData, ForeignKey, and_, UniqueConstraint, cast, text
 
 from polaris.utils.config import get_config_provider
-
+from polaris.common.enums import WorkItemsSourceImportState
 from sqlalchemy.orm import relationship, object_session
 from sqlalchemy.sql import select, func
 
@@ -50,38 +50,38 @@ class WorkItemsSource(Base):
 
     id = Column(Integer, primary_key=True)
     key = Column(UUID(as_uuid=True), nullable=False, unique=True)
+    connector_key = Column(UUID(as_uuid=True), nullable=False, server_default=text('uuid_generate_v4()'))
+
     # type of integration: github, github_enterprise, jira, pivotal_tracker etc..
     integration_type = Column(String, nullable=False)
-
-    connector_key = Column(UUID(as_uuid=True), nullable=False, server_default=text('uuid_generate_v4()'))
 
     # integration specific sub type: for example github_repository_issues, github_organization_issues
     # this type determines the shape of the expected parameters for an instance of the WorkItemsSource
     work_items_source_type = Column(String(128), nullable=False)
-
-    url = Column(String, nullable=True)
-
-    # stores provider specific attributes.
+    # stores provider specific attributes for the work_items_source_type if needed.
     parameters = Column(JSONB, nullable=True, default={}, server_default='{}')
 
-    # User facing display name for the instance.
+    # App facing attributes.
     name = Column(String, nullable=False)
     description = Column(Text, nullable=True)
+    url = Column(String, nullable=True)
     # An instance must be tied to an account and an organization
     account_key = Column(UUID(as_uuid=True), nullable=False)
     organization_key = Column(UUID(as_uuid=True), nullable=True)
+
+    # Commit Mapping: governs which repositories will have their commits mapped
+    # to work_items in this work_item_source.
     # Commit mapping scope specifies the repositories that are mapped to this
     # work item source. The valid values are ('organization', 'project', 'repository')
     # Given the commit mapping scope key, commits originating from all repositories
     # within that specific scope (instance of org, project or repository) will be evaluated to
     # see if they can be mapped to a given work item originating from this work items source.
     commit_mapping_scope = Column(String, nullable=False, default='organization', server_default="'organization'")
-    # the scope mapping key may not be known at the time the work items source is created
-    # in an import scenario. At this point all that is guaranteed is that we know the account key
-    #
+    # given the scope, the key determines which specific instance of that scope will be searched.
+    # this may be nullable, but needs to be non null on creation before commit mapping can proceed.
     commit_mapping_scope_key = Column(UUID(as_uuid=True), nullable=True)
 
-    # Sync Status
+    # Sync Status: the last point at which work items from this source were synced with the source system.
     last_synced = Column(DateTime, nullable=True)
 
     # Source data
@@ -91,13 +91,14 @@ class WorkItemsSource(Base):
     # we are leaving this nullable until we migrate github.
     # TODO: Make this non-nullable when we migrate Github.
     source_id = Column(String, nullable=True, index=True)
-
     source_created_at = Column(DateTime, nullable=True)
     source_updated_at = Column(DateTime, nullable=True)
 
+    # Import: Legal values from WorkItemsSourceImportState enum
+    import_state = Column(String, nullable=False, server_default=WorkItemsSourceImportState.disabled.value)
+
     # Relationships
     work_items = relationship('WorkItem')
-
     project_id = Column(Integer, ForeignKey('projects.id'), nullable=True)
     project = relationship('Project', back_populates='work_items_sources')
 
@@ -179,20 +180,30 @@ class WorkItem(Base):
 
     id = Column(BigInteger, primary_key=True)
     key = Column(UUID(as_uuid=True), nullable=False, unique=True)
-    name = Column(String(256), nullable=False)
-    description = Column(Text, nullable=True)
-    work_item_type = Column(String, nullable=False)
-    is_bug = Column(Boolean, nullable=False, default=False, server_default='FALSE')
-    tags = Column(ARRAY(String), nullable=False, default=[], server_default='{}')
+
     # ID of the item in the source system, used to cross ref this instance for updates etc.
     source_id = Column(String, nullable=True)
+
+    # These are provider specific types: values for each provider are drawn from enums in polaris.common.enum
+    # The work_items_source implementation for the type maps these enums from the source system. These types
+    # are displayed in the UI and meaningful to the application. Eg: Include Bug, Story, Issue, PullRequests etc.
+    work_item_type = Column(String, nullable=False)
+
+    # App fields. These are relevant to the app and checked for updates.
+    name = Column(String(256), nullable=False)
+    description = Column(Text, nullable=True)
+    is_bug = Column(Boolean, nullable=False, default=False, server_default='FALSE')
+    tags = Column(ARRAY(String), nullable=False, default=[], server_default='{}')
     url = Column(String, nullable=True)
+    source_state = Column(String, nullable=False)
+    source_display_id = Column(String, nullable=False)
+
+    # timestamps for synchronization
     source_created_at = Column(DateTime, nullable=False)
     source_last_updated = Column(DateTime, nullable=True)
-    source_display_id = Column(String, nullable=False)
-    source_state = Column(String, nullable=False)
     last_sync = Column(DateTime, nullable=True)
     deleted_at = Column(DateTime, nullable=True)
+
     # Work Items Source relationship
     work_items_source_id = Column(Integer, ForeignKey('work_items_sources.id'))
     work_items_source = relationship('WorkItemsSource', back_populates='work_items')

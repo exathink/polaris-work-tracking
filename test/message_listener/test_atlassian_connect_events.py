@@ -59,6 +59,7 @@ def create_issue(project_id, issue_key, issue_id):
 
 class TestAtlassianConnectEvent:
 
+
     def it_handles_the_issue_created_event(self, jira_work_item_source_fixture, cleanup):
         work_items_source, jira_project_id, connector_key = jira_work_item_source_fixture
         issue_id="10001"
@@ -282,3 +283,98 @@ class TestAtlassianConnectEvent:
                                        f"where "
                                        f"work_items_source_id={work_items_source.id} "
                                        f"and source_display_id='{issue_key}' and deleted_at is not NULL").scalar() == 1
+
+
+    def it_ignores_the_issue_created_event_when_the_work_item_source_is_not_in_check_for_update_import_state(
+        self, jira_work_item_source_fixture, cleanup
+    ):
+        work_items_source, jira_project_id, connector_key = jira_work_item_source_fixture
+        issue_id="10001"
+        issue_key=f"PRJ-{issue_id}"
+
+        issue_created = dict(
+            timestamp=datetime.utcnow().isoformat(),
+            event='issue_created',
+            issue=create_issue(jira_project_id, issue_key, issue_id)
+        )
+
+        jira_issue_created_message = fake_send(
+            AtlassianConnectWorkItemEvent(send=dict(
+                atlassian_connector_key=connector_key,
+                atlassian_event_type='issue_created',
+                atlassian_event=json.dumps(issue_created)
+            ))
+        )
+
+        db.connection().execute(
+            f"update work_tracking.work_items_sources set import_state='disabled' where id={work_items_source.id}"
+        )
+
+        publisher = mock_publisher()
+        subscriber = WorkItemsTopicSubscriber(mock_channel(), publisher=publisher)
+        subscriber.consumer_context = mock_consumer
+
+        message = subscriber.dispatch(mock_channel, jira_issue_created_message)
+        assert message is None
+        assert db.connection().execute(f"Select count(id) from work_tracking.work_items "
+                                       f"where "
+                                       f"work_items_source_id={work_items_source.id} "
+                                       f"and source_display_id='{issue_key}'").scalar() == 0
+
+    def it_ignores_the_issue_updated_message_when_the_work_items_source_is_not_in_the_check_for_updates_state(
+            self,
+            jira_work_item_source_fixture,
+            cleanup
+    ):
+        work_items_source, jira_project_id, connector_key = jira_work_item_source_fixture
+        issue_id="10001"
+        issue_key=f"PRJ-{issue_id}"
+
+        issue = create_issue(jira_project_id, issue_key, issue_id)
+
+        issue_event = dict(
+            timestamp=datetime.utcnow().isoformat(),
+            event='issue_created',
+            issue=issue
+        )
+
+        # First create the issue with a message
+        jira_issue_created_message = fake_send(
+            AtlassianConnectWorkItemEvent(send=dict(
+                atlassian_connector_key=connector_key,
+                atlassian_event_type='issue_created',
+                atlassian_event=json.dumps(issue_event)
+            ))
+        )
+
+        publisher = mock_publisher()
+        subscriber = WorkItemsTopicSubscriber(mock_channel(), publisher=publisher)
+        subscriber.consumer_context = mock_consumer
+
+        subscriber.dispatch(mock_channel, jira_issue_created_message)
+
+        # make a change to an field that the app cares about
+        issue_event['issue']['fields']['summary'] = "Foobar"
+        jira_issue_updated_message = fake_send(
+            AtlassianConnectWorkItemEvent(send=dict(
+                atlassian_connector_key=connector_key,
+                atlassian_event_type='issue_updated',
+                atlassian_event=json.dumps(issue_event)
+            ))
+        )
+
+        db.connection().execute(
+            f"update work_tracking.work_items_sources set import_state='disabled' where id={work_items_source.id}"
+        )
+
+        publisher = mock_publisher()
+        subscriber = WorkItemsTopicSubscriber(mock_channel(), publisher=publisher)
+        subscriber.consumer_context = mock_consumer
+
+        message = subscriber.dispatch(mock_channel, jira_issue_updated_message)
+        assert message is None
+
+        assert db.connection().execute(f"Select count(id) from work_tracking.work_items "
+                                       f"where name='Foobar' and "
+                                       f"work_items_source_id={work_items_source.id} "
+                                       f"and source_display_id='{issue_key}'").scalar() == 0
