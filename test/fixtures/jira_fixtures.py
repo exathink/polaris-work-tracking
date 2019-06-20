@@ -18,7 +18,6 @@ from polaris.common import db
 from polaris.integrations.db import model as integrations
 from polaris.integrations.db.api import load_atlassian_connect_record
 from polaris.work_tracking.db import model as work_tracking
-from polaris.work_tracking.db.api import create_work_items_source
 from polaris.work_tracking.integrations.atlassian import jira_atlassian_connect
 from polaris.work_tracking.integrations.atlassian.jira_work_items_source import JiraWorkItemSourceType
 
@@ -75,21 +74,20 @@ def app_fixture(setup_integrations_schema):
 def jira_work_item_source_fixture(app_fixture, setup_work_tracking_schema):
     _, _,  connector_key = app_fixture
     jira_project_id = "10001"
-    work_items_source_input = dict(
-        integration_type='jira',
-        name='test',
-        jira_parameters=dict(
-            jira_connector_key=str(connector_key),
-            project_id=jira_project_id,
-            work_items_source_type=JiraWorkItemSourceType.project.value
-        ),
-        account_key=account_key,
-        organization_key=organization_key,
-        commit_mapping_scope='organization',
-        commit_mapping_scope_key=organization_key
-    )
-
-    work_items_source = create_work_items_source(work_items_source_input)
+    with db.orm_session() as session:
+        work_items_source = work_tracking.WorkItemsSource(
+            key=uuid.uuid4(),
+            connector_key=str(connector_key),
+            integration_type='jira',
+            work_items_source_type=JiraWorkItemSourceType.project.value,
+            name='test',
+            source_id=jira_project_id,
+            parameters=dict(),
+            account_key=account_key,
+            organization_key=organization_key,
+            commit_mapping_scope='organization'
+        )
+        session.add(work_items_source)
 
     yield work_items_source, jira_project_id, connector_key
 
