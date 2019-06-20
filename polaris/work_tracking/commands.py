@@ -18,26 +18,27 @@ from polaris.work_tracking import work_items_source_factory, connector_factory
 from polaris.work_tracking.db import api
 from polaris.work_tracking.db.model import WorkItemsSource
 
+from polaris.common.enums import WorkItemsSourceImportState
+
 logger = logging.getLogger('polaris.work_tracking.work_tracker')
 config = get_config_provider()
 
 
 def sync_work_items(token_provider, work_items_source_key):
-    with db.orm_session() as session:
-        session.expire_on_commit = False
-        work_items_source = WorkItemsSource.find_by_key(session, work_items_source_key)
-        if work_items_source is not None:
-            work_items_source_impl = work_items_source_factory.get_work_items_source_impl(token_provider,
-                                                                                          work_items_source)
-        else:
-            raise ProcessingException(f"Could not find work items source with key {work_items_source.key}")
 
-    for work_items in work_items_source_impl.fetch_work_items_to_sync():
-        yield api.sync_work_items(work_items_source_key, work_items) or []
+    work_items_source_provider = work_items_source_factory.get_provider_impl(token_provider, work_items_source_key)
+    work_items_source = work_items_source_provider.work_items_source
+    if work_items_source.import_state != WorkItemsSourceImportState.disabled.value:
+        for work_items in work_items_source_provider.fetch_work_items_to_sync():
+            yield api.sync_work_items(work_items_source_key, work_items) or []
 
-    with db.orm_session() as session:
-        work_items_source.set_synced()
-        session.add(work_items_source)
+        with db.orm_session() as session:
+            session.add(work_items_source)
+            work_items_source.set_synced()
+    else:
+        logger.info(f'Attempted to call sync_work_items on a disabled work_item_source: {work_items_source.key}.'
+                    f'Sync request will be ignored')
+
 
 
 def create_work_items_source(work_items_source_input, channel=None):

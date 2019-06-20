@@ -16,7 +16,7 @@ from polaris.common.test_support import init_db
 from polaris.work_tracking.db import model
 from polaris.common import db
 from test.constants import *
-from polaris.common.enums import PivotalTrackerWorkItemType, GithubWorkItemType
+from polaris.common.enums import PivotalTrackerWorkItemType, GithubWorkItemType, WorkItemsSourceImportState
 
 pytest_addoption = dbtest_addoption
 
@@ -45,7 +45,8 @@ def setup_work_item_sources(setup_schema):
             account_key=exathink_account_key,
             organization_key=rails_organization_key,
             commit_mapping_scope='organization',
-            commit_mapping_scope_key=rails_organization_key
+            commit_mapping_scope_key=rails_organization_key,
+            import_state=WorkItemsSourceImportState.ready.value
         )
         work_items_sources['pivotal'] = model.WorkItemsSource(
             key=polaris_work_items_source_key,
@@ -56,7 +57,8 @@ def setup_work_item_sources(setup_schema):
             account_key=exathink_account_key,
             organization_key=polaris_organization_key,
             commit_mapping_scope='organization',
-            commit_mapping_scope_key=polaris_organization_key
+            commit_mapping_scope_key=polaris_organization_key,
+            import_state=WorkItemsSourceImportState.ready.value
         )
         # This will have no work_items set up initially
         work_items_sources['empty'] = model.WorkItemsSource(
@@ -68,7 +70,8 @@ def setup_work_item_sources(setup_schema):
             account_key=exathink_account_key,
             organization_key=polaris_organization_key,
             commit_mapping_scope='organization',
-            commit_mapping_scope_key=polaris_organization_key
+            commit_mapping_scope_key=polaris_organization_key,
+            import_state = WorkItemsSourceImportState.ready.value
         )
 
         session.add_all(work_items_sources.values())
