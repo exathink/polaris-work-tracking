@@ -11,6 +11,7 @@
 import json
 from datetime import datetime
 from unittest.mock import MagicMock
+from ..fixtures.jira_fixtures import *
 
 from polaris.common import db
 from polaris.messaging.message_consumer import MessageConsumer
