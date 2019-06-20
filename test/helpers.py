@@ -13,7 +13,7 @@ from polaris.work_tracking.db.model import WorkItemsSource
 
 def find_work_items(work_items_source_key, source_ids):
     with db.orm_session() as session:
-        return WorkItemsSource.find_by_work_items_source_key(
+        return WorkItemsSource.find_by_key(
             session, work_items_source_key
         ).find_work_items_by_source_id(
             session, source_ids

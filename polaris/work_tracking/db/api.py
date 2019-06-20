@@ -18,7 +18,7 @@ from sqlalchemy.dialects.postgresql import insert
 from polaris.common import db
 from polaris.common.enums import WorkTrackingIntegrationType
 from polaris.utils.collections import dict_select
-from polaris.utils.exceptions import IllegalArgumentError
+from polaris.utils.exceptions import IllegalArgumentError, ProcessingException
 from .model import WorkItemsSource, work_items, work_items_sources, WorkItem
 
 logger = logging.getLogger('polaris.work_tracker.db.api')
@@ -27,7 +27,7 @@ logger = logging.getLogger('polaris.work_tracker.db.api')
 def sync_work_items(work_items_source_key, work_item_list, join_this=None):
     if len(work_item_list) > 0:
         with db.orm_session(join_this) as session:
-            work_items_source = WorkItemsSource.find_by_work_items_source_key(session, work_items_source_key)
+            work_items_source = WorkItemsSource.find_by_key(session, work_items_source_key)
             work_items_temp = db.temp_table_from(
                 work_items,
                 table_name='work_items_temp',
@@ -202,20 +202,104 @@ def create_work_items_source(work_items_source_input, join_this=None):
         return work_item_source
 
 
+def sync_work_item(work_items_source_key, work_item_data, join_this=None):
+    with db.orm_session(join_this) as session:
+        work_item_key = None
+        work_items_source = WorkItemsSource.find_by_key(session, work_items_source_key)
+        if work_items_source:
+            sync_result = dict()
+            work_item = WorkItem.find_by_source_display_id(
+                session,
+                work_items_source.id,
+                work_item_data.get('source_display_id')
+            )
+            if not work_item:
+                work_item_key = uuid.uuid4()
+                work_item = WorkItem(
+                        key=work_item_key,
+                        last_sync=datetime.utcnow(),
+                        **work_item_data
+                    )
+                work_items_source.work_items.append(work_item)
+                sync_result['is_new'] = True
+
+            else:
+                work_item_key = work_item.key
+                sync_result['is_updated'] = work_item.update(work_item_data)
+
+        # The reason we do this flush and refetch from the database below as follows:
+
+        # source_created and source_last_updated fields in the work_item_data come in as
+        # ISO 8601 format strings but get converted to date times on write to the db by SQLAlchemy. However
+        # the object instances that are in the session still are stored as strings. This
+        # is the value that is in work_item in the block above this.
+
+        # Sending this in-memory reference directly back out as the output of this method
+        # causes all sorts of issues as the consumers of this method expect datetimes
+        # instead of strings.
+
+        # Rather than force everyone calling the api to convert strings to datetimes or to add new
+        # constructors to manage the string to date parsing, we choose to simply
+        # load the item back from the database and let SQLAlchemy deal with the datetime
+        # conversion consistently.
+        #
+        # Probably not the most optimal way of doing this, and there may be other problems
+        # we have not anticipated with doing this, but
+        # it seems like the one with smallest impact surface area assuming ISO 8601 format strings
+        # are being input which seems likely in all the integration use cases we have.
+        # Might need to revisit if this turns out to be false.
+        # This really feels like something
+        # SQLAlchemy should handle "correctly" but for now it does not seem to.
+
+        session.flush()
+        work_item = session.connection().execute(
+            select([work_items]).where(
+                work_items.c.key == work_item_key
+            )
+        ).fetchone()
+
+        if work_item:
+            return dict(
+                **sync_result,
+                **dict(
+                    key=work_item.key,
+                    work_item_type=work_item.work_item_type,
+                    display_id=work_item.source_display_id,
+                    url=work_item.url,
+                    name=work_item.name,
+                    description=work_item.description,
+                    is_bug=work_item.is_bug,
+                    tags=work_item.tags,
+                    state=work_item.source_state,
+                    created_at=work_item.source_created_at,
+                    updated_at=work_item.source_last_updated,
+                    last_sync=work_item.last_sync
+                )
+            )
+        else:
+            raise ProcessingException(
+                f'Could not load work_item after sync: '
+                f' work_item_source_key: {work_items_source_key}'
+                f" source_display_id: {work_item_data.get('source_display_id')}"
+            )
+
+
+
 def insert_work_item(work_items_source_key, work_item_data, join_this=None):
-    return sync_work_items(work_items_source_key, [work_item_data], join_this)[0]
+    return sync_work_item(work_items_source_key, work_item_data)
+
 
 
 def update_work_item(work_items_source_key, work_item_data, join_this=None):
-    return sync_work_items(work_items_source_key, [work_item_data], join_this)[0]
+    return sync_work_item(work_items_source_key, work_item_data, join_this)
 
 
 def delete_work_item(work_items_source_key, work_item_data, join_this=None):
     with db.orm_session(join_this) as session:
         session.expire_on_commit = False
-        work_items_source = WorkItemsSource.find_by_work_items_source_key(session, work_items_source_key)
+        work_items_source = WorkItemsSource.find_by_key(session, work_items_source_key)
         if work_items_source:
-            work_item = WorkItem.findBySourceDisplayId(
+            work_item = WorkItem.find_by_source_display_id(
                 session, work_items_source.id,
                 work_item_data.get('source_display_id')
             )

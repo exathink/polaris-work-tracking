@@ -110,7 +110,7 @@ class WorkItemsSource(Base):
         return session.query(cls).filter(cls.organization_key == organization_key).all()
 
     @classmethod
-    def find_by_work_items_source_key(cls, session, work_items_source_key):
+    def find_by_key(cls, session, work_items_source_key):
         return session.query(cls).filter(cls.key == work_items_source_key).first()
 
     @classmethod
@@ -202,11 +202,41 @@ class WorkItem(Base):
     work_items_source = relationship('WorkItemsSource', back_populates='work_items')
 
     @classmethod
-    def findBySourceDisplayId(cls, session, work_items_source_id, source_display_id):
+    def find_by_key(cls, session, key):
+        return session.query(cls).filter(
+            cls.key == key
+        ).first()
+
+    @classmethod
+    def find_by_source_display_id(cls, session, work_items_source_id, source_display_id):
         return session.query(cls).filter(and_(
             cls.work_items_source_id == work_items_source_id,
             cls.source_display_id == source_display_id
         )).first()
+
+    @classmethod
+    def find_by_work_item_source_key_source_id(cls, session, work_items_source_key, source_id):
+        return session.query(cls).filter(
+            and_(
+                cls.work_items_source.key == work_items_source_key,
+                cls.source_id == source_id
+            )
+        ).first()
+
+    # This method will return true only if the specified attributes have changed.
+    # remaining attributes may be updated, but they are "internal" updates and the changes
+    # are not material to the rest of the app. So the result value should be used
+    # to decide whether or not to propagate the update to the rest of the system.
+    def update(self, work_item_data):
+        updated = False
+        for attribute in ['name', 'description', 'is_bug', 'tags', 'url', 'source_state', 'source_display_id']:
+            if getattr(self, attribute) != work_item_data.get(attribute):
+                setattr(self, attribute, work_item_data.get(attribute))
+                updated = True
+
+        self.last_sync = datetime.utcnow()
+        self.source_last_updated = work_item_data.get('source_last_updated')
+        return updated
 
 
 work_items = WorkItem.__table__

@@ -25,7 +25,7 @@ config = get_config_provider()
 def sync_work_items(token_provider, work_items_source_key):
     with db.orm_session() as session:
         session.expire_on_commit = False
-        work_items_source = WorkItemsSource.find_by_work_items_source_key(session, work_items_source_key)
+        work_items_source = WorkItemsSource.find_by_key(session, work_items_source_key)
         if work_items_source is not None:
             work_items_source_impl = work_items_source_factory.get_work_items_source_impl(token_provider,
                                                                                           work_items_source)

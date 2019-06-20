@@ -10,19 +10,16 @@
 
 import json
 from datetime import datetime
-from ..fixtures.jira_fixtures import *
-
-from polaris.messaging.message_consumer import MessageConsumer
-from polaris.messaging.messages import WorkItemsCreated, WorkItemsUpdated
-from polaris.messaging.topics import WorkItemsTopic
-from polaris.common import db
 from unittest.mock import MagicMock
 
-from polaris.utils.token_provider import get_token_provider
+from polaris.common import db
+from polaris.messaging.message_consumer import MessageConsumer
+from polaris.messaging.messages import WorkItemsCreated, WorkItemsUpdated
 from polaris.messaging.test_utils import fake_send, mock_publisher, mock_channel
-from polaris.work_tracking.messages import AtlassianConnectWorkItemEvent
+from polaris.messaging.topics import WorkItemsTopic
+from polaris.utils.token_provider import get_token_provider
 from polaris.work_tracking.message_listener import WorkItemsTopicSubscriber
-from polaris.work_tracking.integrations.atlassian.jira_work_items_source import JiraProject
+from polaris.work_tracking.messages import AtlassianConnectWorkItemEvent
 
 mock_consumer = MagicMock(MessageConsumer)
 mock_consumer.token_provider = get_token_provider()
@@ -94,7 +91,61 @@ class TestAtlassianConnectEvent:
                                        f"and source_display_id='{issue_key}'").scalar() == 1
 
 
-    def it_handles_the_issue_updated_event_on_an_existing_issue(self, jira_work_item_source_fixture, cleanup):
+    def it_sends_an_update_message_when_an_issue_is_updated_and_app_relevant_fields_change(
+            self,
+            jira_work_item_source_fixture,
+            cleanup
+    ):
+        work_items_source, jira_project_id, connector_key = jira_work_item_source_fixture
+        issue_id="10001"
+        issue_key=f"PRJ-{issue_id}"
+
+        issue = create_issue(jira_project_id, issue_key, issue_id)
+
+        issue_event = dict(
+            timestamp=datetime.utcnow().isoformat(),
+            event='issue_created',
+            issue=issue
+        )
+
+        # First create the issue with a message
+        jira_issue_created_message = fake_send(
+            AtlassianConnectWorkItemEvent(send=dict(
+                atlassian_connector_key=connector_key,
+                atlassian_event_type='issue_created',
+                atlassian_event=json.dumps(issue_event)
+            ))
+        )
+
+        publisher = mock_publisher()
+        subscriber = WorkItemsTopicSubscriber(mock_channel(), publisher=publisher)
+        subscriber.consumer_context = mock_consumer
+
+        subscriber.dispatch(mock_channel, jira_issue_created_message)
+
+        # make a change to an field that the app cares about
+        issue_event['issue']['fields']['summary'] = "Foobar"
+        jira_issue_updated_message = fake_send(
+            AtlassianConnectWorkItemEvent(send=dict(
+                atlassian_connector_key=connector_key,
+                atlassian_event_type='issue_updated',
+                atlassian_event=json.dumps(issue_event)
+            ))
+        )
+
+        publisher = mock_publisher()
+        subscriber = WorkItemsTopicSubscriber(mock_channel(), publisher=publisher)
+        subscriber.consumer_context = mock_consumer
+
+        message = subscriber.dispatch(mock_channel, jira_issue_updated_message)
+        assert message
+        publisher.assert_topic_called_with_message(WorkItemsTopic, WorkItemsUpdated)
+
+    def it_does_not_send_an_update_message_when_an_issue_is_updated_but_no_app_relevant_fields_change(
+            self,
+            jira_work_item_source_fixture,
+            cleanup
+    ):
         work_items_source, jira_project_id, connector_key = jira_work_item_source_fixture
         issue_id="10001"
         issue_key=f"PRJ-{issue_id}"
@@ -135,8 +186,8 @@ class TestAtlassianConnectEvent:
         subscriber.consumer_context = mock_consumer
 
         message = subscriber.dispatch(mock_channel, jira_issue_updated_message)
-        assert message
-        publisher.assert_topic_called_with_message(WorkItemsTopic, WorkItemsUpdated)
+        assert message is None
+
 
 
     def it_upserts_for_updates(self, jira_work_item_source_fixture, cleanup):
