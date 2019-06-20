@@ -15,11 +15,11 @@ import pytest
 from flask import Flask
 
 from polaris.common import db
+from polaris.common.enums import JiraWorkItemSourceType
 from polaris.integrations.db import model as integrations
 from polaris.integrations.db.api import load_atlassian_connect_record
 from polaris.work_tracking.db import model as work_tracking
 from polaris.work_tracking.integrations.atlassian import jira_atlassian_connect
-from polaris.work_tracking.integrations.atlassian.jira_work_items_source import JiraWorkItemSourceType
 
 key = uuid.uuid4().hex
 client_key = uuid.uuid4().hex
@@ -49,6 +49,7 @@ def setup_integrations_schema(db_up):
 @pytest.fixture(scope='module')
 def setup_work_tracking_schema(db_up):
     work_tracking.recreate_all(db.engine())
+
 
 @pytest.yield_fixture
 def app_fixture(setup_integrations_schema):
