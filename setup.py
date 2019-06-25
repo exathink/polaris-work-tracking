@@ -39,7 +39,9 @@ setup(
         'polaris.work_tracking.integrations.atlassian',
         'polaris.work_tracking.service',
         'polaris.work_tracking.messages',
-        'polaris.work_tracking.service.graphql'
+        'polaris.work_tracking.service.graphql',
+        'polaris.work_tracking.service.graphql.work_tracking_connector',
+        'polaris.work_tracking.service.graphql.work_items_source',
     ],
 
     url='',

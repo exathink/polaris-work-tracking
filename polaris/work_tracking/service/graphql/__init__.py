@@ -13,7 +13,7 @@ import graphene
 
 from polaris.graphql.interfaces import NamedNode
 from polaris.integrations.graphql import IntegrationsQueryMixin, IntegrationsMutationsMixin
-from .work_item_connector import WorkTrackingConnector
+from .work_tracking_connector import WorkTrackingConnector
 from .work_items_source import WorkItemsSource
 from .mutations import CreateWorkItemsSource
 
