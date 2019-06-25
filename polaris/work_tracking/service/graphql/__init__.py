@@ -13,6 +13,7 @@ import graphene
 
 from polaris.graphql.interfaces import NamedNode
 from polaris.integrations.graphql import IntegrationsQueryMixin, IntegrationsMutationsMixin
+from .work_item_connector import WorkTrackingConnector
 from .mutations import CreateWorkItemsSource
 
 
@@ -22,6 +23,10 @@ class Query(
 ):
 
     node = NamedNode.Field()
+    work_tracking_connector = WorkTrackingConnector.Field()
+
+    def resolve_work_tracking_connector(self, info, **kwargs):
+        return WorkTrackingConnector.resolve_field(info, **kwargs)
 
 
 class Mutations(
