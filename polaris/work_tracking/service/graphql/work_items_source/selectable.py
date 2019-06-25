@@ -10,7 +10,7 @@
 
 from polaris.graphql.interfaces import NamedNode
 from ..interfaces import WorkItemsSourceInfo
-
+from .sql_expressions import work_items_source_info_columns
 from sqlalchemy import select, bindparam
 from polaris.work_tracking.db.model import work_items_sources
 
@@ -24,11 +24,8 @@ class WorkItemsSourceNode:
             work_items_sources.c.id,
             work_items_sources.c.key.label('key'),
             work_items_sources.c.name,
-            work_items_sources.c.url,
-            work_items_sources.c.description,
-            work_items_sources.c.account_key,
-            work_items_sources.c.organization_key,
-            work_items_sources.c.integration_type
+            *work_items_source_info_columns(work_items_sources)
+
         ]).select_from(
             work_items_sources
         ).where(work_items_sources.c.key == bindparam('key'))
