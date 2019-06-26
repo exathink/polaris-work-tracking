@@ -20,7 +20,7 @@ class ConnectorWorkItemsSourceNodes:
 
     @staticmethod
     def selectable(**kwargs):
-        return select([
+        query = select([
             work_items_sources.c.id,
             work_items_sources.c.key.label('key'),
             work_items_sources.c.name,
@@ -30,4 +30,7 @@ class ConnectorWorkItemsSourceNodes:
             work_items_sources
         ).where(work_items_sources.c.connector_key == bindparam('key'))
 
+        if 'unattachedOnly' in kwargs and kwargs['unattachedOnly']:
+            query.where(work_items_sources.c.project_id == None)
 
+        return query

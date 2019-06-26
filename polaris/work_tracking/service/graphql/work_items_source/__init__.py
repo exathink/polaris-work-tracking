@@ -28,6 +28,17 @@ class WorkItemsSource(
         connection_class = lambda: WorkItemsSources
 
     @classmethod
+    def ConnectionField(cls, named_node_resolver=None, **kwargs):
+        return super().ConnectionField(
+            named_node_resolver,
+            unattachedOnly=graphene.Argument(
+                graphene.Boolean, required=False,
+                description='Only fetch work_items_sources that have project_id == null'
+            ),
+            **kwargs
+        )
+
+    @classmethod
     def resolve_field(cls, info, key, **kwargs):
         return cls.resolve_instance(key, **kwargs)
 

@@ -17,4 +17,6 @@ class WorkItemsSourceInfo(graphene.Interface):
     account_key = graphene.String()
     organization_key = graphene.String()
     integration_type = graphene.String()
+    import_state = graphene.String()
+
 
