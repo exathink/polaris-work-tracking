@@ -15,6 +15,7 @@ from sqlalchemy import select, bindparam
 from polaris.work_tracking.db.model import work_items_sources
 from ..work_items_source.sql_expressions import work_items_source_info_columns
 
+
 class ConnectorWorkItemsSourceNodes:
     interfaces = (NamedNode, WorkItemsSourceInfo)
 
@@ -31,6 +32,6 @@ class ConnectorWorkItemsSourceNodes:
         ).where(work_items_sources.c.connector_key == bindparam('key'))
 
         if 'unattachedOnly' in kwargs and kwargs['unattachedOnly']:
-            query.where(work_items_sources.c.project_id == None)
+            query = query.where(work_items_sources.c.project_id == None)
 
         return query

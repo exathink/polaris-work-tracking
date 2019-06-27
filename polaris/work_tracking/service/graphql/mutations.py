@@ -16,6 +16,7 @@ from polaris.common.enums import WorkTrackingIntegrationType
 from polaris.work_tracking import commands
 from polaris.work_tracking.integrations import pivotal_tracker, github
 from polaris.work_tracking.integrations.atlassian import jira_work_items_source
+from polaris.common import db
 
 logger = logging.getLogger('polaris.work_tracking.mutations')
 
@@ -88,3 +89,32 @@ class CreateWorkItemsSource(graphene.Mutation):
         )
 
 
+class WorkItemsSourceImport(graphene.InputObjectType):
+    work_items_source_name = graphene.String(required=True)
+    work_items_source_key = graphene.String(required=True)
+    import_days = graphene.Int(required=True)
+
+
+class ProjectImport(graphene.InputObjectType):
+    imported_project_name = graphene.String(required=True)
+    work_items_sources = graphene.List(WorkItemsSourceImport)
+
+
+class ImportProjectsInput(graphene.InputObjectType):
+    account_key = graphene.String(required=True)
+    organization_key = graphene.String(required=True)
+    projects = graphene.List(ProjectImport, required=True)
+
+
+class ImportProjects(graphene.Mutation):
+    class Arguments:
+        import_projects_input = ImportProjectsInput(required=True)
+
+    project_keys = graphene.List(graphene.String)
+
+    def mutate(self, info, import_projects_input):
+        with db.orm_session() as session:
+            projects = commands.import_projects(import_projects_input, join_this=session)
+            return ImportProjects(
+                project_keys=[project.key for project in projects]
+            )

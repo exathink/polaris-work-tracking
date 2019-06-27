@@ -52,3 +52,21 @@ def sync_work_items_sources(connector_key):
     if connector:
         for work_items_sources in connector.fetch_work_items_sources_to_sync():
             yield api.sync_work_items_sources(connector, work_items_sources)
+
+
+def import_projects(import_projects_input, join_this=None):
+    with db.orm_session(join_this) as session:
+        account_key = import_projects_input['account_key']
+        organization_key = import_projects_input['organization_key']
+        projects = []
+        for project in import_projects_input['projects']:
+            projects.append(
+                api.import_project(
+                    account_key,
+                    organization_key,
+                    project['imported_project_name'],
+                    project['work_items_sources'],
+                    join_this=session
+                )
+            )
+        return projects

@@ -16,10 +16,10 @@ from sqlalchemy import select, and_
 from sqlalchemy.dialects.postgresql import insert
 
 from polaris.common import db
-from polaris.common.enums import WorkTrackingIntegrationType
+from polaris.common.enums import WorkTrackingIntegrationType, WorkItemsSourceImportState
 from polaris.utils.collections import dict_select
 from polaris.utils.exceptions import IllegalArgumentError, ProcessingException
-from .model import WorkItemsSource, work_items, work_items_sources, WorkItem
+from .model import WorkItemsSource, work_items, work_items_sources, WorkItem, Project
 
 logger = logging.getLogger('polaris.work_tracker.db.api')
 
@@ -340,6 +340,7 @@ def sync_work_items_sources(connector, work_items_sources_list, join_this=None):
                             key=uuid.uuid4(),
                             connector_key=connector.key,
                             account_key=connector.account_key,
+                            import_state=WorkItemsSourceImportState.disabled.value,
                             **work_items_source
                         )
                         for work_items_source in work_items_sources_list
@@ -387,3 +388,33 @@ def sync_work_items_sources(connector, work_items_sources_list, join_this=None):
                 )
                 for work_items_source in work_items_sources_before_insert
             ]
+
+
+def import_project(account_key, organization_key, project_name, work_items_source_import, join_this=None):
+    with db.orm_session(join_this) as session:
+        project = Project(
+            key=uuid.uuid4(),
+            account_key=account_key,
+            organization_key=organization_key,
+            name=project_name
+        )
+        for source in work_items_source_import:
+            work_items_source = WorkItemsSource.find_by_key(session, source['work_items_source_key'])
+            if work_items_source:
+                import_days_param = dict(initial_import_days=source['import_days'])
+                if work_items_source.parameters is not None:
+                    work_items_source.parameters = {
+                        **work_items_source.parameters,
+                        **import_days_param
+                    }
+                else:
+                    work_items_source.parameters = import_days_param
+
+                project.work_items_sources.append(work_items_source)
+            else:
+                raise ProcessingException(
+                    f"could not find work items source with name {source['work_items_source_name']}"
+                )
+        session.add(project)
+
+        return project
