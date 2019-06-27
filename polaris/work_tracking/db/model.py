@@ -65,8 +65,8 @@ class WorkItemsSource(Base):
     name = Column(String, nullable=False)
     description = Column(Text, nullable=True)
     url = Column(String, nullable=True)
-    # An instance must be tied to an account and an organization
-    account_key = Column(UUID(as_uuid=True), nullable=False)
+    # An instance can be tied to an account and an organization
+    account_key = Column(UUID(as_uuid=True), nullable=True)
     organization_key = Column(UUID(as_uuid=True), nullable=True)
 
     # Commit Mapping: governs which repositories will have their commits mapped
