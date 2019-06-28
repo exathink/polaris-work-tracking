@@ -60,13 +60,15 @@ def import_projects(import_projects_input, join_this=None):
         organization_key = import_projects_input['organization_key']
         projects = []
         for project in import_projects_input['projects']:
-            projects.append(
-                api.import_project(
-                    account_key,
-                    organization_key,
-                    project['imported_project_name'],
-                    project['work_items_sources'],
-                    join_this=session
-                )
+            imported = api.import_project(
+                account_key,
+                organization_key,
+                project['imported_project_name'],
+                project['work_items_sources'],
+                join_this=session
             )
+            projects.append(
+                imported
+            )
+            publish.project_imported(organization_key, imported)
         return projects

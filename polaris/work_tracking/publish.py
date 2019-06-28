@@ -10,7 +10,7 @@
 
 
 
-from polaris.messaging.messages import WorkItemsSourceCreated
+from polaris.messaging.messages import WorkItemsSourceCreated, ProjectImported
 from polaris.messaging.topics import WorkItemsTopic
 from polaris.messaging.utils import publish
 from polaris.work_tracking.messages import AtlassianConnectWorkItemEvent, ConnectorEvent
@@ -60,6 +60,36 @@ def connector_event(connector_key, connector_type, event, product_type=None, cha
             connector_type=connector_type,
             product_type=product_type,
             event=event
+        )
+    )
+    publish(
+        WorkItemsTopic,
+        message,
+        channel=channel
+    )
+
+
+def project_imported(organization_key, project, channel=None):
+    message = ProjectImported(
+        send=dict(
+            organization_key=organization_key,
+            project_summary=dict(
+                key=project.key,
+                name=project.name,
+                organization_key=project.organization_key,
+                work_item_sources=[
+                    dict(
+                        key=work_items_source.key,
+                        name=work_items_source.name,
+                        description=work_items_source.description,
+                        integration_type=work_items_source.integration_type,
+                        commit_mapping_scope=work_items_source.commit_mapping_scope,
+                        commit_mapping_scope_key=work_items_source.commit_mapping_scope_key
+
+                    )
+                    for work_items_source in project.work_items_sources
+                ]
+            )
         )
     )
     publish(
