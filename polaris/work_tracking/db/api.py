@@ -414,6 +414,9 @@ def import_project(account_key, organization_key, project_name, work_items_sourc
                 if work_items_source.account_key is None:
                     work_items_source.account_key = account_key
 
+                if work_items_source.commit_mapping_scope == 'organization':
+                    work_items_source.commit_mapping_scope_key = organization_key
+
                 # Work Item Source is now ready to sync
                 work_items_source.import_state = WorkItemsSourceImportState.ready.value
 
