@@ -410,6 +410,13 @@ def import_project(account_key, organization_key, project_name, work_items_sourc
                 else:
                     work_items_source.parameters = import_days_param
 
+                work_items_source.organization_key = organization_key
+                if work_items_source.account_key is None:
+                    work_items_source.account_key = account_key
+
+                # Work Item Source is now ready to sync
+                work_items_source.import_state = WorkItemsSourceImportState.ready.value
+
                 project.work_items_sources.append(work_items_source)
             else:
                 raise ProcessingException(
