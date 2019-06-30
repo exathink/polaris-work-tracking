@@ -77,7 +77,7 @@ def project_imported(organization_key, project, channel=None):
                 key=project.key,
                 name=project.name,
                 organization_key=project.organization_key,
-                work_item_sources=[
+                work_items_sources=[
                     dict(
                         key=work_items_source.key,
                         name=work_items_source.name,
