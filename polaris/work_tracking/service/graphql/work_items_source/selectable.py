@@ -9,10 +9,10 @@
 # Author: Krishna Kumar
 
 from polaris.graphql.interfaces import NamedNode
-from ..interfaces import WorkItemsSourceInfo
+from ..interfaces import WorkItemsSourceInfo, WorkItemCount
 from .sql_expressions import work_items_source_info_columns
-from sqlalchemy import select, bindparam
-from polaris.work_tracking.db.model import work_items_sources
+from sqlalchemy import select, bindparam, func
+from polaris.work_tracking.db.model import work_items_sources, work_items
 
 
 class WorkItemsSourceNode:
@@ -31,3 +31,18 @@ class WorkItemsSourceNode:
         ).where(work_items_sources.c.key == bindparam('key'))
 
 
+class WorkItemsSourceWorkItemCount:
+    interface = (WorkItemCount)
+
+    @staticmethod
+    def selectable(work_items_source_node, **kwargs):
+        return select([
+            work_items_source_node.c.id,
+            func.count(work_items.c.id).label('work_item_count')
+        ]).select_from(
+            work_items_source_node.outerjoin(
+                work_items, work_items_source_node.c.id == work_items.c.work_items_source_id
+            )
+        ).group_by(
+            work_items_source_node.c.id
+        )

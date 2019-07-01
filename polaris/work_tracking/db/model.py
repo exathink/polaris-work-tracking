@@ -44,6 +44,8 @@ class Project(Base):
 
     work_items_sources = relationship('WorkItemsSource')
 
+projects = Project.__table__
+
 
 class WorkItemsSource(Base):
     __tablename__ = 'work_items_sources'

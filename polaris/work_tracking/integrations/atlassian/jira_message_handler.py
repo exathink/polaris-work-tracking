@@ -28,7 +28,7 @@ def handle_issue_events(jira_connector_key, jira_event_type, jira_event):
                 connector_key=jira_connector_key,
                 source_id=project_id
             )
-            if work_items_source and work_items_source.import_state == WorkItemsSourceImportState.check_for_updates.value:
+            if work_items_source and work_items_source.import_state == WorkItemsSourceImportState.auto_update.value:
                 # if the work_items source is not enabled for updates nothing is propagated
                 # This ensures that even though the connector is active, it wont import issues etc until
                 # the work_items_source is associated with a project and an initial import is done.

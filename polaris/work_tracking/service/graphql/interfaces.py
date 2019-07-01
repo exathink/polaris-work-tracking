@@ -20,3 +20,5 @@ class WorkItemsSourceInfo(graphene.Interface):
     import_state = graphene.String()
 
 
+class WorkItemCount(graphene.Interface):
+    work_item_count = graphene.Int()

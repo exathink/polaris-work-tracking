@@ -29,11 +29,18 @@ def sync_work_items(token_provider, work_items_source_key):
     work_items_source_provider = work_items_source_factory.get_provider_impl(token_provider, work_items_source_key)
     work_items_source = work_items_source_provider.work_items_source
     if work_items_source.import_state != WorkItemsSourceImportState.disabled.value:
+        if work_items_source.import_state == WorkItemsSourceImportState.ready.value:
+            # Initial Import
+            with db.orm_session() as session:
+                session.add(work_items_source)
+                work_items_source.import_state = WorkItemsSourceImportState.importing.value
+
         for work_items in work_items_source_provider.fetch_work_items_to_sync():
             yield api.sync_work_items(work_items_source_key, work_items) or []
 
         with db.orm_session() as session:
             session.add(work_items_source)
+            work_items_source.import_state = WorkItemsSourceImportState.auto_update.value
             work_items_source.set_synced()
     else:
         logger.info(f'Attempted to call sync_work_items on a disabled work_item_source: {work_items_source.key}.'

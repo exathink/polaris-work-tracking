@@ -11,7 +11,7 @@
 from polaris.graphql.mixins import KeyIdResolverMixin
 from polaris.graphql.utils import create_tuple, init_tuple
 
-from .interfaces import WorkItemsSourceInfo
+from .interfaces import WorkItemsSourceInfo, WorkItemCount
 
 
 class WorkItemsSourceInfoResolverMixin(KeyIdResolverMixin):
@@ -47,3 +47,26 @@ class WorkItemsSourceInfoResolverMixin(KeyIdResolverMixin):
 
     def resolve_integration_type(self, info, **kwargs):
         return self.get_work_items_source_info(info, **kwargs).integration_type
+
+
+class WorkItemCountResolverMixin(KeyIdResolverMixin):
+    work_item_count_tuple = create_tuple(WorkItemsSourceInfo)
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.work_item_count = init_tuple(self.work_item_count_tuple, **kwargs)
+
+    def resolve_work_item_count(self, info, **kwargs):
+        return self.resolve_interface_for_instance(
+            interface=['WorkItemCount'],
+            params=self.get_instance_query_params(),
+            **kwargs
+        )
+
+    def get_work_item_count(self, info, **kwargs):
+        if self.work_item_count is None:
+            self.work_item_count = self.resolve_work_item_count(info, **kwargs)
+        return self.work_item_count
+
+    def resolve_work_item_count(self, info, **kwargs):
+        return self.get_work_item_count(info, **kwargs).work_item_count

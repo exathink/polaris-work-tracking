@@ -87,7 +87,7 @@ def jira_work_item_source_fixture(app_fixture, setup_work_tracking_schema):
             account_key=account_key,
             organization_key=organization_key,
             commit_mapping_scope='organization',
-            import_state=WorkItemsSourceImportState.check_for_updates.value
+            import_state=WorkItemsSourceImportState.auto_update.value
         )
         session.add(work_items_source)
 

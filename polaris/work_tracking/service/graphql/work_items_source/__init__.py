@@ -12,18 +12,22 @@ import graphene
 
 from polaris.graphql.interfaces import NamedNode
 from polaris.graphql.selectable import Selectable, CountableConnection, ConnectionResolverMixin
-from .selectable import WorkItemsSourceNode
+from .selectable import WorkItemsSourceNode, WorkItemsSourceWorkItemCount
 
-from ..interface_mixins import WorkItemsSourceInfoResolverMixin
-from ..interfaces import WorkItemsSourceInfo
+from ..interface_mixins import WorkItemsSourceInfoResolverMixin, WorkItemCountResolverMixin
+from ..interfaces import WorkItemsSourceInfo, WorkItemCount
 
 
 class WorkItemsSource(
     WorkItemsSourceInfoResolverMixin,
+    WorkItemCountResolverMixin,
     Selectable
 ):
     class Meta:
-        interfaces = (NamedNode, WorkItemsSourceInfo, )
+        interfaces = (NamedNode, WorkItemsSourceInfo, WorkItemCount)
+        interface_resolvers = {
+            'WorkItemCount': WorkItemsSourceWorkItemCount
+        }
         named_node_resolver = WorkItemsSourceNode
         connection_class = lambda: WorkItemsSources
 
@@ -34,6 +38,10 @@ class WorkItemsSource(
             unattachedOnly=graphene.Argument(
                 graphene.Boolean, required=False,
                 description='Only fetch work_items_sources that have project_id == null'
+            ),
+            projectKeys=graphene.Argument(
+                graphene.List(graphene.String), required=False,
+                description='Only fetch work items sources for the specified projects'
             ),
             **kwargs
         )
