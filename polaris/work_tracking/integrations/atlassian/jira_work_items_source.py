@@ -108,7 +108,7 @@ class JiraProject(JiraWorkItemsSource):
                 offset = offset + len(issues)
                 query_params['startAt'] = offset
                 response = self.jira_connector.get(
-                    self.jira_connector.api_url('/search'),
+                    '/search',
                     headers={"Accept": "application/json"},
                     params=query_params
                 )

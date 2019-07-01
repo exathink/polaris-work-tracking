@@ -13,7 +13,8 @@ import logging
 
 from polaris.common import db
 from polaris.messaging.message_consumer import MessageConsumer
-from polaris.messaging.messages import ImportWorkItems, WorkItemsCreated, WorkItemsUpdated, WorkItemsSourceCreated
+from polaris.messaging.messages import ImportWorkItems, WorkItemsCreated, WorkItemsUpdated, \
+    WorkItemsSourceCreated, ProjectImported
 from polaris.messaging.topics import WorkItemsTopic, TopicSubscriber
 from polaris.messaging.utils import raise_message_processing_error
 from polaris.utils.config import get_config_provider
@@ -43,6 +44,7 @@ class WorkItemsTopicSubscriber(TopicSubscriber):
                 WorkItemsSourceCreated,
                 AtlassianConnectWorkItemEvent,
                 ConnectorEvent,
+                ProjectImported,
                 # Commands
                 ImportWorkItems
             ],
@@ -58,8 +60,21 @@ class WorkItemsTopicSubscriber(TopicSubscriber):
                 work_items_source_key=message['work_items_source']['key']
             ), in_response_to=message
             )
-            self.publish(WorkItemsTopic, import_message)
+            self.publish(WorkItemsTopic, import_message, channel=channel)
             return import_message
+
+        elif ProjectImported.message_type == message.message_type:
+            project_summary = message['project_summary']
+            import_messages = []
+            for work_items_source in project_summary['work_items_sources']:
+                import_work_items = ImportWorkItems(send=dict(
+                    organization_key=message['organization_key'],
+                    work_items_source_key=work_items_source['key']
+                ))
+                self.publish(WorkItemsTopic, import_work_items, channel=channel)
+                import_messages.append(import_work_items)
+
+            return import_messages
 
         elif ImportWorkItems.message_type == message.message_type:
             total = 0
@@ -73,7 +88,7 @@ class WorkItemsTopicSubscriber(TopicSubscriber):
                         work_items_source_key=message['work_items_source_key'],
                         new_work_items=created
                     ))
-                    self.publish(WorkItemsTopic, created_message)
+                    self.publish(WorkItemsTopic, created_message, channel=channel)
                     messages.append(created_message)
 
                 if len(updated) > 0:
@@ -84,11 +99,12 @@ class WorkItemsTopicSubscriber(TopicSubscriber):
                         work_items_source_key=message['work_items_source_key'],
                         updated_work_items=updated
                     ))
-                    self.publish(WorkItemsTopic, updated_message)
+                    self.publish(WorkItemsTopic, updated_message, channel=channel)
                     messages.append(updated_message)
 
             logger.info(f'{total} work items processed')
             return messages
+
 
         elif AtlassianConnectWorkItemEvent.message_type == message.message_type:
             return self.process_atlassian_connect_event(message)
