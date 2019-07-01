@@ -18,6 +18,7 @@ class WorkItemsSourceInfo(graphene.Interface):
     organization_key = graphene.String()
     integration_type = graphene.String()
     import_state = graphene.String()
+    initial_import_days = graphene.Int()
 
 
 class WorkItemCount(graphene.Interface):

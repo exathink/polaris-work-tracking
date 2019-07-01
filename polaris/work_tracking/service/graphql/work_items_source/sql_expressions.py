@@ -21,7 +21,8 @@ def work_items_source_info_columns(work_items_sources):
         work_items_sources.c.account_key,
         work_items_sources.c.organization_key,
         work_items_sources.c.integration_type,
-        work_items_sources.c.import_state
+        work_items_sources.c.import_state,
+        work_items_sources.c.parameters['initial_import_days'].label('initial_import_days')
     ]
 
 

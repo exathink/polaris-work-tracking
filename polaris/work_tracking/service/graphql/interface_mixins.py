@@ -48,6 +48,12 @@ class WorkItemsSourceInfoResolverMixin(KeyIdResolverMixin):
     def resolve_integration_type(self, info, **kwargs):
         return self.get_work_items_source_info(info, **kwargs).integration_type
 
+    def resolve_import_state(self, info, **kwargs):
+        return self.get_work_items_source_info(info, **kwargs).import_state
+
+    def resolve_initial_import_days(self, info, **kwargs):
+        return self.get_work_items_source_info(info, **kwargs).initial_import_days
+
 
 class WorkItemCountResolverMixin(KeyIdResolverMixin):
     work_item_count_tuple = create_tuple(WorkItemCount)
