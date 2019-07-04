@@ -34,7 +34,6 @@ class JiraConnector(PolarisAtlassianConnector):
         else:
             raise ProcessingException(f'Failed to fetch projects from connnect {self.key} at offset {offset}: {response.text}')
 
-
     def fetch_projects(self, maxResults, offset):
         fetch_projects_url = '/project/search'
         query_params = dict(

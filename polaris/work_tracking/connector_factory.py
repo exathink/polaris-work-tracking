@@ -12,6 +12,7 @@ from polaris.common.enums import ConnectorType
 from polaris.integrations.db.api import find_connector, find_connector_by_name
 from polaris.utils.exceptions import ProcessingException
 from polaris.work_tracking.integrations.atlassian.jira_connector import JiraConnector
+from polaris.work_tracking.integrations.pivotal_tracker import PivotalTrackerConnector
 
 
 def get_connector(connector_name=None, connector_key=None, join_this=None):
@@ -25,7 +26,8 @@ def get_connector(connector_name=None, connector_key=None, join_this=None):
         if connector:
             if connector.type == ConnectorType.atlassian.value and connector.product_type == 'jira':
                 return JiraConnector(connector)
-
+            elif connector.type == ConnectorType.pivotal.value:
+                return PivotalTrackerConnector(connector)
             else:
                 raise ProcessingException(f'Cannot create a work tracking connector for connector_key {connector_key}')
 

@@ -13,11 +13,45 @@ import requests
 import logging
 from polaris.utils.exceptions import ProcessingException
 from polaris.common.enums import PivotalTrackerWorkItemType
+from polaris.integrations.db.model import Connector
+
 logger = logging.getLogger('polaris.work_tracking.pivotal_tracker')
 
 
 class PivotalWorkItemSourceType(Enum):
     project = 'project'
+
+
+class PivotalTrackerConnector:
+    def __init__(self, connector):
+        self.connector = connector
+        self.api_key = connector.api_key
+
+    def fetch_projects(self, max_results, offset):
+        return [], 0
+
+    def map_project_to_work_items_sources_data(self, project):
+        return [], 0
+
+
+
+    def fetch_work_items_sources_to_sync(self, batch_size=100):
+        offset = 0
+        projects, total = self.fetch_projects(max_results=batch_size, offset=offset)
+        while projects is not None and offset < total:
+            if len(projects) == 0:
+                break
+
+            work_items_sources = []
+            for project in projects:
+                work_items_sources_data = self.map_project_to_work_items_sources_data(project)
+                if work_items_sources_data:
+                    work_items_sources.append(work_items_sources_data)
+
+            yield work_items_sources
+
+            offset = offset + len(projects)
+            projects, total = self.fetch_projects(max_results=batch_size, offset=offset)
 
 
 class PivotalTrackerWorkItemsSource:
