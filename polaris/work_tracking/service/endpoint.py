@@ -19,6 +19,9 @@ from polaris.work_tracking.service import graphql
 from polaris.work_tracking.integrations.atlassian import jira_atlassian_connect
 
 from polaris.utils.logging import config_logging
+from polaris.messaging.topics import WorkItemsTopic, ConnectorsTopic
+
+from polaris.messaging.utils import init_topics_to_publish
 
 config_logging()
 
@@ -52,7 +55,8 @@ app.register_blueprint(gql.api, url_prefix='/graphql', schema=graphql.schema)
 
 jira_atlassian_connect.init_connector(app)
 
-
+# Make sure topics we interact with are available.
+init_topics_to_publish(WorkItemsTopic, ConnectorsTopic)
 
 if app.env == 'production':
     app.config['COMPRESS_MIMETYPES'] = ['application/json', 'application/javascript']
