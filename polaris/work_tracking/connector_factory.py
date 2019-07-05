@@ -17,7 +17,7 @@ from polaris.work_tracking.integrations.pivotal_tracker import PivotalTrackerCon
 
 def get_connector(connector_name=None, connector_key=None, join_this=None):
     with db.orm_session(join_this) as session:
-        session.expire_on_commit = False
+
 
         if connector_key is not None:
             connector = find_connector(connector_key, join_this=session)

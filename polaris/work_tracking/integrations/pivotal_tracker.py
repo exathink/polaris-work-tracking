@@ -89,13 +89,14 @@ class PivotalTrackerProject(PivotalTrackerWorkItemsSource):
     def __init__(self, token_provider, work_items_source):
 
         self.work_items_source = work_items_source
+        self.project_id = work_items_source.source_id
+        self.last_updated = work_items_source.latest_work_item_update_timestamp
         self.pivotal_connector = connector_factory.get_connector(
             connector_key=self.work_items_source.connector_key
         )
-        self.access_token = self.pivotal_connector.api_key
-        self.project_id = work_items_source.source_id
-        self.base_url = f'${self.pivotal_connector.base_url}/services/v5'
-        self.last_updated = work_items_source.latest_work_item_update_timestamp
+        self.access_token = self.pivotal_connector.access_token
+        self.base_url = f'{self.pivotal_connector.base_url}'
+
 
 
     def fetch_work_items_to_sync(self):

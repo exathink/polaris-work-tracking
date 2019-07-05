@@ -19,7 +19,6 @@ from polaris.work_tracking.db.model import WorkItemsSource
 
 def get_provider_impl(token_provider, work_items_source_key, join_this=None):
     with db.orm_session(join_this) as session:
-        session.expire_on_commit = False
         work_items_source = WorkItemsSource.find_by_key(session, work_items_source_key)
         if work_items_source:
             if work_items_source.integration_type == WorkTrackingIntegrationType.github.value:
