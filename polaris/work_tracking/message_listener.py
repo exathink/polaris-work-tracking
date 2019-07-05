@@ -200,7 +200,9 @@ class ConnectorsTopicSubscriber(TopicSubscriber):
                     logger.info(f"{len(updated)} work items sources updated")
                     for work_items_source in created:
                         created_message = WorkItemsSourceCreated(
-                            work_items_source=work_items_source
+                            send=dict(
+                                work_items_source=work_items_source
+                            )
                         )
                         self.publish(WorkItemsTopic, created_message)
                         created_messages.append(created_message)
@@ -209,7 +211,9 @@ class ConnectorsTopicSubscriber(TopicSubscriber):
                     logger.info(f"{len(updated)} work items sources updated")
                     for work_items_source in updated:
                         updated_message = WorkItemsSourceUpdated(
-                            work_items_source=work_items_source
+                            send=dict(
+                                work_items_source=work_items_source
+                            )
                         )
                         self.publish(WorkItemsTopic, updated_message)
                         updated_messages.append(updated_message)
@@ -224,7 +228,9 @@ class ConnectorsTopicSubscriber(TopicSubscriber):
                     logger.info(f"{len(updated)} work items sources updated")
                     for work_items_source in created:
                         created_message = WorkItemsSourceCreated(
-                            work_items_source=work_items_source
+                            send=dict(
+                                work_items_source=work_items_source
+                            )
                         )
                         self.publish(WorkItemsTopic, created_message)
                         created_messages.append(created_message)
@@ -233,7 +239,9 @@ class ConnectorsTopicSubscriber(TopicSubscriber):
                     logger.info(f"{len(updated)} work items sources updated")
                     for work_items_source in updated:
                         updated_message = WorkItemsSourceUpdated(
-                            work_items_source=work_items_source
+                            send=dict(
+                                work_items_source=work_items_source
+                            )
                         )
                         self.publish(WorkItemsTopic, updated_message)
                         updated_messages.append(updated_message)
@@ -268,7 +276,7 @@ class ConnectorsTopicSubscriber(TopicSubscriber):
                         yield created, updated
 
             except Exception as exc:
-                raise_message_processing_error(message, 'Failed to sync work items', str(exc))
+                raise_message_processing_error(message, 'Failed to sync work items sources', str(exc))
 
     @staticmethod
     def process_connector_event(message):
