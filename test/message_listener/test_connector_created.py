@@ -7,45 +7,22 @@
 # confidential.
 
 # Author: Krishna Kumar
-import pytest
-import uuid
+from unittest.mock import patch
+
 from polaris.messaging.test_utils import fake_send, mock_channel, mock_publisher, assert_topic_and_message
-from polaris.messaging.topics import ConnectorsTopic
 from polaris.messaging.messages import ConnectorCreated
 from polaris.work_tracking.message_listener import ConnectorsTopicSubscriber
-from polaris.common import db
-from polaris.integrations.db.model import PivotalTracker
 
 from test.constants import *
-
-pivotal_connector_key = uuid.uuid4()
-
-
-@pytest.yield_fixture
-def connectors():
-    yield [
-        PivotalTracker(
-            name='pivotal test',
-            base_url='https://www.pivotaltracker.com',
-            api_key='foo',
-            key=pivotal_connector_key
-        )
-    ]
-
-@pytest.fixture
-def setup_connectors(connectors):
-    with db.orm_session() as session:
-        for connector in connectors:
-            session.add(connector)
-
 
 
 class TestConnectorCreated:
 
     def it_kicks_off_project_fetches_for_pivotal_connector(self, setup_connectors):
+        connector_keys = setup_connectors
         message = fake_send(ConnectorCreated(
             send=dict(
-                connector_key=pivotal_connector_key,
+                connector_key=connector_keys['pivotal'],
                 connector_type='pivotal',
                 state='enabled'
             )
@@ -54,6 +31,10 @@ class TestConnectorCreated:
         channel = mock_channel()
         publisher = mock_publisher()
 
-        created_messages, updated_messages = ConnectorsTopicSubscriber(channel, publisher=publisher).dispatch(channel, message)
-        assert len(created_messages) == 0
-        assert len(updated_messages) == 0
+        with patch(
+                'polaris.work_tracking.integrations.pivotal_tracker.PivotalTrackerConnector.fetch_work_items_sources_to_sync') as fetch_work_items_sources_to_sync:
+            fetch_work_items_sources_to_sync.return_value = []
+
+            ConnectorsTopicSubscriber(channel, publisher=publisher).dispatch(
+                channel, message)
+            fetch_work_items_sources_to_sync.assert_called()
