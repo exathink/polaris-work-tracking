@@ -17,7 +17,7 @@ from polaris.work_tracking.db import model
 from polaris.integrations.db import model as integrations_model
 from polaris.common import db
 from test.constants import *
-from polaris.common.enums import PivotalTrackerWorkItemType, GithubWorkItemType, WorkItemsSourceImportState
+from polaris.common.enums import PivotalTrackerWorkItemType, GithubWorkItemType, WorkItemsSourceImportState, ConnectorProductType
 
 pytest_addoption = dbtest_addoption
 
@@ -36,6 +36,8 @@ def setup_schema(db_up):
 @pytest.yield_fixture
 def setup_connectors(setup_schema):
     pivotal_connector_key = uuid.uuid4()
+    github_connector_key = uuid.uuid4()
+
     with db.orm_session() as session:
         session.expire_on_commit = False
         session.add(
@@ -48,9 +50,23 @@ def setup_connectors(setup_schema):
                 api_key='foobar'
             )
         )
+        session.add(
+            integrations_model.Github(
+                key=github_connector_key,
+                name='test-github-connector',
+                base_url='https://api.github.com',
+                account_key=exathink_account_key,
+                github_organization='exathink',
+                oauth_access_token='foobar',
+                product_type=ConnectorProductType.github_oauth_token.value,
+                state='enabled'
+            )
+        )
+
 
     yield dict(
-        pivotal=pivotal_connector_key
+        pivotal=pivotal_connector_key,
+        github=github_connector_key
     )
 
 

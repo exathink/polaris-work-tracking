@@ -25,7 +25,7 @@ from polaris.work_tracking import commands
 from polaris.work_tracking.integrations.atlassian import jira_message_handler
 from polaris.work_tracking.messages.atlassian_connect_work_item_event import AtlassianConnectWorkItemEvent
 from polaris.messaging.messages.connector_events import ConnectorEvent
-
+from polaris.common.enums import ConnectorType, ConnectorProductType
 logger = logging.getLogger('polaris.work_tracking.message_listener')
 
 
@@ -35,7 +35,12 @@ logger = logging.getLogger('polaris.work_tracking.message_listener')
 
 
 def is_work_tracking_connector(connector_type, product_type):
-    return connector_type in ['pivotal'] or product_type in ['jira']
+    return connector_type in [
+        ConnectorType.pivotal.value
+    ] or product_type in [
+        ConnectorProductType.jira.value,
+        ConnectorProductType.github_oauth_token.value
+    ]
 
 
 class WorkItemsTopicSubscriber(TopicSubscriber):
@@ -261,7 +266,7 @@ class ConnectorsTopicSubscriber(TopicSubscriber):
                 f" Product Type: {product_type}"
             )
             try:
-                if connector_type in ['pivotal']:
+                if connector_type in ['pivotal', 'github']:
                     for work_items_sources in commands.sync_work_items_sources(
                             connector_key=connector_key
                     ):

@@ -13,10 +13,10 @@ from datetime import datetime, timedelta
 from enum import Enum
 
 from github import Github
-from polaris.common.enums import GithubWorkItemType
+from polaris.common.enums import GithubWorkItemType, WorkTrackingIntegrationType
 from polaris.utils.collections import find
 from polaris.utils.exceptions import ProcessingException
-
+from polaris.work_tracking import connector_factory
 
 def github_client(token_provider, work_items_source):
     return Github(per_page=100, login_or_token=token_provider.get_token(work_items_source.account_key,
@@ -29,6 +29,65 @@ logger = logging.getLogger('polaris.work_tracking.github')
 
 class GithubWorkItemSourceType(Enum):
     repository_issues = 'repository_issues'
+
+
+class GithubConnector:
+    def __init__(self, connector):
+        self.connector = connector
+        self.key = connector.key
+        self.name = connector.name
+        self.github_organization = connector.github_organization
+        self.account_key = connector.account_key
+        self.access_token = None
+
+    def fetch_repositories(self):
+        if self.access_token is not None:
+            github = self.get_github_client()
+            organization = github.get_organization(self.github_organization)
+            if organization is not None:
+                return organization.get_repos()
+
+
+
+
+        else:
+            raise ProcessingException("No access token found this Github Connector. Cannot continue.")
+
+    def get_github_client(self):
+        return Github(per_page=100, login_or_token=self.access_token)
+
+    def map_repository_to_work_items_sources_data(self, repository):
+        return dict(
+            integration_type=WorkTrackingIntegrationType.github.value,
+            work_items_source_type=GithubWorkItemSourceType.repository_issues.value,
+            parameters=dict(
+                github_organization=self.github_organization,
+                repository=repository.name
+            ),
+            commit_mapping_scope='organization',
+            source_id=repository.id,
+            name=repository.name,
+            url=f'{repository.html_url}/issues',
+            description=repository.description,
+
+        )
+
+    def fetch_work_items_sources_to_sync(self, batch_size=100):
+        repos_paginator = self.fetch_repositories()
+        while repos_paginator._couldGrow():
+            yield [
+                self.map_repository_to_work_items_sources_data(repo)
+                for repo in repos_paginator._fetchNextPage()
+                if repo.has_issues
+            ]
+
+
+class GithubOAuthTokenConnector(GithubConnector):
+    def __init__(self, connector):
+        super().__init__(connector)
+        self.access_token = connector.oauth_access_token
+
+
 
 
 class GithubIssuesWorkItemsSource:
@@ -45,9 +104,13 @@ class GithubIssuesWorkItemsSource:
 class GithubRepositoryIssues(GithubIssuesWorkItemsSource):
 
     def __init__(self, token_provider, work_items_source):
-        self.github = github_client(token_provider, work_items_source)
         self.work_items_source = work_items_source
         self.last_updated = work_items_source.latest_work_item_update_timestamp
+
+        self.github_connector = connector_factory.get_connector(
+            connector_key=self.work_items_source.connector_key
+        )
+        self.github = self.github_connector.get_github_client()
 
     def map_issue_to_work_item(self, issue):
         bug_tags = ['bug', *self.work_items_source.parameters.get('bug_tags', [])]
@@ -78,7 +141,7 @@ class GithubRepositoryIssues(GithubIssuesWorkItemsSource):
             )
 
     def fetch_work_items_to_sync(self):
-        organization = self.work_items_source.parameters.get('organization')
+        organization = self.work_items_source.parameters.get('github_organization')
         repository = self.work_items_source.parameters.get('repository')
         repo = self.github.get_repo(f"{organization}/{repository}")
 

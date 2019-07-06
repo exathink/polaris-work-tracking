@@ -8,26 +8,28 @@
 
 # Author: Krishna Kumar
 from polaris.common import db
-from polaris.common.enums import ConnectorType
+from polaris.common.enums import ConnectorType, ConnectorProductType
 from polaris.integrations.db.api import find_connector, find_connector_by_name
 from polaris.utils.exceptions import ProcessingException
 from polaris.work_tracking.integrations.atlassian.jira_connector import JiraConnector
 from polaris.work_tracking.integrations.pivotal_tracker import PivotalTrackerConnector
+from polaris.work_tracking.integrations.github import GithubOAuthTokenConnector
 
 
 def get_connector(connector_name=None, connector_key=None, join_this=None):
     with db.orm_session(join_this) as session:
-
 
         if connector_key is not None:
             connector = find_connector(connector_key, join_this=session)
         if connector_name is not None:
             connector = find_connector_by_name(connector_name, join_this=session)
         if connector:
-            if connector.type == ConnectorType.atlassian.value and connector.product_type == 'jira':
+            if connector.type == ConnectorType.atlassian.value and connector.product_type == ConnectorProductType.jira.value:
                 return JiraConnector(connector)
             elif connector.type == ConnectorType.pivotal.value:
                 return PivotalTrackerConnector(connector)
+            elif connector.type == ConnectorType.github.value and connector.product_type == ConnectorProductType.github_oauth_token.value:
+                return GithubOAuthTokenConnector(connector)
             else:
                 raise ProcessingException(f'Cannot create a work tracking connector for connector_key {connector_key}')
 
