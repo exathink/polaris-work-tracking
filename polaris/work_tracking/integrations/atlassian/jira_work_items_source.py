@@ -36,7 +36,7 @@ class JiraProject(JiraWorkItemsSource):
 
         self.work_items_source = work_items_source
         self.project_id = work_items_source.source_id
-        self.initial_import_days = 90
+        self.initial_import_days = int(self.work_items_source.parameters.get('initial_import_days', 90))
         self.last_updated = work_items_source.latest_work_item_update_timestamp
 
         self.jira_connector = polaris.work_tracking.connector_factory.get_connector(
