@@ -9,8 +9,10 @@
 # Author: Krishna Kumar
 
 from enum import Enum
+from datetime import datetime, timedelta
 import requests
 import logging
+
 from polaris.utils.exceptions import ProcessingException
 from polaris.common.enums import PivotalTrackerWorkItemType, WorkTrackingIntegrationType
 from polaris.work_tracking import connector_factory
@@ -97,10 +99,14 @@ class PivotalTrackerProject(PivotalTrackerWorkItemsSource):
         self.access_token = self.pivotal_connector.access_token
         self.base_url = f'{self.pivotal_connector.base_url}'
 
-
-
     def fetch_work_items_to_sync(self):
         query_params = dict(limit=100)
+        if self.work_items_source.last_synced is None or self.last_updated is None:
+            query_params['updated_after'] = (
+                    datetime.utcnow() -
+                    timedelta(days=int(self.work_items_source.parameters.get('initial_import_days', 90)))
+                ).isoformat()
+
         if self.last_updated:
             query_params['updated_after'] = self.last_updated.isoformat()
 
