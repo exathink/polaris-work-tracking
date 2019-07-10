@@ -15,6 +15,9 @@ from polaris.common import db
 from polaris.messaging.message_consumer import MessageConsumer
 from polaris.messaging.messages import ImportWorkItems, WorkItemsCreated, WorkItemsUpdated, \
     WorkItemsSourceCreated, WorkItemsSourceUpdated, ProjectImported, ConnectorCreated, ConnectorEvent
+
+from polaris.work_tracking.messages import AtlassianConnectWorkItemEvent, RefreshConnectorProjects
+
 from polaris.messaging.topics import WorkItemsTopic, ConnectorsTopic, TopicSubscriber
 from polaris.messaging.utils import raise_message_processing_error
 from polaris.utils.config import get_config_provider
@@ -23,9 +26,9 @@ from polaris.utils.logging import config_logging
 from polaris.utils.token_provider import get_token_provider
 from polaris.work_tracking import commands
 from polaris.work_tracking.integrations.atlassian import jira_message_handler
-from polaris.work_tracking.messages.atlassian_connect_work_item_event import AtlassianConnectWorkItemEvent
-from polaris.messaging.messages.connector_events import ConnectorEvent
+
 from polaris.common.enums import ConnectorType, ConnectorProductType
+
 logger = logging.getLogger('polaris.work_tracking.message_listener')
 
 
@@ -36,11 +39,11 @@ logger = logging.getLogger('polaris.work_tracking.message_listener')
 
 def is_work_tracking_connector(connector_type, product_type):
     return connector_type in [
-        ConnectorType.pivotal.value
+        ConnectorType.pivotal.value,
+        ConnectorType.github.value,
     ] or product_type in [
-        ConnectorProductType.jira.value,
-        ConnectorProductType.github_oauth_token.value
-    ]
+               ConnectorProductType.jira.value
+           ]
 
 
 class WorkItemsTopicSubscriber(TopicSubscriber):
@@ -51,10 +54,10 @@ class WorkItemsTopicSubscriber(TopicSubscriber):
             message_classes=[
                 # Events
                 AtlassianConnectWorkItemEvent,
-                ConnectorEvent,
                 ProjectImported,
                 # Commands
-                ImportWorkItems
+                ImportWorkItems,
+
             ],
             publisher=publisher,
             exclusive=False
@@ -104,17 +107,8 @@ class WorkItemsTopicSubscriber(TopicSubscriber):
             logger.info(f'{total} work items processed')
             return messages
 
-
         elif AtlassianConnectWorkItemEvent.message_type == message.message_type:
             return self.process_atlassian_connect_event(message)
-
-        elif ConnectorEvent.message_type == message.message_type:
-            for created, updated in self.process_connector_event(message):
-                if len(created) > 0:
-                    logger.info(f"{len(created)} work items sources created")
-
-                if len(updated) > 0:
-                    logger.info(f"{len(updated)} work items sources updated")
 
     def process_import_work_items(self, message):
         work_items_source_key = message['work_items_source_key']
@@ -189,7 +183,10 @@ class ConnectorsTopicSubscriber(TopicSubscriber):
             message_classes=[
                 # Events
                 ConnectorCreated,
-                ConnectorEvent
+                ConnectorEvent,
+
+                # Commands
+                RefreshConnectorProjects
             ],
             publisher=publisher,
             exclusive=False
@@ -201,27 +198,16 @@ class ConnectorsTopicSubscriber(TopicSubscriber):
             created_messages = []
             updated_messages = []
             for created, updated in self.process_connector_created(message):
-                if len(created) > 0:
-                    logger.info(f"{len(updated)} work items sources updated")
-                    for work_items_source in created:
-                        created_message = WorkItemsSourceCreated(
-                            send=dict(
-                                work_items_source=work_items_source
-                            )
-                        )
-                        self.publish(WorkItemsTopic, created_message)
-                        created_messages.append(created_message)
+                self.publish_responses(created, created_messages, updated, updated_messages)
 
-                if len(updated) > 0:
-                    logger.info(f"{len(updated)} work items sources updated")
-                    for work_items_source in updated:
-                        updated_message = WorkItemsSourceUpdated(
-                            send=dict(
-                                work_items_source=work_items_source
-                            )
-                        )
-                        self.publish(WorkItemsTopic, updated_message)
-                        updated_messages.append(updated_message)
+            return created_messages, updated_messages
+
+        elif RefreshConnectorProjects.message_type == message.message_type:
+            created_messages = []
+            updated_messages = []
+
+            for created, updated in self.process_refresh_connector_projects(message):
+                self.publish_responses(created, created_messages, updated, updated_messages)
 
             return created_messages, updated_messages
 
@@ -229,29 +215,31 @@ class ConnectorsTopicSubscriber(TopicSubscriber):
             created_messages = []
             updated_messages = []
             for created, updated in self.process_connector_event(message):
-                if len(created) > 0:
-                    logger.info(f"{len(updated)} work items sources updated")
-                    for work_items_source in created:
-                        created_message = WorkItemsSourceCreated(
-                            send=dict(
-                                work_items_source=work_items_source
-                            )
-                        )
-                        self.publish(WorkItemsTopic, created_message)
-                        created_messages.append(created_message)
-
-                if len(updated) > 0:
-                    logger.info(f"{len(updated)} work items sources updated")
-                    for work_items_source in updated:
-                        updated_message = WorkItemsSourceUpdated(
-                            send=dict(
-                                work_items_source=work_items_source
-                            )
-                        )
-                        self.publish(WorkItemsTopic, updated_message)
-                        updated_messages.append(updated_message)
+                self.publish_responses(created, created_messages, updated, updated_messages)
 
             return created_messages, updated_messages
+
+    def publish_responses(self, created, created_messages, updated, updated_messages):
+        if len(created) > 0:
+            logger.info(f"{len(updated)} work items sources updated")
+            for work_items_source in created:
+                created_message = WorkItemsSourceCreated(
+                    send=dict(
+                        work_items_source=work_items_source
+                    )
+                )
+                self.publish(WorkItemsTopic, created_message)
+                created_messages.append(created_message)
+        if len(updated) > 0:
+            logger.info(f"{len(updated)} work items sources updated")
+            for work_items_source in updated:
+                updated_message = WorkItemsSourceUpdated(
+                    send=dict(
+                        work_items_source=work_items_source
+                    )
+                )
+                self.publish(WorkItemsTopic, updated_message)
+                updated_messages.append(updated_message)
 
     @staticmethod
     def process_connector_created(message):
@@ -267,19 +255,7 @@ class ConnectorsTopicSubscriber(TopicSubscriber):
             )
             try:
                 if connector_type in ['pivotal', 'github']:
-                    for work_items_sources in commands.sync_work_items_sources(
-                            connector_key=connector_key
-                    ):
-                        created = []
-                        updated = []
-                        for work_items_source in work_items_sources:
-                            if work_items_source['is_new']:
-                                created.append(work_items_source)
-                            else:
-                                updated.append(work_items_source)
-
-                        yield created, updated
-
+                    yield from ConnectorsTopicSubscriber.sync_work_items_sources(connector_key)
             except Exception as exc:
                 raise_message_processing_error(message, 'Failed to sync work items sources', str(exc))
 
@@ -298,23 +274,39 @@ class ConnectorsTopicSubscriber(TopicSubscriber):
                 f" Product Type: {product_type}"
             )
             try:
-
                 if event == 'enabled':
-                    for work_items_sources in commands.sync_work_items_sources(
-                            connector_key=connector_key
-                    ):
-                        created = []
-                        updated = []
-                        for work_items_source in work_items_sources:
-                            if work_items_source['is_new']:
-                                created.append(work_items_source)
-                            else:
-                                updated.append(work_items_source)
-
-                        yield created, updated
-
+                    yield from ConnectorsTopicSubscriber.sync_work_items_sources(connector_key)
             except Exception as exc:
                 raise_message_processing_error(message, 'Failed to sync work items', str(exc))
+
+    @staticmethod
+    def process_refresh_connector_projects(message):
+        connector_key = message['connector_key']
+
+        logger.info(
+            f"Processing  {message.message_type}: "
+            f" Connector Key : {connector_key}"
+
+        )
+        try:
+            yield from ConnectorsTopicSubscriber.sync_work_items_sources(connector_key)
+        except Exception as exc:
+            raise_message_processing_error(message, 'Failed to sync work items sources', str(exc))
+
+    @staticmethod
+    def sync_work_items_sources(connector_key):
+        for work_items_sources in commands.sync_work_items_sources(
+                connector_key=connector_key
+        ):
+            created = []
+            updated = []
+            for work_items_source in work_items_sources:
+                if work_items_source['is_new']:
+                    created.append(work_items_source)
+                else:
+                    updated.append(work_items_source)
+
+            yield created, updated
 
 
 if __name__ == "__main__":

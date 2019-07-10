@@ -15,7 +15,7 @@ from polaris.graphql.interfaces import NamedNode
 from polaris.integrations.graphql import IntegrationsQueryMixin, IntegrationsMutationsMixin
 from .work_tracking_connector import WorkTrackingConnector
 from .work_items_source import WorkItemsSource
-from .mutations import CreateWorkItemsSource, ImportProjects
+from .mutations import CreateWorkItemsSource, ImportProjects, RefreshConnectorProjects
 
 
 class Query(
@@ -41,6 +41,7 @@ class Mutations(
 ):
     create_work_items_source = CreateWorkItemsSource.Field()
     import_projects = ImportProjects.Field()
+    refresh_connector_projects = RefreshConnectorProjects.Field()
 
 
 schema = graphene.Schema(query=Query, mutation=Mutations)

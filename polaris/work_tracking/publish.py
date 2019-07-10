@@ -13,7 +13,7 @@
 from polaris.messaging.messages import WorkItemsSourceCreated, ProjectImported
 from polaris.messaging.topics import WorkItemsTopic, ConnectorsTopic
 from polaris.messaging.utils import publish
-from polaris.work_tracking.messages import AtlassianConnectWorkItemEvent
+from polaris.work_tracking.messages import AtlassianConnectWorkItemEvent, RefreshConnectorProjects
 from polaris.messaging.messages.connector_events import ConnectorEvent
 
 
@@ -95,6 +95,19 @@ def project_imported(organization_key, project, channel=None):
     )
     publish(
         WorkItemsTopic,
+        message,
+        channel=channel
+    )
+
+
+def refresh_connector_projects(connector_key, channel=None):
+    message = RefreshConnectorProjects(
+        send=dict(
+            connector_key=connector_key
+        )
+    )
+    publish(
+        ConnectorsTopic,
         message,
         channel=channel
     )

@@ -11,12 +11,14 @@
 import logging
 
 import graphene
-
+import time
 from polaris.common.enums import WorkTrackingIntegrationType
 from polaris.work_tracking import commands
 from polaris.work_tracking.integrations import pivotal_tracker, github
 from polaris.work_tracking.integrations.atlassian import jira_work_items_source
 from polaris.common import db
+from polaris.work_tracking import publish
+
 
 logger = logging.getLogger('polaris.work_tracking.mutations')
 
@@ -118,3 +120,21 @@ class ImportProjects(graphene.Mutation):
             return ImportProjects(
                 project_keys=[project.key for project in projects]
             )
+
+
+class RefreshConnectorProjectsInput(graphene.InputObjectType):
+    connector_key = graphene.String(required=True)
+
+
+class RefreshConnectorProjects(graphene.Mutation):
+    class Arguments:
+        refresh_connector_projects_input = RefreshConnectorProjectsInput(required=True)
+
+    success = graphene.Boolean()
+
+    def mutate(self, info, refresh_connector_projects_input):
+        publish.refresh_connector_projects(refresh_connector_projects_input['connector_key'])
+        time.sleep(1)
+        return RefreshConnectorProjects(success=True)
+
+
