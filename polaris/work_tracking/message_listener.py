@@ -282,21 +282,22 @@ class ConnectorsTopicSubscriber(TopicSubscriber):
     @staticmethod
     def process_refresh_connector_projects(message):
         connector_key = message['connector_key']
-
+        tracking_receipt_key = message.get('tracking_receipt_key')
         logger.info(
             f"Processing  {message.message_type}: "
             f" Connector Key : {connector_key}"
 
         )
         try:
-            yield from ConnectorsTopicSubscriber.sync_work_items_sources(connector_key)
+            yield from ConnectorsTopicSubscriber.sync_work_items_sources(connector_key, tracking_receipt_key=tracking_receipt_key)
         except Exception as exc:
             raise_message_processing_error(message, 'Failed to sync work items sources', str(exc))
 
     @staticmethod
-    def sync_work_items_sources(connector_key):
+    def sync_work_items_sources(connector_key, tracking_receipt_key=None):
         for work_items_sources in commands.sync_work_items_sources(
-                connector_key=connector_key
+                connector_key=connector_key,
+                tracking_receipt_key=tracking_receipt_key
         ):
             created = []
             updated = []
