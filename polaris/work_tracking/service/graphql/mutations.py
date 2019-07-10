@@ -18,7 +18,7 @@ from polaris.work_tracking.integrations import pivotal_tracker, github
 from polaris.work_tracking.integrations.atlassian import jira_work_items_source
 from polaris.common import db
 from polaris.work_tracking import publish
-
+from polaris.integrations.db.api import create_tracking_receipt
 
 logger = logging.getLogger('polaris.work_tracking.mutations')
 
@@ -124,6 +124,7 @@ class ImportProjects(graphene.Mutation):
 
 class RefreshConnectorProjectsInput(graphene.InputObjectType):
     connector_key = graphene.String(required=True)
+    track = graphene.Boolean(required=False, default_value=False)
 
 
 class RefreshConnectorProjects(graphene.Mutation):
@@ -131,10 +132,22 @@ class RefreshConnectorProjects(graphene.Mutation):
         refresh_connector_projects_input = RefreshConnectorProjectsInput(required=True)
 
     success = graphene.Boolean()
+    tracking_receipt_key = graphene.String(required=False)
 
     def mutate(self, info, refresh_connector_projects_input):
-        publish.refresh_connector_projects(refresh_connector_projects_input['connector_key'])
-        time.sleep(1)
-        return RefreshConnectorProjects(success=True)
+        with db.orm_session() as session:
+            tracking_receipt = None
+            if refresh_connector_projects_input.track:
+                tracking_receipt = create_tracking_receipt(
+                    name='RefreshConnectorProjectsMutation',
+                    join_this=session
+                )
+
+            publish.refresh_connector_projects(refresh_connector_projects_input['connector_key'], tracking_receipt)
+
+            return RefreshConnectorProjects(
+                success=True,
+                tracking_receipt_key=tracking_receipt.key if tracking_receipt else None
+            )
 
 

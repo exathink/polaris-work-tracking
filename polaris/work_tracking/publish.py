@@ -68,6 +68,7 @@ def connector_event(connector_key, connector_type, event, product_type=None, cha
         message,
         channel=channel
     )
+    return message
 
 
 def project_imported(organization_key, project, channel=None):
@@ -98,12 +99,14 @@ def project_imported(organization_key, project, channel=None):
         message,
         channel=channel
     )
+    return message
 
 
-def refresh_connector_projects(connector_key, channel=None):
+def refresh_connector_projects(connector_key, tracking_receipt=None,  channel=None):
     message = RefreshConnectorProjects(
         send=dict(
-            connector_key=connector_key
+            connector_key=connector_key,
+            tracking_receipt_key=tracking_receipt.key if tracking_receipt else None
         )
     )
     publish(
@@ -111,3 +114,4 @@ def refresh_connector_projects(connector_key, channel=None):
         message,
         channel=channel
     )
+    return message

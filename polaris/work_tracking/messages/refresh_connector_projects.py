@@ -19,3 +19,4 @@ class RefreshConnectorProjects(Message):
     message_type = 'work_items.refresh_connector_projects'
 
     connector_key = fields.String(required=True)
+    tracking_receipt_key = fields.String(required=False, allow_none=True)
