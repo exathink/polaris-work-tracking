@@ -39,6 +39,10 @@ class WorkItemsSource(
                 graphene.Boolean, required=False,
                 description='Only fetch work_items_sources that have project_id == null'
             ),
+            attachedOnly=graphene.Argument(
+                graphene.Boolean, required=False,
+                description='Only fetch work_items_sources that have project_id != null'
+            ),
             projectKeys=graphene.Argument(
                 graphene.List(graphene.String), required=False,
                 description='Only fetch work items sources for the specified projects'

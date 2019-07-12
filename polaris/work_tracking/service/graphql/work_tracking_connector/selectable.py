@@ -52,5 +52,8 @@ class ConnectorWorkItemsSourceNodes:
         if 'unattachedOnly' in kwargs and kwargs['unattachedOnly']:
             query = query.where(work_items_sources.c.project_id == None)
 
+        if 'attachedOnly' in kwargs and kwargs['attachedOnly']:
+            query = query.where(work_items_sources.c.project_id != None)
+
 
         return query
