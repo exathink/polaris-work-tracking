@@ -12,7 +12,7 @@ import logging
 import uuid
 from datetime import datetime
 
-from sqlalchemy import select, and_
+from sqlalchemy import select, and_, func
 from sqlalchemy.dialects.postgresql import insert
 
 from polaris.common import db
@@ -428,3 +428,17 @@ def import_project(account_key, organization_key, project_name, work_items_sourc
         session.add(project)
 
         return project
+
+
+def get_imported_work_items_sources_count(connector_key, join_this=None):
+    with db.orm_session(join_this) as session:
+        return session.connection().execute(
+            select([
+                func.count(work_items_sources.c.id)
+            ]).where(
+                and_(
+                    work_items_sources.c.connector_key == connector_key,
+                    work_items_sources.c.project_id != None
+                )
+            )
+        ).scalar()
