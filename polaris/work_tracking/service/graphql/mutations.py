@@ -18,7 +18,10 @@ from polaris.work_tracking.integrations import pivotal_tracker, github
 from polaris.work_tracking.integrations.atlassian import jira_work_items_source
 from polaris.common import db
 from polaris.work_tracking import publish
-from polaris.integrations.db.api import create_tracking_receipt
+from polaris.integrations.db.api import create_tracking_receipt, delete_connector, archive_connector
+from polaris.work_tracking.db import api
+
+from polaris.integrations.graphql.connector.mutations import DeleteConnector, DeleteConnectorInput
 
 logger = logging.getLogger('polaris.work_tracking.mutations')
 
@@ -149,5 +152,22 @@ class RefreshConnectorProjects(graphene.Mutation):
                 success=True,
                 tracking_receipt_key=tracking_receipt.key if tracking_receipt else None
             )
+
+
+class DeleteWorkTrackingConnector(DeleteConnector):
+    def mutate(self, info, delete_connector_input):
+        connector_key = delete_connector_input['connector_key']
+        with db.orm_session() as session:
+            if api.get_imported_work_items_sources_count(connector_key, session) > 0:
+                return DeleteWorkTrackingConnector(
+                    connector_name=archive_connector(connector_key, session),
+                    disposition='archived'
+                )
+            else:
+                return DeleteWorkTrackingConnector(
+                    connector_name=delete_connector(connector_key, session),
+                    disposition='deleted'
+                )
+
 
 
