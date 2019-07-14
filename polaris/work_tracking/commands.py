@@ -72,8 +72,9 @@ def import_projects(import_projects_input, join_this=None):
             imported = api.import_project(
                 account_key,
                 organization_key,
-                project['imported_project_name'],
                 project['work_items_sources'],
+                project.get('imported_project_name'),
+                project.get('existing_project_key'),
                 join_this=session
             )
             projects.append(

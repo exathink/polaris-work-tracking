@@ -390,14 +390,32 @@ def sync_work_items_sources(connector, work_items_sources_list, join_this=None):
             ]
 
 
-def import_project(account_key, organization_key, project_name, work_items_source_import, join_this=None):
+def import_project(
+        account_key,
+        organization_key,
+        work_items_source_import,
+        project_name=None,
+        existing_project_key=None,
+        join_this=None
+):
     with db.orm_session(join_this) as session:
-        project = Project(
-            key=uuid.uuid4(),
-            account_key=account_key,
-            organization_key=organization_key,
-            name=project_name
-        )
+        if project_name is None and existing_project_key is None:
+            raise ProcessingException('At least one of project_name or existing_project_key must be provided')
+
+        if project_name is not None:
+            project = Project(
+                key=uuid.uuid4(),
+                account_key=account_key,
+                organization_key=organization_key,
+                name=project_name
+            )
+
+        if existing_project_key is not None:
+            project = Project.find_by_key(session, existing_project_key)
+
+        if project is None:
+            raise ProcessingException('Could not initialize project for import')
+
         for source in work_items_source_import:
             work_items_source = WorkItemsSource.find_by_key(session, source['work_items_source_key'])
             if work_items_source:
@@ -423,7 +441,7 @@ def import_project(account_key, organization_key, project_name, work_items_sourc
                 project.work_items_sources.append(work_items_source)
             else:
                 raise ProcessingException(
-                    f"could not find work items source with name {source['work_items_source_name']}"
+                    f"could not find work items source with key {source['work_items_source_key']}"
                 )
         session.add(project)
 

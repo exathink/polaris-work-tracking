@@ -44,6 +44,10 @@ class Project(Base):
 
     work_items_sources = relationship('WorkItemsSource')
 
+    @classmethod
+    def find_by_key(cls, session, project_key):
+        return session.query(cls).filter(cls.key == project_key).first()
+
 
 projects = Project.__table__
 

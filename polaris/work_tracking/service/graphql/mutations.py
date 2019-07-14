@@ -101,7 +101,10 @@ class WorkItemsSourceImport(graphene.InputObjectType):
 
 
 class ProjectImport(graphene.InputObjectType):
-    imported_project_name = graphene.String(required=True)
+    # At least of imported_project_name or existing_project_key must be provided.
+    imported_project_name = graphene.String(required=False)
+    existing_project_key = graphene.String(required=False)
+
     work_items_sources = graphene.List(WorkItemsSourceImport)
 
 

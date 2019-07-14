@@ -170,7 +170,8 @@ def setup_attached_and_unattached_work_items_sources(setup_connectors):
 class TestDeleteWorkTrackingConnector:
 
     def it_deletes_the_connector_if_there_all_work_items_sources_are_unattached(self,
-                                                                                setup_attached_and_unattached_work_items_sources, cleanup):
+                                                                                setup_attached_and_unattached_work_items_sources,
+                                                                                cleanup):
         connector_keys = setup_attached_and_unattached_work_items_sources
         unattached_connector_key = connector_keys['pivotal']
 
@@ -188,17 +189,18 @@ class TestDeleteWorkTrackingConnector:
                                 }
                         }
                         """,
-                          variable_values=dict(
-                              connectorKey=unattached_connector_key
-                          ))
+                                  variable_values=dict(
+                                      connectorKey=unattached_connector_key
+                                  ))
         assert response['data']['deleteConnector']
         assert response['data']['deleteConnector']['connectorName']
         assert response['data']['deleteConnector']['disposition'] == 'deleted'
 
-        assert db.connection().execute(f"select count(id) from integrations.connectors where key='{unattached_connector_key}'").scalar() == 0
+        assert db.connection().execute(
+            f"select count(id) from integrations.connectors where key='{unattached_connector_key}'").scalar() == 0
 
     def it_archives_the_connector_if_there_are_attached_work_items_sources(self,
-                                                                                setup_attached_and_unattached_work_items_sources):
+                                                                           setup_attached_and_unattached_work_items_sources):
         connector_keys = setup_attached_and_unattached_work_items_sources
         attached_connector_key = connector_keys['github']
 
@@ -216,12 +218,187 @@ class TestDeleteWorkTrackingConnector:
                                 }
                         }
                         """,
-                          variable_values=dict(
-                              connectorKey=attached_connector_key
-                          ))
+                                  variable_values=dict(
+                                      connectorKey=attached_connector_key
+                                  ))
         assert response['data']['deleteConnector']
         assert response['data']['deleteConnector']['connectorName']
         assert response['data']['deleteConnector']['disposition'] == 'archived'
 
         assert db.connection().execute(
             f"select archived from integrations.connectors where key='{attached_connector_key}'").scalar()
+
+
+@pytest.yield_fixture
+def setup_import_project(setup_connectors):
+    connector_keys = setup_connectors
+    with db.orm_session() as session:
+        work_items_sources_keys = [uuid.uuid4() for i in range(0, 3)]
+        for key in work_items_sources_keys:
+            session.add(
+                model.WorkItemsSource(
+                    key=key,
+                    connector_key=connector_keys['pivotal'],
+                    integration_type='pivotal_tracker',
+                    work_items_source_type='project',
+                    parameters=dict(id="1934657", name="polaris-web"),
+                    name='polaris-web',
+                    account_key=exathink_account_key,
+                    organization_key=polaris_organization_key,
+                    commit_mapping_scope='organization',
+                    commit_mapping_scope_key=polaris_organization_key,
+                    import_state=WorkItemsSourceImportState.ready.value
+                )
+            )
+
+        project = model.Project(
+            name='TestProject',
+            key=uuid.uuid4(),
+            organization_key=polaris_organization_key,
+            account_key=exathink_account_key
+        )
+
+        project.work_items_sources.append(
+            model.WorkItemsSource(
+                key=uuid.uuid4(),
+                integration_type='github',
+                connector_key=connector_keys['github'],
+                work_items_source_type='repository_issues',
+                parameters=dict(repository='rails', organization='rails'),
+                name='rails repository issues',
+                account_key=exathink_account_key,
+                organization_key=rails_organization_key,
+                commit_mapping_scope='organization',
+                commit_mapping_scope_key=rails_organization_key,
+                import_state=WorkItemsSourceImportState.ready.value
+            )
+        )
+        session.add(project)
+
+        session.flush()
+        yield project.key, work_items_sources_keys
+
+
+class TestImportProject:
+
+    def it_imports_a_project_with_work_items_in_single_mode(self, setup_import_project):
+        _, work_items_sources_keys = setup_import_project
+
+        client = Client(schema)
+        with patch('polaris.work_tracking.publish.publish') as publish:
+            response = client.execute("""
+                mutation importProjects($importProjectsInput: ImportProjectsInput!) {
+                    importProjects(importProjectsInput: $importProjectsInput) {
+                        projectKeys
+                    }
+                }
+            """,
+              variable_values=
+                  dict(
+                      importProjectsInput=dict(
+                          accountKey=str(exathink_account_key),
+                          organizationKey=str(polaris_organization_key),
+                          projects=[
+                              dict(
+                                  importedProjectName='test1',
+                                  workItemsSources=[
+                                      dict(
+                                          workItemsSourceKey=str(source_key),
+                                          workItemsSourceName='foo',
+                                          importDays=90
+                                      )
+                                      for source_key in work_items_sources_keys
+                                  ]
+                              )
+                          ]
+                      )
+                  )
+              )
+            assert len(response['data']['importProjects']['projectKeys']) == 1
+            new_project_key = response['data']['importProjects']['projectKeys'][0]
+
+            assert db.connection().execute(f"select count(id) from work_tracking.projects where key='{new_project_key}'").scalar() == 1
+
+
+    def it_imports_a_project_with_work_items_in_separate_mode(self, setup_import_project):
+        _, work_items_sources_keys = setup_import_project
+
+        client = Client(schema)
+        with patch('polaris.work_tracking.publish.publish') as publish:
+            response = client.execute("""
+                mutation importProjects($importProjectsInput: ImportProjectsInput!) {
+                    importProjects(importProjectsInput: $importProjectsInput) {
+                        projectKeys
+                    }
+                }
+            """,
+              variable_values=
+                  dict(
+                      importProjectsInput=dict(
+                          accountKey=str(exathink_account_key),
+                          organizationKey=str(polaris_organization_key),
+                          projects=[
+                              dict(
+                                  importedProjectName=f'test{source_key}',
+                                  workItemsSources=[
+                                      dict(
+                                          workItemsSourceKey=str(source_key),
+                                          workItemsSourceName='foo',
+                                          importDays=90
+                                      )
+                                  ]
+                              )
+                              for source_key in work_items_sources_keys
+                          ]
+                      )
+                  )
+              )
+            assert len(response['data']['importProjects']['projectKeys']) == len(work_items_sources_keys)
+            project_keys = response['data']['importProjects']['projectKeys']
+
+            for key in project_keys:
+                assert db.connection().execute(
+                    f"select count(id) from work_tracking.projects where key='{key}'").scalar() == 1
+
+
+
+    def it_imports_into_an_existing_project(self, setup_import_project):
+        project_key, work_items_sources_keys = setup_import_project
+
+        client = Client(schema)
+        with patch('polaris.work_tracking.publish.publish') as publish:
+            response = client.execute("""
+                mutation importProjects($importProjectsInput: ImportProjectsInput!) {
+                    importProjects(importProjectsInput: $importProjectsInput) {
+                        projectKeys
+                    }
+                }
+            """,
+              variable_values=
+                  dict(
+                      importProjectsInput=dict(
+                          accountKey=str(exathink_account_key),
+                          organizationKey=str(polaris_organization_key),
+                          projects=[
+                              dict(
+                                  existingProjectKey=str(project_key),
+                                  workItemsSources=[
+                                      dict(
+                                          workItemsSourceKey=str(source_key),
+                                          workItemsSourceName='foo',
+                                          importDays=90
+                                      )
+                                      for source_key in work_items_sources_keys
+                                  ]
+                              )
+                          ]
+                      )
+                  )
+              )
+            assert len(response['data']['importProjects']['projectKeys']) == 1
+
+
+            assert db.connection().execute(f"select count(work_tracking.work_items_sources.id) from "
+                                           f"work_tracking.work_items_sources "
+                                           f"inner join work_tracking.projects on projects.id = work_items_sources.project_id "
+                                           f"where projects.key='{project_key}'").scalar() == len(work_items_sources_keys) + 1
