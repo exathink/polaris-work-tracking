@@ -159,10 +159,14 @@ def get_work_items_sources_to_sync():
                     work_items_sources.c.key,
                     work_items_sources.c.organization_key
                 ]).where(
-                    work_items_sources.c.integration_type.in_([
-                        WorkTrackingIntegrationType.github.value,
-                        WorkTrackingIntegrationType.pivotal.value
-                    ])
+                    and_(
+                        work_items_sources.c.project_id != None,
+                        work_items_sources.c.integration_type.in_([
+                            WorkTrackingIntegrationType.github.value,
+                            WorkTrackingIntegrationType.pivotal.value
+                        ]),
+                        work_items_sources.c.import_state == WorkItemsSourceImportState.auto_update.value
+                    )
                 )
             ).fetchall()
         ]
