@@ -18,6 +18,22 @@ class JiraConnector(PolarisAtlassianConnector):
     def __init__(self, connector):
         super().__init__(connector)
 
+    def test(self):
+        fetch_projects_url = '/project/search'
+        query_params = dict(
+            maxResults=1
+        )
+        response = self.get(
+            fetch_projects_url,
+            params=query_params,
+            headers={"Accept": "application/json"},
+        )
+
+        if response.ok:
+            return True
+        else:
+            raise ProcessingException(f'Jira Connector Test Failed: {response.text} ({response.status_code})')
+
     def fetch_project(self, project_id):
         fetch_project_url = f'/project/{project_id}'
         query_params = dict(

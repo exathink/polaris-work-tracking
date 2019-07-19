@@ -12,7 +12,7 @@ import logging
 from datetime import datetime, timedelta
 from enum import Enum
 
-from github import Github
+from github import Github, GithubException
 from polaris.common.enums import GithubWorkItemType, WorkTrackingIntegrationType
 from polaris.utils.collections import find
 from polaris.utils.exceptions import ProcessingException
@@ -39,6 +39,23 @@ class GithubConnector:
         self.github_organization = connector.github_organization
         self.account_key = connector.account_key
         self.access_token = None
+
+    def test(self):
+        github = self.get_github_client()
+        try:
+            github.get_organization(self.github_organization)
+            return True
+        except GithubException as e:
+            logger.error(f"Github Connector Test Failed:  Connector Key: {self.key} Name: {self.name} \n"
+                         f"Error: {str(e)}")
+            if e.status in [403, 404]:
+                raise ProcessingException(f"The organization {self.github_organization} was either not found "
+                                          f"on the Github server or cannot be accessed using these credentials")
+            elif e.status == 401:
+                raise ProcessingException(f"The Github server says these credentials are invalid")
+
+            else:
+                raise ProcessingException(f"{str(e)}")
 
     def fetch_repositories(self):
         if self.access_token is not None:
@@ -86,7 +103,6 @@ class GithubOAuthTokenConnector(GithubConnector):
     def __init__(self, connector):
         super().__init__(connector)
         self.access_token = connector.oauth_access_token
-
 
 
 

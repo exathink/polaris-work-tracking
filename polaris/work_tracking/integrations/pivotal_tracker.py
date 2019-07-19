@@ -24,19 +24,41 @@ class PivotalWorkItemSourceType(Enum):
     project = 'project'
 
 
-class PivotalApiClientMixin:
+class PivotalApiClient:
     def __init__(self, connector):
         self.connector = connector
         self.access_token = connector.api_key
         self.base_url = f'{connector.base_url}/services/v5'
 
 
-class PivotalTrackerConnector(PivotalApiClientMixin):
+class PivotalTrackerConnector(PivotalApiClient):
     def __init__(self, connector):
         super().__init__(connector)
         self.key = connector.key
         self.name = connector.name
         self.account_key = connector.account_key
+
+    @property
+    def enabled(self):
+        return True
+
+    def test(self):
+        response = requests.get(
+            f'{self.base_url}/projects',
+            headers={"X-TrackerToken": self.access_token},
+        )
+        if response.ok:
+            return True
+        else:
+            error_message = response.json()
+            if error_message is not None:
+                raise ProcessingException(
+                    f"Server responded with status: {response.status_code}\n"
+                    f"Error Message: {error_message['error']}\n"
+                    f"Possible Fix: {error_message['possible_fix'] if error_message['possible_fix'] else ''}"
+                )
+            else:
+                raise ProcessingException(f'Pivotal Connector Test Failed: {response.text} ({response.status_code})')
 
     def fetch_projects(self):
         response = requests.get(
@@ -51,9 +73,6 @@ class PivotalTrackerConnector(PivotalApiClientMixin):
                                       f' {self.connector.name} : '
                                       f'{response.status_code}: '
                                       f'{response.text}')
-
-
-
 
     @staticmethod
     def map_project_to_work_items_sources_data(project):
