@@ -15,18 +15,19 @@ from polaris.graphql.interfaces import NamedNode
 from polaris.integrations.graphql import IntegrationsQueryMixin, IntegrationsMutationsMixin
 from .work_tracking_connector import WorkTrackingConnector
 from .work_items_source import WorkItemsSource
-from .mutations import CreateWorkItemsSource, ImportProjects, RefreshConnectorProjects, DeleteWorkTrackingConnector
+from .mutations import \
+    CreateWorkItemsSource, ImportProjects, \
+    RefreshConnectorProjects, DeleteWorkTrackingConnector, \
+    CreateWorkTrackingConnector, TestWorkTrackingConnector, RegisterWorkTrackingConnector
 
 
 class Query(
     IntegrationsQueryMixin,
     graphene.ObjectType
 ):
-
     node = NamedNode.Field()
     work_tracking_connector = WorkTrackingConnector.Field()
     work_items_source = WorkItemsSource.Field()
-
 
     def resolve_work_tracking_connector(self, info, **kwargs):
         return WorkTrackingConnector.resolve_field(info, **kwargs)
@@ -42,7 +43,12 @@ class Mutations(
     create_work_items_source = CreateWorkItemsSource.Field()
     import_projects = ImportProjects.Field()
     refresh_connector_projects = RefreshConnectorProjects.Field()
+    test_connector = TestWorkTrackingConnector.Field()
+
+    # oveerides from integrations connector
     delete_connector = DeleteWorkTrackingConnector.Field()
+    create_connector = CreateWorkTrackingConnector.Field()
+    register_connector = RegisterWorkTrackingConnector.Field()
 
 
 schema = graphene.Schema(query=Query, mutation=Mutations)

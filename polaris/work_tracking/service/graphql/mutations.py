@@ -11,26 +11,29 @@
 import logging
 
 import graphene
-import time
+
+from polaris.common import db
 from polaris.common.enums import WorkTrackingIntegrationType
+from polaris.integrations import publish as integrations_publish
+from polaris.integrations.db.api import create_connector, create_tracking_receipt, \
+    delete_connector, archive_connector, register_connector
+from polaris.integrations.graphql.connector.mutations import DeleteConnector, CreateConnector, RegisterConnector
+from polaris.utils.exceptions import ProcessingException
 from polaris.work_tracking import commands
+from polaris.work_tracking import publish
+from polaris.work_tracking.db import api
 from polaris.work_tracking.integrations import pivotal_tracker, github
 from polaris.work_tracking.integrations.atlassian import jira_work_items_source
-from polaris.common import db
-from polaris.work_tracking import publish
-from polaris.integrations.db.api import create_tracking_receipt, delete_connector, archive_connector
-from polaris.work_tracking.db import api
-
-from polaris.integrations.graphql.connector.mutations import DeleteConnector, DeleteConnectorInput
+from .work_tracking_connector import WorkTrackingConnector
 
 logger = logging.getLogger('polaris.work_tracking.mutations')
-
 
 # Input Types
 IntegrationType = graphene.Enum.from_enum(WorkTrackingIntegrationType)
 GithubSourceType = graphene.Enum.from_enum(github.GithubWorkItemSourceType)
 PivotalSourceType = graphene.Enum.from_enum(pivotal_tracker.PivotalWorkItemSourceType)
 JiraSourceType = graphene.Enum.from_enum(jira_work_items_source.JiraWorkItemSourceType)
+
 
 class CommitMappingScope(graphene.Enum):
     organization = 'organization'
@@ -58,7 +61,6 @@ class JiraWorkItemsSourceParams(graphene.InputObjectType):
     jira_connector_key = graphene.String(required=True)
     project_id = graphene.String(required=True)
     initial_import_days = graphene.Int(required=False)
-
 
 
 class WorkItemsSourceInput(graphene.InputObjectType):
@@ -157,6 +159,51 @@ class RefreshConnectorProjects(graphene.Mutation):
             )
 
 
+class TestConnectorInput(graphene.InputObjectType):
+    connector_key = graphene.String(required=True)
+
+
+class TestWorkTrackingConnector(graphene.Mutation):
+    class Arguments:
+        test_connector_input = TestConnectorInput(required=True)
+
+    success = graphene.Boolean()
+
+    def mutate(self, info, test_connector_input):
+        connector_key = test_connector_input.connector_key
+        logger.info(f'Test Connector called for connector {connector_key}')
+        with db.orm_session() as session:
+            return TestWorkTrackingConnector(
+                success=commands.test_work_tracking_connector(connector_key, join_this=session)
+            )
+
+
+class CreateWorkTrackingConnector(CreateConnector):
+    connector = WorkTrackingConnector.Field(key_is_required=False)
+
+    def mutate(self, info, create_connector_input):
+        logger.info('Create WorkTracking Connector called')
+        with db.orm_session() as session:
+            connector = create_connector(create_connector_input.connector_type, create_connector_input,
+                                         join_this=session)
+
+            # if the connector is created in a non-enabled state (Atlassian for example)
+            # we cannot test it. So default is assume test pass.
+            can_create = True
+            if connector.state == 'enabled':
+                can_create = commands.test_work_tracking_connector(connector.key, join_this=session)
+
+            if can_create:
+                resolved = CreateConnector(
+                    connector=WorkTrackingConnector.resolve_field(info, connector.key)
+                )
+                # Do the publish right at the end.
+                integrations_publish.connector_created(connector)
+                return resolved
+            else:
+                raise ProcessingException("Could not create connector: Connector test failed")
+
+
 class DeleteWorkTrackingConnector(DeleteConnector):
     def mutate(self, info, delete_connector_input):
         connector_key = delete_connector_input['connector_key']
@@ -173,4 +220,25 @@ class DeleteWorkTrackingConnector(DeleteConnector):
                 )
 
 
+class RegisterWorkTrackingConnector(RegisterConnector):
 
+    connector = WorkTrackingConnector.Field(key_is_required=False)
+
+    def mutate(self, info, register_connector_input):
+        logger.info(f'Register Connector called with key {register_connector_input.connector_key}')
+        with db.orm_session() as session:
+            connector = register_connector(register_connector_input, join_this=session)
+
+            # if the connector is created in a non-enabled state (Atlassian for example)
+            # we cannot test it. So default is assume test pass.
+            can_register = True
+            if connector.state == 'enabled':
+                can_register = commands.test_work_tracking_connector(connector.key, join_this=session)
+
+            if can_register:
+                return RegisterConnector(
+                    registered=connector is not None,
+                    connector=WorkTrackingConnector.resolve_instance(key=register_connector_input.connector_key)
+                )
+            else:
+                raise ProcessingException("Could not register connector: Connector test failed")
