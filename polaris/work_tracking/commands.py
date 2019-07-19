@@ -82,3 +82,12 @@ def import_projects(import_projects_input, join_this=None):
             )
             publish.project_imported(organization_key, imported)
         return projects
+
+
+def test_work_tracking_connector(connector_key, join_this=None):
+    with db.orm_session(join_this) as session:
+        work_tracking_connector = connector_factory.get_connector(
+            connector_key=connector_key,
+            join_this=session
+        )
+        return work_tracking_connector.test()
