@@ -55,7 +55,7 @@ class TestConnectorCreated:
         publisher = mock_publisher()
 
         with patch(
-                'polaris.work_tracking.integrations.github.GithubConnector.fetch_work_items_sources_to_sync') as fetch_work_items_sources_to_sync:
+                'polaris.work_tracking.integrations.github.GithubWorkTrackingConnector.fetch_work_items_sources_to_sync') as fetch_work_items_sources_to_sync:
             fetch_work_items_sources_to_sync.return_value = []
 
             ConnectorsTopicSubscriber(channel, publisher=publisher).dispatch(
