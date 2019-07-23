@@ -19,7 +19,6 @@ from polaris.work_tracking import connector_factory
 
 from polaris.integrations.github import GithubConnector
 
-
 logger = logging.getLogger('polaris.work_tracking.github')
 
 
@@ -50,9 +49,9 @@ class GithubWorkTrackingConnector(GithubConnector):
                 if repo.has_issues
             ]
 
+
 class GithubWorkItemSourceType(Enum):
     repository_issues = 'repository_issues'
-
 
 
 class GithubIssuesWorkItemsSource:
@@ -116,8 +115,8 @@ class GithubRepositoryIssues(GithubIssuesWorkItemsSource):
                 sort='created',
                 direction='desc',
                 since=(
-                    datetime.utcnow() -
-                    timedelta(days=int(self.work_items_source.parameters.get('initial_import_days', 90)))
+                        datetime.utcnow() -
+                        timedelta(days=int(self.work_items_source.parameters.get('initial_import_days', 90)))
                 )
             )
         else:
