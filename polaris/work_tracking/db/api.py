@@ -344,7 +344,7 @@ def sync_work_items_sources(connector, work_items_sources_list, join_this=None):
                             key=uuid.uuid4(),
                             connector_key=connector.key,
                             account_key=connector.account_key,
-                            import_state=WorkItemsSourceImportState.disabled.value,
+                            import_state=WorkItemsSourceImportState.ready.value,
                             **work_items_source
                         )
                         for work_items_source in work_items_sources_list
@@ -438,9 +438,6 @@ def import_project(
 
                 if work_items_source.commit_mapping_scope == 'organization':
                     work_items_source.commit_mapping_scope_key = organization_key
-
-                # Work Item Source is now ready to sync
-                work_items_source.import_state = WorkItemsSourceImportState.ready.value
 
                 project.work_items_sources.append(work_items_source)
             else:
