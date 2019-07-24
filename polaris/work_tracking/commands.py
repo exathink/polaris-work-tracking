@@ -63,11 +63,15 @@ def sync_work_items_sources(connector_key, tracking_receipt_key=None):
                 yield api.sync_work_items_sources(connector, work_items_sources)
 
 
-def import_projects(import_projects_input, join_this=None):
-    with db.orm_session(join_this) as session:
+def import_projects(import_projects_input):
+    projects = []
+    # We execute this in a separate transaction because we need the transaction to commit before
+    # publishing
+
+    with db.orm_session() as session:
         account_key = import_projects_input['account_key']
         organization_key = import_projects_input['organization_key']
-        projects = []
+
         for project in import_projects_input['projects']:
             imported = api.import_project(
                 account_key,
@@ -80,8 +84,11 @@ def import_projects(import_projects_input, join_this=None):
             projects.append(
                 imported
             )
-            publish.project_imported(organization_key, imported)
-        return projects
+    # DB transaction has commited we can publish messages.
+    for imported in projects:
+        publish.project_imported(organization_key, imported)
+
+    return projects
 
 
 def test_work_tracking_connector(connector_key, join_this=None):

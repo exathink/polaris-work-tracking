@@ -123,11 +123,10 @@ class ImportProjects(graphene.Mutation):
     project_keys = graphene.List(graphene.String)
 
     def mutate(self, info, import_projects_input):
-        with db.orm_session() as session:
-            projects = commands.import_projects(import_projects_input, join_this=session)
-            return ImportProjects(
-                project_keys=[project.key for project in projects]
-            )
+        projects = commands.import_projects(import_projects_input)
+        return ImportProjects(
+            project_keys=[project.key for project in projects]
+        )
 
 
 class RefreshConnectorProjectsInput(graphene.InputObjectType):

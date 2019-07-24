@@ -361,7 +361,6 @@ class TestImportProject:
                     f"select count(id) from work_tracking.projects where key='{key}'").scalar() == 1
 
 
-
     def it_imports_into_an_existing_project(self, setup_import_project):
         project_key, work_items_sources_keys = setup_import_project
 
@@ -402,3 +401,76 @@ class TestImportProject:
                                            f"work_tracking.work_items_sources "
                                            f"inner join work_tracking.projects on projects.id = work_items_sources.project_id "
                                            f"where projects.key='{project_key}'").scalar() == len(work_items_sources_keys) + 1
+
+    def it_publishes_work_items_sources_created_message_in_separate_mode(self, setup_import_project):
+        _, work_items_sources_keys = setup_import_project
+
+        client = Client(schema)
+        with patch('polaris.work_tracking.publish.publish') as publish:
+            response = client.execute("""
+                mutation importProjects($importProjectsInput: ImportProjectsInput!) {
+                    importProjects(importProjectsInput: $importProjectsInput) {
+                        projectKeys
+                    }
+                }
+            """,
+              variable_values=
+                  dict(
+                      importProjectsInput=dict(
+                          accountKey=str(exathink_account_key),
+                          organizationKey=str(polaris_organization_key),
+                          projects=[
+                              dict(
+                                  importedProjectName=f'test{source_key}',
+                                  workItemsSources=[
+                                      dict(
+                                          workItemsSourceKey=str(source_key),
+                                          workItemsSourceName='foo',
+                                          importDays=90
+                                      )
+                                  ]
+                              )
+                              for source_key in work_items_sources_keys
+                          ]
+                      )
+                  )
+              )
+            publish.assert_called()
+            assert publish.call_count == len(work_items_sources_keys)
+
+    def it_does_not_publish_if_the_import_fails(self, setup_import_project):
+        _, work_items_sources_keys = setup_import_project
+
+        client = Client(schema)
+        with patch('polaris.work_tracking.publish.publish') as publish:
+            response = client.execute("""
+                mutation importProjects($importProjectsInput: ImportProjectsInput!) {
+                    importProjects(importProjectsInput: $importProjectsInput) {
+                        projectKeys
+                    }
+                }
+            """,
+              variable_values=
+                  dict(
+                      importProjectsInput=dict(
+                          accountKey=str(exathink_account_key),
+                          organizationKey=str(polaris_organization_key),
+                          projects=[
+                              dict(
+                                  importedProjectName=f'test{source_key}',
+                                  workItemsSources=[
+                                      dict(
+                                          # create a random work item source key so the transaction fails
+                                          workItemsSourceKey=str(uuid.uuid4()),
+                                          workItemsSourceName='foo',
+                                          importDays=90
+                                      )
+                                  ]
+                              )
+                              for source_key in work_items_sources_keys
+                          ]
+                      )
+                  )
+              )
+            assert response['errors']
+            publish.assert_not_called()
