@@ -78,9 +78,8 @@ class GithubRepositoryIssues(GithubIssuesWorkItemsSource):
 
     def map_issue_to_work_item(self, issue):
         bug_tags = ['bug', *self.work_items_source.parameters.get('bug_tags', [])]
-
-        # map common fields first
-        work_item = dict(
+        return dict(
+            work_item_type=GithubWorkItemType.issue.value,
             name=issue.title[:255],
             description=issue.body,
             is_bug=find(issue.labels, lambda label: label.name in bug_tags) is not None,
@@ -89,20 +88,11 @@ class GithubRepositoryIssues(GithubIssuesWorkItemsSource):
             source_last_updated=issue.updated_at,
             source_created_at=issue.created_at,
             source_display_id=issue.number,
-            source_state=issue.state
+            source_state=issue.state,
+            url=issue.url,
         )
-        if issue.pull_request is not None:
-            return dict(
-                work_item_type=GithubWorkItemType.pull_request.value,
-                url=issue.pull_request.html_url,
-                **work_item
-            )
-        else:
-            return dict(
-                work_item_type=GithubWorkItemType.issue.value,
-                url=issue.url,
-                **work_item
-            )
+
+
 
     def fetch_work_items_to_sync(self):
         organization = self.work_items_source.parameters.get('github_organization')
@@ -130,6 +120,7 @@ class GithubRepositoryIssues(GithubIssuesWorkItemsSource):
             work_items = [
                 self.map_issue_to_work_item(issue)
                 for issue in issues_iterator._fetchNextPage()
+                if issue.pull_request is None
             ]
             if len(work_items) == 0:
                 logger.info('There are no work items to import')
