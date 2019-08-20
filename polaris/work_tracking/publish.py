@@ -25,6 +25,7 @@ def work_items_source_created(work_items_source, channel=None):
                     name=work_items_source.name,
                     key=work_items_source.key,
                     integration_type=work_items_source.integration_type,
+                    work_items_source_type=work_items_source.work_items_source_type,
                     commit_mapping_scope=work_items_source.commit_mapping_scope,
                     commit_mapping_scope_key=work_items_source.commit_mapping_scope_key
                 )
@@ -85,9 +86,10 @@ def project_imported(organization_key, project, channel=None):
                         name=work_items_source.name,
                         description=work_items_source.description,
                         integration_type=work_items_source.integration_type,
+                        work_items_source_type=work_items_source.work_items_source_type,
                         commit_mapping_scope=work_items_source.commit_mapping_scope,
-                        commit_mapping_scope_key=work_items_source.commit_mapping_scope_key
-
+                        commit_mapping_scope_key=work_items_source.commit_mapping_scope_key,
+                        source_id=work_items_source.source_id
                     )
                     for work_items_source in project.work_items_sources
                 ]
