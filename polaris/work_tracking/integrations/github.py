@@ -33,7 +33,7 @@ class GithubWorkTrackingConnector(GithubConnector):
                 github_organization=self.github_organization,
                 repository=repository.name
             ),
-            commit_mapping_scope='organization',
+            commit_mapping_scope='repository',
             source_id=repository.id,
             name=repository.name,
             url=f'{repository.html_url}/issues',
