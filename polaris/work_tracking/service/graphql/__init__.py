@@ -18,7 +18,7 @@ from .work_items_source import WorkItemsSource
 from .mutations import \
     CreateWorkItemsSource, ImportProjects, \
     RefreshConnectorProjects, DeleteWorkTrackingConnector, \
-    CreateWorkTrackingConnector, TestWorkTrackingConnector, RegisterWorkTrackingConnector
+    CreateWorkTrackingConnector, TestWorkTrackingConnector, RegisterWorkTrackingConnector, EditWorkTrackingConnector
 
 
 class Query(
@@ -49,6 +49,7 @@ class Mutations(
     delete_connector = DeleteWorkTrackingConnector.Field()
     create_connector = CreateWorkTrackingConnector.Field()
     register_connector = RegisterWorkTrackingConnector.Field()
+    edit_connector = EditWorkTrackingConnector.Field()
 
 
 schema = graphene.Schema(query=Query, mutation=Mutations)

@@ -16,8 +16,8 @@ from polaris.common import db
 from polaris.common.enums import WorkTrackingIntegrationType
 from polaris.integrations import publish as integrations_publish
 from polaris.integrations.db.api import create_connector, create_tracking_receipt, \
-    delete_connector, archive_connector, register_connector
-from polaris.integrations.graphql.connector.mutations import DeleteConnector, CreateConnector, RegisterConnector
+    delete_connector, archive_connector, register_connector, update_connector
+from polaris.integrations.graphql.connector.mutations import DeleteConnector, CreateConnector, RegisterConnector, EditConnector
 from polaris.utils.exceptions import ProcessingException
 from polaris.work_tracking import commands
 from polaris.work_tracking import publish
@@ -198,6 +198,25 @@ class CreateWorkTrackingConnector(CreateConnector):
                 )
                 # Do the publish right at the end.
                 integrations_publish.connector_created(connector)
+                return resolved
+            else:
+                raise ProcessingException("Could not create connector: Connector test failed")
+
+
+class EditWorkTrackingConnector(EditConnector):
+    connector = WorkTrackingConnector.Field(key_is_required=False)
+
+    def mutate(self, info, edit_connector_input):
+        logger.info('Create WorkTracking Connector called')
+        with db.orm_session() as session:
+            connector = update_connector(edit_connector_input.connector_type, edit_connector_input,
+                                         join_this=session)
+            if commands.test_work_tracking_connector(connector.key, join_this=session):
+                resolved = EditConnector(
+                    connector=WorkTrackingConnector.resolve_field(info, connector.key)
+                )
+                # Do the publish right at the end.
+                # integrations_publish.connector_created(connector)
                 return resolved
             else:
                 raise ProcessingException("Could not create connector: Connector test failed")
