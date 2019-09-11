@@ -18,7 +18,7 @@ from .work_items_source import WorkItemsSource
 from .mutations import \
     CreateWorkItemsSource, ImportProjects, \
     RefreshConnectorProjects, DeleteWorkTrackingConnector, \
-    CreateWorkTrackingConnector, TestWorkTrackingConnector, RegisterWorkTrackingConnector, EditWorkTrackingConnector
+    CreateWorkTrackingConnector, TestWorkTrackingConnector, EditWorkTrackingConnector
 
 
 class Query(
@@ -48,7 +48,6 @@ class Mutations(
     # oveerides from integrations connector
     delete_connector = DeleteWorkTrackingConnector.Field()
     create_connector = CreateWorkTrackingConnector.Field()
-    register_connector = RegisterWorkTrackingConnector.Field()
     edit_connector = EditWorkTrackingConnector.Field()
 
 

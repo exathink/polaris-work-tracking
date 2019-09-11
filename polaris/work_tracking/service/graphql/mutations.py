@@ -16,8 +16,8 @@ from polaris.common import db
 from polaris.common.enums import WorkTrackingIntegrationType
 from polaris.integrations import publish as integrations_publish
 from polaris.integrations.db.api import create_connector, create_tracking_receipt, \
-    delete_connector, archive_connector, register_connector, update_connector
-from polaris.integrations.graphql.connector.mutations import DeleteConnector, CreateConnector, RegisterConnector, EditConnector
+    delete_connector, archive_connector, update_connector
+from polaris.integrations.graphql.connector.mutations import DeleteConnector, CreateConnector, EditConnector
 from polaris.utils.exceptions import ProcessingException
 from polaris.work_tracking import commands
 from polaris.work_tracking import publish
@@ -238,25 +238,3 @@ class DeleteWorkTrackingConnector(DeleteConnector):
                 )
 
 
-class RegisterWorkTrackingConnector(RegisterConnector):
-
-    connector = WorkTrackingConnector.Field(key_is_required=False)
-
-    def mutate(self, info, register_connector_input):
-        logger.info(f'Register Connector called with key {register_connector_input.connector_key}')
-        with db.orm_session() as session:
-            connector = register_connector(register_connector_input, join_this=session)
-
-            # if the connector is created in a non-enabled state (Atlassian for example)
-            # we cannot test it. So default is assume test pass.
-            can_register = True
-            if connector.state == 'enabled':
-                can_register = commands.test_work_tracking_connector(connector.key, join_this=session)
-
-            if can_register:
-                return RegisterConnector(
-                    registered=connector is not None,
-                    connector=WorkTrackingConnector.resolve_instance(key=register_connector_input.connector_key)
-                )
-            else:
-                raise ProcessingException("Could not register connector: Connector test failed")
