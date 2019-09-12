@@ -18,6 +18,9 @@ class JiraConnector(PolarisAtlassianConnector):
     def __init__(self, connector):
         super().__init__(connector)
 
+    def api_url(self, path, version='latest'):
+        return f'/rest/api/{version}{path}'
+
     def test(self):
         fetch_projects_url = '/project/search'
         query_params = dict(
