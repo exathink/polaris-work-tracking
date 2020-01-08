@@ -24,10 +24,10 @@ class JiraConnectorContext:
     base_url = config_provider.get('JIRA_CONNECTOR_BASE_URL')
     mount_path = config_provider.get('MOUNT_PATH')
 
-    app_name = "Urjuna for Jira"
-    addon_name = "Urjuna for Jira"
+    app_name = "Polaris Flow for Jira"
+    addon_name = "Polaris Flow for Jira"
     addon_key = config_provider.get('JIRA_CONNECTOR_APP_KEY', 'polaris.jira')
-    addon_description = "Jira Connector for Urjuna"
+    addon_description = "Jira Connector for Polaris Flow"
     addon_scopes = ["READ", "WRITE"]
     addon_version = 1
 
