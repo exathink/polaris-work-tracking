@@ -9,6 +9,7 @@
 # Author: Krishna Kumar
 
 import logging
+from datetime import datetime
 
 import polaris.work_tracking.connector_factory
 from polaris.common.enums import JiraWorkItemType, JiraWorkItemSourceType
@@ -50,6 +51,14 @@ class JiraProject(JiraWorkItemsSource):
             Epic2=JiraWorkItemType.epic.value
         )
 
+    @staticmethod
+    def jira_time_to_utc_time_string(jira_time_string):
+        return datetime.strftime(
+            datetime.fromtimestamp(datetime.strptime(jira_time_string,"%Y-%m-%dT%H:%M:%S.%f%z").timestamp()),
+            "%Y-%m-%dT%H:%M:%S.%f%z"
+        )
+
+
     def map_issue_to_work_item_data(self, issue):
         fields = issue.get('fields')
         issue_type = fields.get('issuetype').get('name')
@@ -64,8 +73,8 @@ class JiraProject(JiraWorkItemsSource):
                 url=issue.get('self'),
                 source_id=str(issue.get('id')),
                 source_display_id=issue.get('key'),
-                source_last_updated=fields.get('updated'),
-                source_created_at=fields.get('created'),
+                source_last_updated=self.jira_time_to_utc_time_string(fields.get('updated')),
+                source_created_at=self.jira_time_to_utc_time_string(fields.get('created')),
                 source_state=fields.get('status').get('name')
             )
         )
