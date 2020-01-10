@@ -53,10 +53,15 @@ class JiraProject(JiraWorkItemsSource):
 
     @staticmethod
     def jira_time_to_utc_time_string(jira_time_string):
-        return datetime.strftime(
-            datetime.fromtimestamp(datetime.strptime(jira_time_string,"%Y-%m-%dT%H:%M:%S.%f%z").timestamp()),
-            "%Y-%m-%dT%H:%M:%S.%f%z"
-        )
+        try:
+            return datetime.strftime(
+                datetime.fromtimestamp(datetime.strptime(jira_time_string,"%Y-%m-%dT%H:%M:%S.%f%z").timestamp()),
+                "%Y-%m-%dT%H:%M:%S.%f%z"
+            )
+        except ValueError as exc:
+            logger.warning(f"Jira timestamp {jira_time_string} "
+                           f"could not be parsed to UTC returning the original string instead.")
+            return jira_time_string
 
 
     def map_issue_to_work_item_data(self, issue):
