@@ -9,7 +9,8 @@
 # Author: Krishna Kumar
 
 import json
-from datetime import datetime
+
+from datetime import datetime, timezone, timedelta
 from unittest.mock import MagicMock
 from ..fixtures.jira_fixtures import *
 
@@ -24,6 +25,12 @@ from polaris.work_tracking.messages import AtlassianConnectWorkItemEvent
 
 mock_consumer = MagicMock(MessageConsumer)
 mock_consumer.token_provider = get_token_provider()
+
+
+def jira_test_time_stamp():
+    # Jira returns timestamps in a local timezone so we need to
+    # mock this up here
+    return datetime.strftime(datetime.now(tz=timezone(offset=timedelta(hours=-6))), "%Y-%m-%dT%H:%M:%S.%f%z")
 
 
 def create_issue(project_id, issue_key, issue_id):
@@ -41,8 +48,8 @@ def create_issue(project_id, issue_key, issue_id):
             ),
             description=" A new feature",
             summary="A new feature",
-            created=datetime.utcnow().isoformat(),
-            updated=datetime.utcnow().isoformat(),
+            created=jira_test_time_stamp(),
+            updated=jira_test_time_stamp(),
             status=dict(
                 self="https://jira.atlassian.com/rest/api/2/status/5",
                 name="resolved",
@@ -66,7 +73,7 @@ class TestAtlassianConnectEvent:
         issue_key=f"PRJ-{issue_id}"
 
         issue_created = dict(
-            timestamp=datetime.utcnow().isoformat(),
+            timestamp=jira_test_time_stamp(),
             event='issue_created',
             issue=create_issue(jira_project_id, issue_key, issue_id)
         )
@@ -105,7 +112,7 @@ class TestAtlassianConnectEvent:
         issue = create_issue(jira_project_id, issue_key, issue_id)
 
         issue_event = dict(
-            timestamp=datetime.utcnow().isoformat(),
+            timestamp=jira_test_time_stamp(),
             event='issue_created',
             issue=issue
         )
@@ -155,7 +162,7 @@ class TestAtlassianConnectEvent:
         issue = create_issue(jira_project_id, issue_key, issue_id)
 
         issue_event = dict(
-            timestamp=datetime.utcnow().isoformat(),
+            timestamp=jira_test_time_stamp(),
             event='issue_created',
             issue=issue
         )
@@ -198,7 +205,7 @@ class TestAtlassianConnectEvent:
         issue_key=f"PRJ-{issue_id}"
 
         issue_updated = dict(
-            timestamp=datetime.utcnow().isoformat(),
+            timestamp=jira_test_time_stamp(),
             event='issue_updated',
             issue=create_issue(jira_project_id, issue_key, issue_id)
         )
@@ -232,7 +239,7 @@ class TestAtlassianConnectEvent:
         issue = create_issue(jira_project_id, issue_key, issue_id)
 
         issue_event = dict(
-            timestamp=datetime.utcnow().isoformat(),
+            timestamp=jira_test_time_stamp(),
             event='issue_created',
             issue=issue
         )
@@ -293,7 +300,7 @@ class TestAtlassianConnectEvent:
         issue_key=f"PRJ-{issue_id}"
 
         issue_created = dict(
-            timestamp=datetime.utcnow().isoformat(),
+            timestamp=jira_test_time_stamp(),
             event='issue_created',
             issue=create_issue(jira_project_id, issue_key, issue_id)
         )
@@ -333,7 +340,7 @@ class TestAtlassianConnectEvent:
         issue = create_issue(jira_project_id, issue_key, issue_id)
 
         issue_event = dict(
-            timestamp=datetime.utcnow().isoformat(),
+            timestamp=jira_test_time_stamp(),
             event='issue_created',
             issue=issue
         )
