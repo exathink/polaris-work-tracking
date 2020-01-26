@@ -82,14 +82,14 @@ class WorkItemsSourceInput(graphene.InputObjectType):
 
 class CreateWorkItemsSource(graphene.Mutation):
     class Arguments:
-        data = WorkItemsSourceInput(required=True)
+        create_work_items_source_input = WorkItemsSourceInput(required=True)
 
     name = graphene.String()
     key = graphene.String()
 
-    def mutate(self, info, data):
+    def mutate(self, info, create_work_items_source_input):
         logger.info('CreateWorkItemsSource called')
-        work_items_source = commands.create_work_items_source(work_items_source_input=data)
+        work_items_source = commands.create_work_items_source(work_items_source_input=create_work_items_source_input)
         return CreateWorkItemsSource(
             name=work_items_source.name,
             key=work_items_source.key

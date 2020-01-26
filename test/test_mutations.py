@@ -30,7 +30,7 @@ class TestCreateWorkItemSource:
             response = client.execute("""
                 mutation createWorkItemsSource {
                         createWorkItemsSource(
-                            data:{
+                            createWorkItemsSourceInput:{
                                 accountKey: "3a0480a3-2eb8-4728-987f-674cbe3cf48c",
                                 organizationKey:"8850852b-9187-4284-bb1f-98ea89ae31fe",
                                 commitMappingScope:organization,
@@ -61,7 +61,7 @@ class TestCreateWorkItemSource:
             response = client.execute("""
                 mutation createWorkItemsSource {
                         createWorkItemsSource(
-                            data:{
+                            createWorkItemsSourceInput:{
                                 accountKey: "3a0480a3-2eb8-4728-987f-674cbe3cf48c",
                                 organizationKey:"8850852b-9187-4284-bb1f-98ea89ae31fe",
                                 commitMappingScope:organization,
@@ -93,7 +93,7 @@ class TestCreateWorkItemSource:
             response = client.execute("""
                 mutation createWorkItemsSource {
                         createWorkItemsSource(
-                            data:{
+                            createWorkItemsSourceInput:{
                                 accountKey: "3a0480a3-2eb8-4728-987f-674cbe3cf48c",
                                 organizationKey:"8850852b-9187-4284-bb1f-98ea89ae31fe",
                                 commitMappingScope:organization,
