@@ -64,6 +64,11 @@ class JiraProject(JiraWorkItemsSource):
             return jira_time_string
 
 
+    @staticmethod
+    def jira_time_string(timestamp):
+        return timestamp.strftime("%Y-%m-%d %H:%M")
+
+
     def map_issue_to_work_item_data(self, issue):
         fields = issue.get('fields')
         issue_type = fields.get('issuetype').get('name')
@@ -91,7 +96,7 @@ class JiraProject(JiraWorkItemsSource):
         if self.work_items_source.last_synced is None or self.last_updated is None:
             jql = f'{jql_base} AND created >= "-{self.initial_import_days}d"'
         else:
-            jql = f'{jql_base} AND updated > "{self.last_updated.isoformat()}"'
+            jql = f'{jql_base} AND updated > "{self.jira_time_string(self.last_updated)}"'
 
         query_params = dict(
             fields="summary,created,updated, description,labels,issuetype,status",
