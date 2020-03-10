@@ -44,12 +44,13 @@ class JiraProject(JiraWorkItemsSource):
             connector_key=self.work_items_source.connector_key
         )
         # map standard JIRA issue types to JiraWorkItemType enum values.
-        self.work_item_type_map = dict(
-            Story=JiraWorkItemType.story.value,
-            Bug=JiraWorkItemType.bug.value,
-            Epic=JiraWorkItemType.epic.value,
-            Epic2=JiraWorkItemType.epic.value
-        )
+        self.work_item_type_map = {
+            'Story': JiraWorkItemType.story.value,
+            'Bug': JiraWorkItemType.bug.value,
+            'Epic': JiraWorkItemType.epic.value,
+            'Task': JiraWorkItemType.task.value,
+            'Sub-task': JiraWorkItemType.sub_task.value
+        }
 
     @staticmethod
     def jira_time_to_utc_time_string(jira_time_string):
