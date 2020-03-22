@@ -154,6 +154,26 @@ class WorkItemsSource(Base):
             )
         )
 
+    @property
+    def most_recently_updated_work_item_source_id(self):
+        return object_session(self).scalar(
+            select(
+                [work_items.c.source_id]
+            ).where(
+                and_(
+                    work_items.c.source_last_updated ==
+                        select(
+                            [func.max(work_items.c.source_last_updated)]
+                        ).where(
+                            work_items.c.work_items_source_id == self.id
+                        ).alias(),
+                    work_items.c.work_items_source_id == self.id
+                )
+            )
+        )
+
+
+
     def get_summary_info(self):
         return dict(
             work_items_source_key=self.key,
