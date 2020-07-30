@@ -41,6 +41,13 @@ class GithubWorkTrackingConnector(GithubConnector):
 
         )
 
+    def fetch_repositories(self):
+        if self.access_token is not None:
+            github = self.get_github_client()
+            organization = github.get_organization(self.github_organization)
+            if organization is not None:
+                return organization.get_repos()
+
     def fetch_work_items_sources_to_sync(self, batch_size=100):
         repos_paginator = self.fetch_repositories()
         while repos_paginator._couldGrow():
