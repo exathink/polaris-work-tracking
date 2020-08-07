@@ -13,4 +13,4 @@ echo "Running migrations"
 package aws run-task polaris-work-tracking-db-migrator
 
 echo "Deploying Services.."
-package aws deploy-services polaris-work-tracking-service polaris.auto-scaling-group polaris-work-tracking-service polaris-work-tracking-listener
+package aws deploy-services polaris-work-tracking-service polaris.auto-scaling-group polaris-work-tracking-listener polaris-work-tracking-service
