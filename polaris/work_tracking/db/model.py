@@ -231,6 +231,8 @@ class WorkItem(Base):
     last_sync = Column(DateTime, nullable=True)
     deleted_at = Column(DateTime, nullable=True)
 
+    # Information related to Epic
+    is_epic = Column(Boolean, nullable=False, default=False, server_default='FALSE')
     epic_id = Column(String, nullable=True)
 
     # Work Items Source relationship
