@@ -231,6 +231,8 @@ class WorkItem(Base):
     last_sync = Column(DateTime, nullable=True)
     deleted_at = Column(DateTime, nullable=True)
 
+    epic_id = Column(String, nullable=True)
+
     # Work Items Source relationship
     work_items_source_id = Column(Integer, ForeignKey('work_items_sources.id'))
     work_items_source = relationship('WorkItemsSource', back_populates='work_items')
