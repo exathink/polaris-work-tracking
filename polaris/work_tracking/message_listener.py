@@ -16,7 +16,8 @@ from polaris.messaging.message_consumer import MessageConsumer
 from polaris.messaging.messages import ImportWorkItems, WorkItemsCreated, WorkItemsUpdated, \
     WorkItemsSourceCreated, WorkItemsSourceUpdated, ProjectImported, ConnectorCreated, ConnectorEvent
 
-from polaris.work_tracking.messages import AtlassianConnectWorkItemEvent, RefreshConnectorProjects
+from polaris.work_tracking.messages import AtlassianConnectWorkItemEvent, RefreshConnectorProjects, \
+    ResolveIssuesForEpic
 
 from polaris.messaging.topics import WorkItemsTopic, ConnectorsTopic, TopicSubscriber
 from polaris.messaging.utils import raise_message_processing_error
@@ -55,9 +56,11 @@ class WorkItemsTopicSubscriber(TopicSubscriber):
                 # Events
                 AtlassianConnectWorkItemEvent,
                 ProjectImported,
+                WorkItemsCreated,
+                WorkItemsUpdated,
                 # Commands
                 ImportWorkItems,
-
+                ResolveIssuesForEpic
             ],
             publisher=publisher,
             exclusive=False
@@ -109,6 +112,41 @@ class WorkItemsTopicSubscriber(TopicSubscriber):
 
         elif AtlassianConnectWorkItemEvent.message_type == message.message_type:
             return self.process_atlassian_connect_event(message)
+
+        elif WorkItemsCreated.message_type == message.message_type:
+            return self.process_work_items_created(message)
+
+        elif WorkItemsUpdated.message_type == message.message_type:
+            return self.process_work_items_updated(message)
+
+        elif ResolveIssuesForEpic.message_type == message.message_type:
+            total = 0
+            messages = []
+            for created, updated in self.process_resolve_issues_for_epic(message):
+                if len(created) > 0:
+                    total = total + len(created)
+                    logger.info(f'{len(created)} new work_items')
+                    created_message = WorkItemsCreated(send=dict(
+                        organization_key=message['organization_key'],
+                        work_items_source_key=message['work_items_source_key'],
+                        new_work_items=created
+                    ))
+                    self.publish(WorkItemsTopic, created_message, channel=channel)
+                    messages.append(created_message)
+
+                if len(updated) > 0:
+                    total = total + len(updated)
+                    logger.info(f'{len(updated)} updated work_items')
+                    updated_message = WorkItemsUpdated(send=dict(
+                        organization_key=message['organization_key'],
+                        work_items_source_key=message['work_items_source_key'],
+                        updated_work_items=updated
+                    ))
+                    self.publish(WorkItemsTopic, updated_message, channel=channel)
+                    messages.append(updated_message)
+
+            logger.info(f'{total} work items processed')
+            return messages
 
     def process_import_work_items(self, message):
         work_items_source_key = message['work_items_source_key']
@@ -173,6 +211,48 @@ class WorkItemsTopicSubscriber(TopicSubscriber):
 
         except Exception as exc:
             raise_message_processing_error(message, 'Failed to handle atlassian_connect_message', str(exc))
+
+    def process_work_items_created(self, message):
+        for work_item in message['new_work_items']:
+            if work_item['is_epic']:
+                response_message = ResolveIssuesForEpic(
+                    send=dict(
+                        organization_key=message['organization_key'],
+                        work_items_source_key=message['work_items_source_key'],
+                        epic_id=work_item['source_id']
+                    ))
+                self.publish(WorkItemsTopic, response_message)
+
+    def process_work_items_updated(self, message):
+        for work_item in message['updated_work_items']:
+            if work_item['is_epic']:
+                response_message = ResolveIssuesForEpic(
+                    send=dict(
+                        organization_key=message['organization_key'],
+                        work_items_source_key=message['work_items_source_key'],
+                        epic_id=work_item['source_id']
+                    ))
+                self.publish(WorkItemsTopic, response_message)
+
+    def process_resolve_issues_for_epic(self, message):
+        work_items_source_key = message['work_items_source_key']
+        logger.info(f"Processing  {message.message_type}: "
+                    f" Work Items Source Key : {work_items_source_key}")
+        try:
+            for work_items in commands.sync_work_items_with_epic_id(self.consumer_context.token_provider, \
+                                                                    work_items_source_key, message['epic_id']):
+                created = []
+                updated = []
+                for work_item in work_items:
+                    if work_item['is_new']:
+                        created.append(work_item)
+                    else:
+                        updated.append(work_item)
+
+                yield created, updated
+
+        except Exception as exc:
+            raise_message_processing_error(message, 'Failed to sync work items', str(exc))
 
 
 class ConnectorsTopicSubscriber(TopicSubscriber):
@@ -289,7 +369,8 @@ class ConnectorsTopicSubscriber(TopicSubscriber):
 
         )
         try:
-            yield from ConnectorsTopicSubscriber.sync_work_items_sources(connector_key, tracking_receipt_key=tracking_receipt_key)
+            yield from ConnectorsTopicSubscriber.sync_work_items_sources(connector_key,
+                                                                         tracking_receipt_key=tracking_receipt_key)
         except Exception as exc:
             raise_message_processing_error(message, 'Failed to sync work items sources', str(exc))
 

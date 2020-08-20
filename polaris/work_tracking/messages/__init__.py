@@ -11,10 +11,12 @@
 from polaris.messaging.messages import register_messages
 from .atlassian_connect_work_item_event import AtlassianConnectWorkItemEvent
 from .refresh_connector_projects import RefreshConnectorProjects
+from .resolve_issues_for_epic import ResolveIssuesForEpic
 
 # Add this to the global message factory so that the messages can be desrialized on reciept.
 register_messages([
     AtlassianConnectWorkItemEvent,
-    RefreshConnectorProjects
+    RefreshConnectorProjects,
+    ResolveIssuesForEpic,
 ])
 
