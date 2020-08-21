@@ -188,7 +188,6 @@ class JiraProject(JiraWorkItemsSource):
                 work_items = []
                 for issue in issues:
                     work_item_data = self.map_issue_to_work_item_data(issue)
-                    work_item_data['epic_id'] = epic_id
                     if work_item_data:
                         work_items.append(work_item_data)
 
