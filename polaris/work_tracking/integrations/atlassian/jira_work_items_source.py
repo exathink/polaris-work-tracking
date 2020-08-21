@@ -161,9 +161,10 @@ class JiraProject(JiraWorkItemsSource):
                 )
                 body = response.json()
 
-    def fetch_work_items_with_epic_id(self, epic_id):
+    def fetch_work_items_for_epic(self, epic):
+        epic_source_id = epic['source_id']
         jql_base = f"project = {self.project_id} "
-        jql = f'{jql_base} AND \"Epic Link\" = {epic_id}'
+        jql = f'{jql_base} AND \"Epic Link\" = {epic_source_id}'
 
         query_params = dict(
             fields="summary,created,updated, description,labels,issuetype,status",

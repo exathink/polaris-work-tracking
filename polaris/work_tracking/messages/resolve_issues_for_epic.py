@@ -12,6 +12,7 @@
 from marshmallow import fields
 
 from polaris.messaging.messages import Message
+from polaris.messaging.types import WorkItemSummary
 
 
 class ResolveIssuesForEpic(Message):
@@ -19,4 +20,4 @@ class ResolveIssuesForEpic(Message):
 
     organization_key = fields.String(required=True)
     work_items_source_key = fields.String(required=True)
-    epic_id = fields.String(required=True)
+    epic = fields.Nested(WorkItemSummary, required=True)

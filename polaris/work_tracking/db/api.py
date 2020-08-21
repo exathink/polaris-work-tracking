@@ -31,7 +31,7 @@ def sync_work_items(work_items_source_key, work_item_list, join_this=None):
             work_items_temp = db.temp_table_from(
                 work_items,
                 table_name='work_items_temp',
-                exclude_columns=[work_items.c.id, work_items.c.epic_id]
+                exclude_columns=[work_items.c.id, work_items.c.epic_key]
             )
             work_items_temp.create(session.connection(), checkfirst=True)
 
@@ -52,7 +52,7 @@ def sync_work_items(work_items_source_key, work_item_list, join_this=None):
 
             work_items_before_insert = session.connection().execute(
                 select([*work_items_temp.columns, work_items.c.key.label('current_key'),
-                        work_items.c.epic_id]).select_from(
+                        work_items.c.epic_key]).select_from(
                     work_items_temp.outerjoin(
                         work_items,
                         and_(
@@ -96,7 +96,7 @@ def sync_work_items(work_items_source_key, work_item_list, join_this=None):
                     description=work_item.description,
                     is_bug=work_item.is_bug,
                     is_epic=work_item.is_epic,
-                    epic_id=work_item.epic_id,
+                    epic_key=work_item.epic_key,
                     tags=work_item.tags,
                     state=work_item.source_state,
                     created_at=work_item.source_created_at,
@@ -280,7 +280,7 @@ def sync_work_item(work_items_source_key, work_item_data, join_this=None):
                     description=work_item.description,
                     is_bug=work_item.is_bug,
                     is_epic=work_item.is_epic,
-                    epic_id=work_item.epic_id,
+                    epic_key=work_item.epic_key,
                     tags=work_item.tags,
                     state=work_item.source_state,
                     created_at=work_item.source_created_at,
@@ -325,7 +325,7 @@ def delete_work_item(work_items_source_key, work_item_data, join_this=None):
                     description=work_item.description,
                     is_bug=work_item.is_bug,
                     is_epic=work_item.is_epic,
-                    epic_id=work_item.epic_id,
+                    epic_key=work_item.epic_key,
                     tags=work_item.tags,
                     state=work_item.source_state,
                     created_at=work_item.source_created_at,
@@ -471,9 +471,9 @@ def get_imported_work_items_sources_count(connector_key, join_this=None):
         ).scalar()
 
 
-def sync_work_items_with_epic_id(work_items_source_key, epic_id, work_item_data, join_this=None):
-    # For all issues linked to the epic, update epic_id
-    # For all issues previously linked to given epic but not linked now set epic_id as null
+def sync_work_items_for_epic(work_items_source_key, epic, work_item_data, join_this=None):
+    # For all issues linked to the epic, update epic_key
+    # For all issues previously linked to given epic but not linked now set epic_key as null
     # Upsert
     # return list of work items with updated epic id
     pass
