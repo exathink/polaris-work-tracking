@@ -233,8 +233,8 @@ class WorkItem(Base):
 
     # Information related to Epic
     is_epic = Column(Boolean, nullable=False, default=False, server_default='FALSE')
-    epic_key = Column(UUID(as_uuid=True), ForeignKey('work_items.key'), nullable=True)
-    epic = relationship('WorkItem', remote_side='WorkItem.key')
+    epic_id = Column(Integer, ForeignKey('work_items.id'), nullable=True)
+    epic = relationship('WorkItem', remote_side='WorkItem.id')
 
     # Work Items Source relationship
     work_items_source_id = Column(Integer, ForeignKey('work_items_sources.id'))

@@ -31,7 +31,7 @@ def sync_work_items(work_items_source_key, work_item_list, join_this=None):
             work_items_temp = db.temp_table_from(
                 work_items,
                 table_name='work_items_temp',
-                exclude_columns=[work_items.c.id, work_items.c.epic_key]
+                exclude_columns=[work_items.c.id, work_items.c.epic_id]
             )
             work_items_temp.create(session.connection(), checkfirst=True)
 
@@ -50,16 +50,23 @@ def sync_work_items(work_items_source_key, work_item_list, join_this=None):
                 )
             )
 
+            epic_work_items = work_items.alias('epic_work_items')
             work_items_before_insert = session.connection().execute(
                 select([*work_items_temp.columns, work_items.c.key.label('current_key'),
-                        work_items.c.epic_key]).select_from(
+                        epic_work_items.c.key.label('epic_key')]).select_from(
                     work_items_temp.outerjoin(
                         work_items,
                         and_(
                             work_items_temp.c.work_items_source_id == work_items.c.work_items_source_id,
                             work_items_temp.c.source_id == work_items.c.source_id
                         )
-                    )
+                    ).outerjoin(
+                            epic_work_items,
+                            and_(
+                                epic_work_items.c.work_items_source_id == work_items.c.work_items_source_id,
+                                epic_work_items.c.id == work_items.c.epic_id
+                            )
+                        )
                 )
             ).fetchall()
 
@@ -280,7 +287,7 @@ def sync_work_item(work_items_source_key, work_item_data, join_this=None):
                     description=work_item.description,
                     is_bug=work_item.is_bug,
                     is_epic=work_item.is_epic,
-                    epic_key=work_item.epic_key,
+                    epic_key=work_item.epic.key if work_item.epic_id is not None else None,
                     tags=work_item.tags,
                     state=work_item.source_state,
                     created_at=work_item.source_created_at,
@@ -325,7 +332,7 @@ def delete_work_item(work_items_source_key, work_item_data, join_this=None):
                     description=work_item.description,
                     is_bug=work_item.is_bug,
                     is_epic=work_item.is_epic,
-                    epic_key=work_item.epic_key,
+                    epic_key=work_item.epic.key if work_item.epic_id is not None else None,
                     tags=work_item.tags,
                     state=work_item.source_state,
                     created_at=work_item.source_created_at,
