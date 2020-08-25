@@ -573,8 +573,8 @@ def sync_work_items_for_epic(work_items_source_key, epic, work_item_list, join_t
                     ).outerjoin(
                         epic_work_items,
                         and_(
-                            epic_work_items.c.work_items_source_id == work_items.c.work_items_source_id,
-                            epic_work_items.c.id == work_items.c.epic_id
+                            epic_work_items.c.id == work_items_temp.c.epic_id,
+                            epic_work_items.c.work_items_source_id == work_items_temp.c.work_items_source_id
                         )
                     )
                 )
