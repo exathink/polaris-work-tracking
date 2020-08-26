@@ -9,7 +9,7 @@
 # Author: Pragya Goyal
 
 import pytest
-from unittest.mock import MagicMock
+from unittest.mock import MagicMock, patch
 
 from pika.channel import Channel
 
@@ -20,15 +20,15 @@ from polaris.messaging.test_utils import mock_publisher, mock_channel, fake_send
 from polaris.utils.token_provider import get_token_provider
 from polaris.work_tracking.message_listener import WorkItemsTopicSubscriber
 from polaris.messaging.topics import WorkItemsTopic
-from polaris.utils.collections import dict_merge, dict_drop
+from polaris.utils.collections import dict_merge, dict_drop, object_to_dict
 from polaris.common.enums import JiraWorkItemType
+from ..fixtures.jira_fixtures import *
 from test.constants import *
 from datetime import datetime
 
 mock_channel = MagicMock(Channel)
 mock_consumer = MagicMock(MessageConsumer)
 mock_consumer.token_provider = get_token_provider()
-jira_work_items_source_key = uuid.uuid4().hex
 
 work_item_summary = dict(
     work_item_type=JiraWorkItemType.epic.value,
@@ -55,111 +55,67 @@ def new_work_items_summary():
         for i in range(100,105)
     ]
 
-class TestWorkItemsTopicSubscriber:
+#
+# def get_work_item_summary(work_item):
+#     return dict_drop(
+#         dict_merge(
+#             work_item,
+#             dict(
+#                 display_id=work_item['source_display_id'],
+#                 created_at=work_item['source_created_at'],
+#                 last_updated=work_item['source_last_updated'],
+#                 epic_key=None
+#             )
+#         ),
+#         [, 'epic_id']
+#     )
 
-    class TestWorkItemsCreated:
 
-        def it_publishes_a_response_when_there_is_an_epic_in_work_items(self, new_work_items_summary, cleanup):
-            work_items = new_work_items_summary
+class TestResolveIssuesForJiraEpic:
+
+    def it_returns_valid_response_when_there_is_new_work_item_in_an_epic(self, jira_work_items_fixture, new_work_items, cleanup):
+        work_items, work_items_source, jira_project_id, connector_key = jira_work_items_fixture
+        new_mapped_work_item = new_work_items[0]
+        with patch(
+            'polaris.work_tracking.integrations.atlassian.jira_work_items_source.JiraProject.fetch_work_items_for_epic') as fetch_work_items_for_epic:
+            fetch_work_items_for_epic.return_value = [new_mapped_work_item]
+            epic_issue = [issue for issue in work_items if issue.is_epic][0]
+            epic = object_to_dict(
+                                epic_issue,
+                                ['key',
+                                 'name',
+                                 'description',
+                                 'work_item_type',
+                                 'is_bug',
+                                 'is_epic',
+                                 'tags',
+                                 'source_id',
+                                 'source_display_id',
+                                 'source_state',
+                                 'url',
+                                 'source_created_at',
+                                 'source_last_updated',
+                                 'last_sync',
+                                 'epic_id'],
+                            {
+                                'source_display_id': 'display_id',
+                                'source_created_at':'created_at',
+                                'source_last_updated': 'last_updated',
+                                'source_state': 'state',
+                                'epic_id': 'epic_key'}
+                            )
             message = fake_send(
-                WorkItemsCreated(
+                ResolveIssuesForEpic(
                     send=dict(
                         organization_key=exathink_organization_key,
-                        work_items_source_key=jira_work_items_source_key,
-                        new_work_items=[
-                            dict_merge(
-                                dict_drop(work_item, ['epic_id']),
-                                dict(epic_key=None)
-                            )
-                            for work_item in work_items
-                        ]
+                        work_items_source_key=work_items_source.key,
+                        epic=epic
                     )
                 )
             )
+
             publisher = mock_publisher()
             channel = mock_channel()
-
-            result = WorkItemsTopicSubscriber(channel, publisher=publisher).dispatch(channel, message)
-            assert len(result) == len(work_items)
-            publisher.assert_topic_called_with_message(WorkItemsTopic, ResolveIssuesForEpic, call=0)
-            publisher.assert_topic_called_with_message(WorkItemsTopic, ResolveIssuesForEpic, call=1)
-            publisher.assert_topic_called_with_message(WorkItemsTopic, ResolveIssuesForEpic, call=2)
-            publisher.assert_topic_called_with_message(WorkItemsTopic, ResolveIssuesForEpic, call=3)
-            publisher.assert_topic_called_with_message(WorkItemsTopic, ResolveIssuesForEpic, call=4)
-
-        def it_does_not_publish_response_when_there_is_no_epic(self, new_work_items_summary, cleanup):
-            work_items = new_work_items_summary
-            message = fake_send(
-                WorkItemsCreated(
-                    send=dict(
-                        organization_key=exathink_organization_key,
-                        work_items_source_key=jira_work_items_source_key,
-                        new_work_items=[
-                            dict_merge(
-                                dict_drop(work_item, ['epic_id']),
-                                dict(epic_key=None, is_epic=False)
-                            )
-                            for work_item in work_items
-                        ]
-                    )
-                )
-            )
-            publisher = mock_publisher()
-            channel = mock_channel()
-
-            result = WorkItemsTopicSubscriber(channel, publisher=publisher).dispatch(channel, message)
-            assert len(result) == 0
-
-
-    class TestWorkItemsUpdated:
-
-        def it_publishes_a_response_when_there_is_an_epic_in_work_items(self, new_work_items_summary, cleanup):
-            work_items = new_work_items_summary
-            message = fake_send(
-                WorkItemsUpdated(
-                    send=dict(
-                        organization_key=exathink_organization_key,
-                        work_items_source_key=jira_work_items_source_key,
-                        updated_work_items=[
-                            dict_merge(
-                                dict_drop(work_item, ['epic_id']),
-                                dict(epic_key=None)
-                            )
-                            for work_item in work_items
-                        ]
-                    )
-                )
-            )
-            publisher = mock_publisher()
-            channel = mock_channel()
-
-            result = WorkItemsTopicSubscriber(channel, publisher=publisher).dispatch(channel, message)
-            assert len(result) == len(work_items)
-            publisher.assert_topic_called_with_message(WorkItemsTopic, ResolveIssuesForEpic, call=0)
-            publisher.assert_topic_called_with_message(WorkItemsTopic, ResolveIssuesForEpic, call=1)
-            publisher.assert_topic_called_with_message(WorkItemsTopic, ResolveIssuesForEpic, call=2)
-            publisher.assert_topic_called_with_message(WorkItemsTopic, ResolveIssuesForEpic, call=3)
-            publisher.assert_topic_called_with_message(WorkItemsTopic, ResolveIssuesForEpic, call=4)
-
-        def it_does_not_publish_response_when_there_is_no_epic(self, new_work_items_summary, cleanup):
-            work_items = new_work_items_summary
-            message = fake_send(
-                WorkItemsUpdated(
-                    send=dict(
-                        organization_key=exathink_organization_key,
-                        work_items_source_key=jira_work_items_source_key,
-                        updated_work_items=[
-                            dict_merge(
-                                dict_drop(work_item, ['epic_id']),
-                                dict(epic_key=None, is_epic=False)
-                            )
-                            for work_item in work_items
-                        ]
-                    )
-                )
-            )
-            publisher = mock_publisher()
-            channel = mock_channel()
-
-            result = WorkItemsTopicSubscriber(channel, publisher=publisher).dispatch(channel, message)
-            assert len(result) == 0
+            messages = WorkItemsTopicSubscriber(channel, publisher=publisher).dispatch(channel, message)
+            assert len(messages) == 1
+            # mock API result
