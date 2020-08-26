@@ -213,6 +213,7 @@ class WorkItemsTopicSubscriber(TopicSubscriber):
             raise_message_processing_error(message, 'Failed to handle atlassian_connect_message', str(exc))
 
     def process_work_items_created(self, message):
+        response_messages = []
         for work_item in message['new_work_items']:
             if work_item['is_epic']:
                 response_message = ResolveIssuesForEpic(
@@ -222,8 +223,11 @@ class WorkItemsTopicSubscriber(TopicSubscriber):
                         epic=work_item
                     ))
                 self.publish(WorkItemsTopic, response_message)
+                response_messages.append(response_message)
+        return response_messages
 
     def process_work_items_updated(self, message):
+        response_messages = []
         for work_item in message['updated_work_items']:
             if work_item['is_epic']:
                 response_message = ResolveIssuesForEpic(
@@ -233,6 +237,8 @@ class WorkItemsTopicSubscriber(TopicSubscriber):
                         epic=work_item
                     ))
                 self.publish(WorkItemsTopic, response_message)
+                response_messages.append(response_message)
+        return response_messages
 
     def process_resolve_issues_for_epic(self, message):
         work_items_source_key = message['work_items_source_key']
