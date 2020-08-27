@@ -52,3 +52,7 @@ class TestSyncWorkItems:
         assert db.connection().execute(
             f"select count(id) from work_tracking.work_items where work_items_source_id={empty_source.id}"
         ).scalar() == len(new_work_items)
+
+
+class TestSyncWorkItemsForEpic:
+    pass

@@ -27,7 +27,6 @@ mock_consumer.token_provider = get_token_provider()
 
 
 class TestWorkItemsTopicSubscriber:
-
     class TestImportWorkItems:
 
         def it_returns_a_valid_response_when_there_are_new_work_items(self, setup_work_items, new_work_items):
@@ -51,7 +50,6 @@ class TestWorkItemsTopicSubscriber:
                 messages = subscriber.dispatch(mock_channel, import_work_items_message)
                 assert len(messages) == 1
                 publisher.assert_topic_called_with_message(WorkItemsTopic, WorkItemsCreated)
-
 
         def it_returns_a_valid_response_when_there_are_updated_work_items(self, setup_work_items, new_work_items):
             _, work_items_sources = setup_work_items
@@ -81,8 +79,6 @@ class TestWorkItemsTopicSubscriber:
 
                 assert len(messages) == 1
                 publisher.assert_topic_called_with_message(WorkItemsTopic, WorkItemsUpdated)
-
-
 
         def it_does_not_publish_a_response_when_there_are_no_work_items(self, setup_work_items, new_work_items):
             _, work_items_sources = setup_work_items

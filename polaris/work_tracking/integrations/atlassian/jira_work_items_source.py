@@ -200,4 +200,3 @@ class JiraProject(JiraWorkItemsSource):
                     params=query_params
                 )
                 body = response.json()
-
