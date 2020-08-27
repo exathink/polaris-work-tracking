@@ -212,5 +212,4 @@ def cleanup():
     db.connection().execute(f"delete from work_tracking.work_items")
     db.connection().execute(f"delete from work_tracking.work_items_sources")
 
-
     db.connection().execute(f"delete from integrations.connectors")

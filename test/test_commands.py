@@ -51,7 +51,7 @@ class TestPivotalSyncWorkItems:
 
 class TestJiraSyncWorkItemsForEpic:
 
-    def it_imports_when_a_mapped_work_item_is_new(self, jira_work_items_fixture, new_work_items, cleanup):
+    def it_creates_when_a_mapped_work_item_is_new(self, jira_work_items_fixture, new_work_items, cleanup):
         work_items, work_items_source, jira_project_id, connector_key = jira_work_items_fixture
         with patch(
                 'polaris.work_tracking.integrations.atlassian.jira_work_items_source.JiraProject.fetch_work_items_for_epic') as fetch_work_items_for_epic:
@@ -86,7 +86,7 @@ class TestJiraSyncWorkItemsForEpic:
                 assert len(result) == len(new_work_items)
                 assert all(map(lambda item: item['is_new'], result))
 
-    def it_updates_when_a_mapped_work_item_is_existing(self, jira_work_items_fixture, new_work_items, cleanup):
+    def it_updates_when_a_mapped_work_item_exists(self, jira_work_items_fixture, new_work_items, cleanup):
         work_items, work_items_source, jira_project_id, connector_key = jira_work_items_fixture
         mapped_work_items = [
             object_to_dict(

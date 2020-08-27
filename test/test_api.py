@@ -10,6 +10,8 @@
 
 from polaris.common import db
 from polaris.work_tracking.db import api
+from .fixtures.jira_fixtures import *
+from polaris.utils.collections import object_to_dict
 
 
 class TestSyncWorkItems:
@@ -22,9 +24,6 @@ class TestSyncWorkItems:
         assert db.connection().execute(
             f"select count(id) from work_tracking.work_items where work_items_source_id={empty_source.id}"
         ).scalar() == len(new_work_items)
-
-
-
 
     def it_updates_existing_work_items_that_match_incoming_items_by_source_id(self, setup_work_items, new_work_items):
         _, work_items_sources = setup_work_items
@@ -54,5 +53,131 @@ class TestSyncWorkItems:
         ).scalar() == len(new_work_items)
 
 
-class TestSyncWorkItemsForEpic:
-    pass
+class TestSyncWorkItemsForJiraEpic:
+
+    def it_creates_and_adds_epic_id_for_a_new_work_item_mapped_to_an_epic(self, jira_work_items_fixture, new_work_items, cleanup):
+        work_items, work_items_source, _, _ = jira_work_items_fixture
+        work_items_list = new_work_items
+        epic_issue = [issue for issue in work_items if issue.is_epic][0]
+        epic = object_to_dict(
+            epic_issue,
+            ['key',
+             'name',
+             'description',
+             'work_item_type',
+             'is_bug',
+             'is_epic',
+             'tags',
+             'source_id',
+             'source_display_id',
+             'source_state',
+             'url',
+             'source_created_at',
+             'source_last_updated',
+             'last_sync',
+             'epic_id'],
+            {
+                'source_display_id': 'display_id',
+                'source_created_at': 'created_at',
+                'source_last_updated': 'last_updated',
+                'source_state': 'state',
+                'epic_id': 'epic_key'}
+        )
+        created = api.sync_work_items_for_epic(work_items_source.key, epic, work_items_list)
+        epic_id = db.connection().execute(f"select id from work_tracking.work_items where key='{epic['key']}'").scalar()
+        assert len(created) == len(new_work_items)
+        assert db.connection().execute(
+            f"select count(id) from work_tracking.work_items where work_items_source_id={work_items_source.id} and epic_id={epic_id} "
+        ).scalar() == len(new_work_items)
+
+    def it_updates_and_adds_epic_id_for_existing_work_item_mapped_to_an_epic(self, jira_work_items_fixture, cleanup):
+        work_items, work_items_source, _, _ = jira_work_items_fixture
+        work_items_list = [
+            object_to_dict(
+                issue,
+                ['name',
+                 'description',
+                 'work_item_type',
+                 'is_bug',
+                 'is_epic',
+                 'tags',
+                 'source_id',
+                 'source_display_id',
+                 'source_state',
+                 'url',
+                 'source_created_at',
+                 'source_last_updated'
+                 ]
+            )
+            for issue in work_items if not issue.is_epic
+        ]
+        epic_issue = [issue for issue in work_items if issue.is_epic][0]
+        epic = object_to_dict(
+            epic_issue,
+            ['key',
+             'name',
+             'description',
+             'work_item_type',
+             'is_bug',
+             'is_epic',
+             'tags',
+             'source_id',
+             'source_display_id',
+             'source_state',
+             'url',
+             'source_created_at',
+             'source_last_updated',
+             'last_sync',
+             'epic_id'],
+            {
+                'source_display_id': 'display_id',
+                'source_created_at': 'created_at',
+                'source_last_updated': 'last_updated',
+                'source_state': 'state',
+                'epic_id': 'epic_key'}
+        )
+        updated = api.sync_work_items_for_epic(work_items_source.key, epic, work_items_list)
+        epic_id = db.connection().execute(f"select id from work_tracking.work_items where key='{epic['key']}'").scalar()
+        assert len(updated) == len(work_items_list)
+        assert db.connection().execute(
+            f"select count(id) from work_tracking.work_items where work_items_source_id={work_items_source.id} and epic_id={epic_id} "
+        ).scalar() == len(work_items_list)
+
+    def it_does_nothing_when_no_mapped_work_items_found(self, jira_work_items_fixture, cleanup):
+        work_items, work_items_source, _, _ = jira_work_items_fixture
+        work_items_list = []
+        epic_issue = [issue for issue in work_items if issue.is_epic][0]
+        epic = object_to_dict(
+            epic_issue,
+            ['key',
+             'name',
+             'description',
+             'work_item_type',
+             'is_bug',
+             'is_epic',
+             'tags',
+             'source_id',
+             'source_display_id',
+             'source_state',
+             'url',
+             'source_created_at',
+             'source_last_updated',
+             'last_sync',
+             'epic_id'],
+            {
+                'source_display_id': 'display_id',
+                'source_created_at': 'created_at',
+                'source_last_updated': 'last_updated',
+                'source_state': 'state',
+                'epic_id': 'epic_key'}
+        )
+        updated = api.sync_work_items_for_epic(work_items_source.key, epic, work_items_list)
+        # FIXME: There is an issue with session management in fixture, as the work items are not created \
+        #  until we enter the api code. It happens for the other 2 tests above too, but they pass as the \
+        #  api code is executed which completes transaction and creates all work items from fixture. \
+        #  But they are not created here, hence, we find epic_id to be None.
+        epic_id = db.connection().execute(f"select id from work_tracking.work_items where key='{epic['key']}'").scalar()
+        assert not updated
+        assert db.connection().execute(
+            f"select count(id) from work_tracking.work_items where work_items_source_id={work_items_source.id} and epic_id={epic_id} "
+        ).scalar() == 0
