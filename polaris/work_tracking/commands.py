@@ -44,8 +44,8 @@ def sync_work_items(token_provider, work_items_source_key):
                     f'Sync request will be ignored')
 
 
-def sync_work_items_for_epic(token_provider, work_items_source_key, epic):
-    work_items_source_provider = work_items_source_factory.get_provider_impl(token_provider, work_items_source_key)
+def sync_work_items_for_epic(work_items_source_key, epic):
+    work_items_source_provider = work_items_source_factory.get_provider_impl(None, work_items_source_key)
     work_items_source = work_items_source_provider.work_items_source
     if work_items_source and work_items_source.import_state == WorkItemsSourceImportState.auto_update.value:
         for work_items in work_items_source_provider.fetch_work_items_for_epic(epic):

@@ -245,8 +245,7 @@ class WorkItemsTopicSubscriber(TopicSubscriber):
         logger.info(f"Processing  {message.message_type}: "
                     f" Work Items Source Key : {work_items_source_key}")
         try:
-            for work_items in commands.sync_work_items_for_epic(self.consumer_context.token_provider, \
-                                                                    work_items_source_key, message['epic']):
+            for work_items in commands.sync_work_items_for_epic(work_items_source_key, message['epic']):
                 created = []
                 updated = []
                 for work_item in work_items:
