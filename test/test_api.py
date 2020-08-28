@@ -172,10 +172,6 @@ class TestSyncWorkItemsForJiraEpic:
                 'epic_id': 'epic_key'}
         )
         updated = api.sync_work_items_for_epic(work_items_source.key, epic, work_items_list)
-        # FIXME: There is an issue with session management in fixture, as the work items are not created \
-        #  until we enter the api code. It happens for the other 2 tests above too, but they pass as the \
-        #  api code is executed which completes transaction and creates all work items from fixture. \
-        #  But they are not created here, hence, we find epic_id to be None.
         epic_id = db.connection().execute(f"select id from work_tracking.work_items where key='{epic['key']}'").scalar()
         assert not updated
         assert db.connection().execute(

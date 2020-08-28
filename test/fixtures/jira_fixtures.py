@@ -73,10 +73,11 @@ def app_fixture(setup_integrations_schema):
 
 
 @pytest.yield_fixture
-def jira_work_item_source_fixture(app_fixture, setup_work_tracking_schema):
+def jira_work_item_source_fixture(setup_work_tracking_schema, app_fixture):
     _, _,  connector_key = app_fixture
     jira_project_id = "10001"
     with db.orm_session() as session:
+        session.expire_on_commit = False
         work_items_source = work_tracking.WorkItemsSource(
             key=uuid.uuid4(),
             connector_key=str(connector_key),
@@ -91,8 +92,9 @@ def jira_work_item_source_fixture(app_fixture, setup_work_tracking_schema):
             import_state=WorkItemsSourceImportState.auto_update.value
         )
         session.add(work_items_source)
+        session.flush()
 
-    yield session, work_items_source, jira_project_id, connector_key
+    yield work_items_source, jira_project_id, connector_key
 
 
 def setup_jira_work_items(work_items_source):
@@ -143,9 +145,9 @@ def setup_jira_work_items(work_items_source):
 
 @pytest.yield_fixture()
 def jira_work_items_fixture(jira_work_item_source_fixture):
-    session, work_items_source, jira_project_id, connector_key = jira_work_item_source_fixture
+    work_items_source, jira_project_id, connector_key = jira_work_item_source_fixture
     work_items = []
-    with db.orm_session(session) as session:
+    with db.orm_session() as session:
         session.add(work_items_source)
         work_items.extend(setup_jira_work_items(work_items_source))
         session.flush()
