@@ -15,7 +15,7 @@ from pika.channel import Channel
 
 from polaris.messaging.message_consumer import MessageConsumer
 from polaris.messaging.messages import WorkItemsCreated, WorkItemsUpdated
-from polaris.work_tracking.messages import ResolveIssuesForEpic
+from polaris.work_tracking.messages import ResolveWorkItemsForEpic
 from polaris.messaging.test_utils import mock_publisher, mock_channel, fake_send
 from polaris.utils.token_provider import get_token_provider
 from polaris.work_tracking.message_listener import WorkItemsTopicSubscriber
@@ -81,11 +81,11 @@ class TestJiraWorkItemsCreated:
 
         result = WorkItemsTopicSubscriber(channel, publisher=publisher).dispatch(channel, message)
         assert len(result) == len(work_items)
-        publisher.assert_topic_called_with_message(WorkItemsTopic, ResolveIssuesForEpic, call=0)
-        publisher.assert_topic_called_with_message(WorkItemsTopic, ResolveIssuesForEpic, call=1)
-        publisher.assert_topic_called_with_message(WorkItemsTopic, ResolveIssuesForEpic, call=2)
-        publisher.assert_topic_called_with_message(WorkItemsTopic, ResolveIssuesForEpic, call=3)
-        publisher.assert_topic_called_with_message(WorkItemsTopic, ResolveIssuesForEpic, call=4)
+        publisher.assert_topic_called_with_message(WorkItemsTopic, ResolveWorkItemsForEpic, call=0)
+        publisher.assert_topic_called_with_message(WorkItemsTopic, ResolveWorkItemsForEpic, call=1)
+        publisher.assert_topic_called_with_message(WorkItemsTopic, ResolveWorkItemsForEpic, call=2)
+        publisher.assert_topic_called_with_message(WorkItemsTopic, ResolveWorkItemsForEpic, call=3)
+        publisher.assert_topic_called_with_message(WorkItemsTopic, ResolveWorkItemsForEpic, call=4)
 
     def it_does_not_publish_response_when_there_is_no_epic(self, new_work_items_summary, cleanup):
         work_items = new_work_items_summary

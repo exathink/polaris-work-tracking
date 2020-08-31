@@ -15,8 +15,8 @@ from polaris.messaging.messages import Message
 from polaris.messaging.types import WorkItemSummary
 
 
-class ResolveIssuesForEpic(Message):
-    message_type = 'work_items.resolve_issues_for_epic'
+class ResolveWorkItemsForEpic(Message):
+    message_type = 'work_items.resolve_work_items_for_epic'
 
     organization_key = fields.String(required=True)
     work_items_source_key = fields.String(required=True)

@@ -15,7 +15,7 @@ from pika.channel import Channel
 
 from polaris.messaging.message_consumer import MessageConsumer
 from polaris.messaging.messages import WorkItemsCreated, WorkItemsUpdated
-from polaris.work_tracking.messages import ResolveIssuesForEpic
+from polaris.work_tracking.messages import ResolveWorkItemsForEpic
 from polaris.messaging.test_utils import mock_publisher, mock_channel, fake_send
 from polaris.utils.token_provider import get_token_provider
 from polaris.work_tracking.message_listener import WorkItemsTopicSubscriber
@@ -91,7 +91,7 @@ class TestResolveIssuesForJiraEpic:
                     'epic_id': 'epic_key'}
             )
             message = fake_send(
-                ResolveIssuesForEpic(
+                ResolveWorkItemsForEpic(
                     send=dict(
                         organization_key=exathink_organization_key,
                         work_items_source_key=work_items_source.key,
@@ -154,7 +154,7 @@ class TestResolveIssuesForJiraEpic:
                     'epic_id': 'epic_key'}
             )
             message = fake_send(
-                ResolveIssuesForEpic(
+                ResolveWorkItemsForEpic(
                     send=dict(
                         organization_key=exathink_organization_key,
                         work_items_source_key=work_items_source.key,
@@ -219,7 +219,7 @@ class TestResolveIssuesForJiraEpic:
                     'epic_id': 'epic_key'}
             )
             message = fake_send(
-                ResolveIssuesForEpic(
+                ResolveWorkItemsForEpic(
                     send=dict(
                         organization_key=exathink_organization_key,
                         work_items_source_key=work_items_source.key,
@@ -267,7 +267,7 @@ class TestResolveIssuesForJiraEpic:
                     'epic_id': 'epic_key'}
             )
             message = fake_send(
-                ResolveIssuesForEpic(
+                ResolveWorkItemsForEpic(
                     send=dict(
                         organization_key=exathink_organization_key,
                         work_items_source_key=work_items_source.key,
