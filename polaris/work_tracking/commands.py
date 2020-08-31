@@ -48,8 +48,10 @@ def sync_work_items_for_epic(work_items_source_key, epic):
     work_items_source_provider = work_items_source_factory.get_provider_impl(None, work_items_source_key)
     work_items_source = work_items_source_provider.work_items_source
     if work_items_source and work_items_source.import_state == WorkItemsSourceImportState.auto_update.value:
-        for work_items in work_items_source_provider.fetch_work_items_for_epic(epic):
-            yield api.sync_work_items_for_epic(work_items_source_key, epic, work_items) or []
+        if hasattr(work_items_source_provider, 'fetch_work_items_for_epic') and callable(
+                work_items_source_provider.fetch_work_items_for_epic):
+            for work_items in work_items_source_provider.fetch_work_items_for_epic(epic):
+                yield api.sync_work_items_for_epic(work_items_source_key, epic, work_items) or []
     else:
         logger.info(
             f'Attempted to call sync_work_items_with_epic_id on a disabled work_item_source: {work_items_source.key}.'
