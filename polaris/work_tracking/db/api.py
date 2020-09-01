@@ -12,8 +12,8 @@ import logging
 import uuid
 from datetime import datetime
 
-from sqlalchemy import select, and_, func, literal
-from sqlalchemy.dialects.postgresql import insert
+from sqlalchemy import select, and_, func, literal, Column, Integer
+from sqlalchemy.dialects.postgresql import insert, UUID
 
 from polaris.common import db
 from polaris.common.enums import WorkTrackingIntegrationType, WorkItemsSourceImportState
@@ -61,12 +61,12 @@ def sync_work_items(work_items_source_key, work_item_list, join_this=None):
                             work_items_temp.c.source_id == work_items.c.source_id
                         )
                     ).outerjoin(
-                            epic_work_items,
-                            and_(
-                                epic_work_items.c.work_items_source_id == work_items.c.work_items_source_id,
-                                epic_work_items.c.id == work_items.c.epic_id
-                            )
+                        epic_work_items,
+                        and_(
+                            epic_work_items.c.work_items_source_id == work_items.c.work_items_source_id,
+                            epic_work_items.c.id == work_items.c.epic_id
                         )
+                    )
                 )
             ).fetchall()
 
@@ -479,134 +479,75 @@ def get_imported_work_items_sources_count(connector_key, join_this=None):
 
 
 def sync_work_items_for_epic(work_items_source_key, epic, work_item_list, join_this=None):
-    # For all issues linked to the epic, update epic_id
-    # For all issues previously linked to given epic but not linked now set epic_id as null
-    # Upsert
-    # return list of work items with updated epic id
+    # sync work items first then update epic_id
     if len(work_item_list) > 0:
         with db.orm_session(join_this) as session:
-            work_items_source = WorkItemsSource.find_by_key(session, work_items_source_key)
-            work_items_temp = db.temp_table_from(
-                work_items,
-                table_name='work_items_temp',
-                exclude_columns=[work_items.c.id]
+            synced_work_items = sync_work_items(work_items_source_key, work_item_list, join_this=session)
+            work_items_temp = db.create_temp_table(
+                'work_items_temp_table', [
+                    Column('key', UUID(as_uuid=True), unique=True),
+                    Column('epic_id', Integer)
+                ]
             )
             work_items_temp.create(session.connection(), checkfirst=True)
             epic_work_item = WorkItem.find_by_key(session, epic['key'])
-            last_sync = datetime.utcnow()
             session.connection().execute(
-                insert(work_items_temp).values(
+                work_items_temp.insert().values(
                     [
                         dict(
-                            key=uuid.uuid4(),
-                            work_items_source_id=work_items_source.id,
-                            last_sync=last_sync,
-                            epic_id=epic_work_item.id,
-                            **work_item
+                            key=work_item['key'],
+                            epic_id=epic_work_item.id
                         )
-                        for work_item in work_item_list
+                        for work_item in synced_work_items
                     ]
                 )
             )
 
-            # Insert into work_items_temp, work items from work_items table which have epic_key same as current epic, \
-            # but do no exist in work_items_temp
+            work_items_removed_from_epic = session.connection().execute(
+                select([
+                    *work_items.columns
+                ]
+                ).select_from(
+                    work_items
+                ).where(
+                    and_(
+                        work_items.c.epic_id == epic_work_item.id,
+                        work_items.c.key.notin_([wi['key'] for wi in synced_work_items])
+                    )
 
-            session.connection().execute(
-                work_items_temp.insert().from_select(
-                    [
-                        'key',
-                        'work_items_source_id',
-                        'last_sync',
-                        'epic_id',
-                        'work_item_type',
-                        'name',
-                        'description',
-                        'is_bug',
-                        'is_epic',
-                        'tags',
-                        'url',
-                        'source_last_updated',
-                        'source_display_id',
-                        'source_state',
-                        'source_created_at',
-                        'source_id'
-                    ],
-                    select(
-                        [
-                        literal(uuid.uuid4()).label('key'),
-                        work_items.c.work_items_source_id,
-                        literal(last_sync).label('last_sync'),
-                        literal(None).label('epic_id'),
-                        work_items.c.work_item_type,
-                        work_items.c.name,
-                        work_items.c.description,
-                        work_items.c.is_bug,
-                        work_items.c.is_epic,
-                        work_items.c.tags,
-                        work_items.c.url,
-                        work_items.c.source_last_updated,
-                        work_items.c.source_display_id,
-                        work_items.c.source_state,
-                        work_items.c.source_created_at,
-                        work_items.c.source_id
-                    ]
-                    ).where(
-                        and_(
-                            work_items.c.epic_id == epic_work_item.id,
-                            work_items_temp.c.source_id != work_items.c.source_id,
-                            work_items.c.work_items_source_id == work_items_source.id
-                            )
-                    )
-                )
-            )
-            epic_work_items = work_items.alias('epic_work_items')
-            work_items_before_insert = session.connection().execute(
-                select([*work_items_temp.columns, work_items.c.key.label('current_key'),
-                        epic_work_items.c.key.label('epic_key')]).select_from(
-                    work_items_temp.outerjoin(
-                        work_items,
-                        and_(
-                            work_items_temp.c.work_items_source_id == work_items.c.work_items_source_id,
-                            work_items_temp.c.source_id == work_items.c.source_id
-                        )
-                    ).outerjoin(
-                        epic_work_items,
-                        and_(
-                            epic_work_items.c.id == work_items_temp.c.epic_id,
-                            epic_work_items.c.work_items_source_id == work_items_temp.c.work_items_source_id
-                        )
-                    )
                 )
             ).fetchall()
 
-            upsert = insert(work_items).from_select(
-                [column.name for column in work_items_temp.columns],
-                select([work_items_temp])
-            )
-
-            session.connection().execute(
-                upsert.on_conflict_do_update(
-                    index_elements=['work_items_source_id', 'source_id'],
-                    set_=dict(
-                        name=upsert.excluded.name,
-                        description=upsert.excluded.description,
-                        is_bug=upsert.excluded.is_bug,
-                        is_epic=upsert.excluded.is_epic,
-                        epic_id=upsert.excluded.epic_id,
-                        tags=upsert.excluded.tags,
-                        url=upsert.excluded.url,
-                        source_last_updated=upsert.excluded.source_last_updated,
-                        source_display_id=upsert.excluded.source_display_id,
-                        source_state=upsert.excluded.source_state,
-                        last_sync=upsert.excluded.last_sync
+            if len(work_items_removed_from_epic) > 0:
+                session.connection().execute(
+                    work_items_temp.insert().values([
+                        dict(
+                            key=work_item['key'],
+                            epic_id=None
+                        )
+                        for work_item in work_items_removed_from_epic
+                    ]
                     )
                 )
+
+            #update work items
+            session.connection().execute(
+                work_items.update().where(
+                    work_items.c.key == work_items_temp.c.key
+                ).values(
+                    epic_id=work_items_temp.c.epic_id
+                )
             )
-            return [
+
+            # Collecting all work items inserted/updated
+            work_items_upserted = []
+            for work_item in synced_work_items:
+                work_item['epic_key'] = epic_work_item.key
+            work_items_upserted.extend(synced_work_items)
+            additional_work_items_updated = [
                 dict(
-                    is_new=work_item.current_key is None,
-                    key=work_item.key if work_item.current_key is None else work_item.current_key,
+                    is_new=False,
+                    key=work_item.key,
                     work_item_type=work_item.work_item_type,
                     display_id=work_item.source_display_id,
                     url=work_item.url,
@@ -614,7 +555,7 @@ def sync_work_items_for_epic(work_items_source_key, epic, work_item_list, join_t
                     description=work_item.description,
                     is_bug=work_item.is_bug,
                     is_epic=work_item.is_epic,
-                    epic_key=work_item.epic_key,
+                    epic_key=None,
                     tags=work_item.tags,
                     state=work_item.source_state,
                     created_at=work_item.source_created_at,
@@ -622,6 +563,7 @@ def sync_work_items_for_epic(work_items_source_key, epic, work_item_list, join_t
                     last_sync=work_item.last_sync,
                     source_id=work_item.source_id
                 )
-                for work_item in work_items_before_insert
+                for work_item in work_items_removed_from_epic
             ]
-
+            work_items_upserted.extend(additional_work_items_updated)
+            return work_items_upserted
