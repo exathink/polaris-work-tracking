@@ -51,7 +51,7 @@ def sync_work_items_for_epic(work_items_source_key, epic):
         if hasattr(work_items_source_provider, 'fetch_work_items_for_epic') and callable(
                 work_items_source_provider.fetch_work_items_for_epic):
             for work_items in work_items_source_provider.fetch_work_items_for_epic(epic):
-                yield api.sync_work_items(work_items_source_key, work_items, epic=epic) or []
+                yield api.sync_work_items_for_epic(work_items_source_key, epic, work_items) or []
     else:
         logger.info(
             f'Attempted to call sync_work_items_with_epic_id on a disabled work_item_source: {work_items_source.key}.'

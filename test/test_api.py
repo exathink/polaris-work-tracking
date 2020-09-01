@@ -83,7 +83,7 @@ class TestSyncWorkItemsForJiraEpic:
                 'source_state': 'state',
                 'epic_id': 'epic_key'}
         )
-        created = api.sync_work_items(work_items_source.key, work_items_list, epic=epic)
+        created = api.sync_work_items_for_epic(work_items_source.key, epic, work_items_list)
         epic_id = db.connection().execute(f"select id from work_tracking.work_items where key='{epic['key']}'").scalar()
         assert len(created) == len(new_work_items)
         assert db.connection().execute(
@@ -136,7 +136,7 @@ class TestSyncWorkItemsForJiraEpic:
                 'source_state': 'state',
                 'epic_id': 'epic_key'}
         )
-        updated = api.sync_work_items(work_items_source.key, work_items_list, epic=epic)
+        updated = api.sync_work_items_for_epic(work_items_source.key, epic, work_items_list)
         epic_id = db.connection().execute(f"select id from work_tracking.work_items where key='{epic['key']}'").scalar()
         assert len(updated) == len(work_items_list)
         assert db.connection().execute(
@@ -171,7 +171,7 @@ class TestSyncWorkItemsForJiraEpic:
                 'source_state': 'state',
                 'epic_id': 'epic_key'}
         )
-        updated = api.sync_work_items(work_items_source.key, work_items_list, epic=epic)
+        updated = api.sync_work_items_for_epic(work_items_source.key, epic, work_items_list)
         epic_id = db.connection().execute(f"select id from work_tracking.work_items where key='{epic['key']}'").scalar()
         assert not updated
         assert db.connection().execute(
