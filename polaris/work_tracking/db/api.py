@@ -242,7 +242,23 @@ def sync_work_item(work_items_source_key, work_item_data, join_this=None):
 
             else:
                 work_item_key = work_item.key
+                # Find linked epic work item
+                # FIXME: Discuss if using work item source is correct here? \
+                #  In Jira issues can link to Epics in different project, \
+                #  which possibly will be a different work item source for us
+                if work_item_data.get('epic_source_display_id', None):
+                    if work_item_data['epic_source_display_id'] != '':
+                        epic_work_item = WorkItem.find_by_source_display_id(
+                            session,
+                            work_items_source.id,
+                            work_item_data.get('epic_source_display_id')
+
+                        )
+                        work_item_data['epic_id'] = epic_work_item.id if epic_work_item else None
+                        work_item_data.pop('epic_source_display_id')
+
                 sync_result['is_updated'] = work_item.update(work_item_data)
+
 
         # The reason we do this flush and refetch from the database below as follows:
 
