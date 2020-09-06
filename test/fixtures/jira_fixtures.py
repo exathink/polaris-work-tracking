@@ -13,13 +13,14 @@ import uuid
 
 import pytest
 from flask import Flask
-
+from datetime import datetime
 from polaris.common import db
 from polaris.common.enums import JiraWorkItemSourceType, WorkItemsSourceImportState
 from polaris.integrations.db import model as integrations
 from polaris.integrations.db.api import load_atlassian_connect_record
 from polaris.work_tracking.db import model as work_tracking
 from polaris.work_tracking.integrations.atlassian import jira_atlassian_connect
+from polaris.common.enums import JiraWorkItemType
 
 key = uuid.uuid4().hex
 client_key = uuid.uuid4().hex
@@ -72,10 +73,11 @@ def app_fixture(setup_integrations_schema):
 
 
 @pytest.yield_fixture
-def jira_work_item_source_fixture(app_fixture, setup_work_tracking_schema):
+def jira_work_item_source_fixture(setup_work_tracking_schema, app_fixture):
     _, _,  connector_key = app_fixture
     jira_project_id = "10001"
     with db.orm_session() as session:
+        session.expire_on_commit = False
         work_items_source = work_tracking.WorkItemsSource(
             key=uuid.uuid4(),
             connector_key=str(connector_key),
@@ -90,8 +92,67 @@ def jira_work_item_source_fixture(app_fixture, setup_work_tracking_schema):
             import_state=WorkItemsSourceImportState.auto_update.value
         )
         session.add(work_items_source)
+        session.flush()
 
     yield work_items_source, jira_project_id, connector_key
+
+
+def setup_jira_work_items(work_items_source):
+    for display_id in range(1000, 1010):
+        work_items_source.work_items.append(
+            work_tracking.WorkItem(
+                key=uuid.uuid4(),
+                name=f"Issue {display_id}",
+                description="An issue in detail",
+                work_item_type=JiraWorkItemType.task.value,
+                is_bug=False,
+                is_epic=False,
+                tags=[],
+                source_id=str(display_id),
+                source_display_id=str(display_id),
+                source_state='',
+                url='',
+                source_created_at=datetime.utcnow(),
+                source_last_updated=datetime.utcnow(),
+                last_sync=datetime.utcnow(),
+                epic_id=None
+            )
+        )
+    # add an epic
+    display_id = 1011
+    work_items_source.work_items.append(
+        work_tracking.WorkItem(
+            key=uuid.uuid4(),
+            name=f"Issue {display_id}",
+            description="An issue in detail",
+            work_item_type=JiraWorkItemType.epic.value,
+            is_bug=False,
+            is_epic=True,
+            tags=[],
+            source_id=str(display_id),
+            source_display_id=str(display_id),
+            source_state='',
+            url='',
+            source_created_at=datetime.utcnow(),
+            source_last_updated=datetime.utcnow(),
+            last_sync=datetime.utcnow(),
+            epic_id=None
+        )
+    )
+
+    return work_items_source.work_items
+
+
+@pytest.yield_fixture()
+def jira_work_items_fixture(jira_work_item_source_fixture):
+    work_items_source, jira_project_id, connector_key = jira_work_item_source_fixture
+    work_items = []
+    with db.orm_session() as session:
+        session.add(work_items_source)
+        work_items.extend(setup_jira_work_items(work_items_source))
+        session.flush()
+
+    yield work_items, work_items_source, jira_project_id, connector_key
 
 
 @pytest.yield_fixture
@@ -101,5 +162,7 @@ def cleanup():
 
     with db.create_session() as session:
         session.connection.execute("delete from work_tracking.work_items")
+        session.connection.execute("delete from work_tracking.work_items_sources")
+
         session.connection.execute("delete from integrations.atlassian_connect")
         session.connection.execute("delete from integrations.connectors")

@@ -9,7 +9,7 @@
 # Author: Krishna Kumar
 
 import logging
-from datetime import datetime, timedelta, timezone
+from datetime import datetime, timedelta
 
 import polaris.work_tracking.connector_factory
 from polaris.common.enums import JiraWorkItemType, JiraWorkItemSourceType
@@ -86,7 +86,8 @@ class JiraProject(JiraWorkItemsSource):
                 source_display_id=issue.get('key'),
                 source_last_updated=self.jira_time_to_utc_time_string(fields.get('updated')),
                 source_created_at=self.jira_time_to_utc_time_string(fields.get('created')),
-                source_state=fields.get('status').get('name')
+                source_state=fields.get('status').get('name'),
+                is_epic=issue_type == 'Epic'
             )
         )
 
@@ -124,6 +125,46 @@ class JiraProject(JiraWorkItemsSource):
             # JIRA api does not allow seconds precision in specifying dates so we have to round it up to the next minute
             # so we dont get back the last item that was updated.
             jql = f'{jql_base} AND updated > "{self.jira_time_string(self.last_updated + server_timezone_offset + timedelta(minutes=1))}"'
+
+        query_params = dict(
+            fields="summary,created,updated, description,labels,issuetype,status",
+            jql=jql,
+            maxResults=100
+        )
+
+        response = self.jira_connector.get(
+            '/search',
+            headers={"Accept": "application/json"},
+            params=query_params
+        )
+        if response.ok:
+            offset = 0
+            body = response.json()
+            total = int(body.get('total') or 0)
+            while offset < total and response.ok:
+                issues = body.get('issues', [])
+                if len(issues) == 0:
+                    break
+                work_items = []
+                for issue in issues:
+                    work_item_data = self.map_issue_to_work_item_data(issue)
+                    if work_item_data:
+                        work_items.append(work_item_data)
+
+                yield work_items
+                offset = offset + len(issues)
+                query_params['startAt'] = offset
+                response = self.jira_connector.get(
+                    '/search',
+                    headers={"Accept": "application/json"},
+                    params=query_params
+                )
+                body = response.json()
+
+    def fetch_work_items_for_epic(self, epic):
+        epic_source_id = epic['source_id']
+        jql_base = f"project = {self.project_id} "
+        jql = f'{jql_base} AND \"Epic Link\" = {epic_source_id}'
 
         query_params = dict(
             fields="summary,created,updated, description,labels,issuetype,status",

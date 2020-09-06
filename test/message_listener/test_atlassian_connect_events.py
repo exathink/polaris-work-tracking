@@ -66,11 +66,10 @@ def create_issue(project_id, issue_key, issue_id):
 
 class TestAtlassianConnectEvent:
 
-
     def it_handles_the_issue_created_event(self, jira_work_item_source_fixture, cleanup):
         work_items_source, jira_project_id, connector_key = jira_work_item_source_fixture
-        issue_id="10001"
-        issue_key=f"PRJ-{issue_id}"
+        issue_id = "10001"
+        issue_key = f"PRJ-{issue_id}"
 
         issue_created = dict(
             timestamp=jira_test_time_stamp(),
@@ -99,15 +98,14 @@ class TestAtlassianConnectEvent:
                                        f"work_items_source_id={work_items_source.id} "
                                        f"and source_display_id='{issue_key}'").scalar() == 1
 
-
     def it_sends_an_update_message_when_an_issue_is_updated_and_app_relevant_fields_change(
             self,
             jira_work_item_source_fixture,
             cleanup
     ):
         work_items_source, jira_project_id, connector_key = jira_work_item_source_fixture
-        issue_id="10001"
-        issue_key=f"PRJ-{issue_id}"
+        issue_id = "10001"
+        issue_key = f"PRJ-{issue_id}"
 
         issue = create_issue(jira_project_id, issue_key, issue_id)
 
@@ -156,8 +154,8 @@ class TestAtlassianConnectEvent:
             cleanup
     ):
         work_items_source, jira_project_id, connector_key = jira_work_item_source_fixture
-        issue_id="10001"
-        issue_key=f"PRJ-{issue_id}"
+        issue_id = "10001"
+        issue_key = f"PRJ-{issue_id}"
 
         issue = create_issue(jira_project_id, issue_key, issue_id)
 
@@ -197,12 +195,10 @@ class TestAtlassianConnectEvent:
         message = subscriber.dispatch(mock_channel, jira_issue_updated_message)
         assert message is None
 
-
-
     def it_upserts_for_updates(self, jira_work_item_source_fixture, cleanup):
         work_items_source, jira_project_id, connector_key = jira_work_item_source_fixture
-        issue_id="10001"
-        issue_key=f"PRJ-{issue_id}"
+        issue_id = "10001"
+        issue_key = f"PRJ-{issue_id}"
 
         issue_updated = dict(
             timestamp=jira_test_time_stamp(),
@@ -233,8 +229,8 @@ class TestAtlassianConnectEvent:
 
     def it_handles_the_issue_deleted_event(self, jira_work_item_source_fixture, cleanup):
         work_items_source, jira_project_id, connector_key = jira_work_item_source_fixture
-        issue_id="10001"
-        issue_key=f"PRJ-{issue_id}"
+        issue_id = "10001"
+        issue_key = f"PRJ-{issue_id}"
 
         issue = create_issue(jira_project_id, issue_key, issue_id)
 
@@ -291,13 +287,12 @@ class TestAtlassianConnectEvent:
                                        f"work_items_source_id={work_items_source.id} "
                                        f"and source_display_id='{issue_key}' and deleted_at is not NULL").scalar() == 1
 
-
     def it_ignores_the_issue_created_event_when_the_work_item_source_is_not_in_check_for_update_import_state(
-        self, jira_work_item_source_fixture, cleanup
+            self, jira_work_item_source_fixture, cleanup
     ):
         work_items_source, jira_project_id, connector_key = jira_work_item_source_fixture
-        issue_id="10001"
-        issue_key=f"PRJ-{issue_id}"
+        issue_id = "10001"
+        issue_key = f"PRJ-{issue_id}"
 
         issue_created = dict(
             timestamp=jira_test_time_stamp(),
@@ -334,8 +329,8 @@ class TestAtlassianConnectEvent:
             cleanup
     ):
         work_items_source, jira_project_id, connector_key = jira_work_item_source_fixture
-        issue_id="10001"
-        issue_key=f"PRJ-{issue_id}"
+        issue_id = "10001"
+        issue_key = f"PRJ-{issue_id}"
 
         issue = create_issue(jira_project_id, issue_key, issue_id)
 

@@ -142,6 +142,7 @@ def setup_github_work_items(work_item_source):
                 description="An issue in detail",
                 work_item_type=GithubWorkItemType.issue.value,
                 is_bug=False,
+                is_epic=False,
                 tags=[],
                 source_id=str(display_id),
                 source_display_id=str(display_id),
@@ -164,6 +165,7 @@ def setup_pivotal_work_items(work_item_source):
                 name=f"Story {display_id}",
                 work_item_type=PivotalTrackerWorkItemType.story.value,
                 is_bug=False,
+                is_epic=False,
                 tags=[],
                 source_id=str(display_id),
                 source_display_id=str(display_id),
@@ -182,6 +184,7 @@ work_items_common = dict(
     work_item_type=GithubWorkItemType.issue.value,
     description='Foo',
     is_bug=True,
+    is_epic=False,
     tags=['acre'],
     source_last_updated=datetime.utcnow(),
     source_created_at=datetime.utcnow(),
@@ -208,6 +211,5 @@ def cleanup():
     yield
     db.connection().execute(f"delete from work_tracking.work_items")
     db.connection().execute(f"delete from work_tracking.work_items_sources")
-
 
     db.connection().execute(f"delete from integrations.connectors")

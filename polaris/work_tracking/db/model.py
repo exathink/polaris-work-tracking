@@ -231,6 +231,11 @@ class WorkItem(Base):
     last_sync = Column(DateTime, nullable=True)
     deleted_at = Column(DateTime, nullable=True)
 
+    # Information related to Epic
+    is_epic = Column(Boolean, nullable=False, default=False, server_default='FALSE')
+    epic_id = Column(Integer, ForeignKey('work_items.id'), nullable=True)
+    epic = relationship('WorkItem', remote_side='WorkItem.id')
+
     # Work Items Source relationship
     work_items_source_id = Column(Integer, ForeignKey('work_items_sources.id'))
     work_items_source = relationship('WorkItemsSource', back_populates='work_items')
