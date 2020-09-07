@@ -70,7 +70,7 @@ class JiraProject(JiraWorkItemsSource):
     def jira_time_string(timestamp):
         return timestamp.strftime("%Y-%m-%d %H:%M")
 
-    def map_issue_to_work_item_data(self, issue, changelog):
+    def map_issue_to_work_item_data(self, issue, changelog=None):
         fields = issue.get('fields')
         issue_type = fields.get('issuetype').get('name')
         mapped_data = dict(
