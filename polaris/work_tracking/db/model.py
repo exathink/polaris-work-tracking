@@ -268,7 +268,7 @@ class WorkItem(Base):
     # to decide whether or not to propagate the update to the rest of the system.
     def update(self, work_item_data):
         updated = False
-        for attribute in ['name', 'description', 'is_bug', 'tags', 'url', 'source_state', 'source_display_id']:
+        for attribute in ['name', 'description', 'is_bug', 'is_epic', 'tags', 'url', 'source_state', 'source_display_id', 'epic_id']:
             if getattr(self, attribute) != work_item_data.get(attribute):
                 setattr(self, attribute, work_item_data.get(attribute))
                 updated = True
