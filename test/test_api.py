@@ -233,3 +233,58 @@ class TestSyncWorkItemsForJiraEpic:
             f"select count(id) from work_tracking.work_items where work_items_source_id={work_items_source.id} and epic_id={epic_id} "
         ).scalar() == 2
         assert db.connection().execute(f"select count(id) from work_tracking.work_items where epic_id is NULL and is_epic=FALSE ").scalar() == 8
+
+
+class TestSyncWorkItem:
+
+    def it_creates_a_new_work_item(self, setup_work_items, new_work_items):
+        _, work_items_sources = setup_work_items
+        empty_source = work_items_sources['empty']
+        # Import once
+        result = api.sync_work_item(empty_source.key, work_item_data=new_work_items[0])
+        assert result['is_new']
+        assert result['name'] == new_work_items[0]['name']
+        assert db.connection().execute(
+            f"select count(id) from work_tracking.work_items where work_items_source_id={empty_source.id} and key='{result['key']}'"
+        ).scalar() == 1
+
+    def it_updates_a_work_item_without_epic_info(self, setup_work_items, new_work_items):
+        _, work_items_sources = setup_work_items
+        empty_source = work_items_sources['empty']
+        # Import once
+        api.sync_work_items(empty_source.key, work_item_list=new_work_items)
+        updated_work_item = new_work_items[0]
+        updated_work_item['source_state'] = 'closed'
+        result = api.sync_work_item(empty_source.key, work_item_data=updated_work_item)
+        assert result['is_updated']
+        assert db.connection().execute(
+            f"select count(id) from work_tracking.work_items where work_items_source_id={empty_source.id} and key='{result['key']}' and source_state='closed'"
+        ).scalar() == 1
+
+    def it_updates_epic_id_when_epic_work_item_exists(self, setup_work_items, new_work_items):
+        _, work_items_sources = setup_work_items
+        empty_source = work_items_sources['empty']
+        # Import once
+        new_work_items[-1]['is_epic'] = True
+        api.sync_work_items(empty_source.key, work_item_list=new_work_items)
+        updated_work_item = new_work_items[0]
+        updated_work_item['epic_source_display_id'] = new_work_items[-1]['source_display_id']
+        result = api.sync_work_item(empty_source.key, work_item_data=updated_work_item)
+        assert result['is_updated']
+        assert db.connection().execute(
+            f"select count(id) from work_tracking.work_items where work_items_source_id={empty_source.id} and key='{result['key']}' and epic_id is not NULL"
+        ).scalar() == 1
+
+    def it_does_not_update_epic_id_when_epic_work_item_does_not_exist(self, setup_work_items, new_work_items):
+        _, work_items_sources = setup_work_items
+        empty_source = work_items_sources['empty']
+        # Import once
+        api.sync_work_items(empty_source.key, work_item_list=new_work_items)
+        updated_work_item = new_work_items[0]
+        updated_work_item['epic_source_display_id'] = 'Does not exist'
+        result = api.sync_work_item(empty_source.key, work_item_data=updated_work_item)
+        assert not result['is_updated']
+        assert db.connection().execute(
+            f"select count(id) from work_tracking.work_items where work_items_source_id={empty_source.id} and key='{result['key']}' and epic_id is NULL"
+        ).scalar() == 1
+
