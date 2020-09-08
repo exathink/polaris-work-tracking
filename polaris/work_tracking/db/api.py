@@ -310,7 +310,8 @@ def sync_work_item(work_items_source_key, work_item_data, join_this=None):
                     state=work_item.source_state,
                     created_at=work_item.source_created_at,
                     updated_at=work_item.source_last_updated,
-                    last_sync=work_item.last_sync
+                    last_sync=work_item.last_sync,
+                    source_id=work_item.source_id,
                 )
             )
         else:
