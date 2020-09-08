@@ -257,7 +257,7 @@ class WorkItemsTopicSubscriber(TopicSubscriber):
                 yield created, updated
 
         except Exception as exc:
-            raise_message_processing_error(message, 'Failed to sync work items', str(exc))
+            raise_message_processing_error(message, 'Failed to resolve work items for epic', str(exc))
 
 
 class ConnectorsTopicSubscriber(TopicSubscriber):
