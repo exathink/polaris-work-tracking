@@ -154,7 +154,10 @@ class PivotalTrackerProject(PivotalTrackerWorkItemsSource):
                         source_last_updated=story.get('updated_at'),
                         source_created_at=story.get('created_at'),
                         source_display_id=story.get('id'),
-                        source_state=story.get('current_state')
+                        source_state=story.get('current_state'),
+                        # hard coding this for stories. When we load epics
+                        # we can set those explicitly to true.
+                        is_epic=False
 
                     )
                     for story in stories

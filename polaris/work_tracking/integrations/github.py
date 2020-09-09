@@ -97,7 +97,8 @@ class GithubRepositoryIssues(GithubIssuesWorkItemsSource):
             source_last_updated=issue.updated_at,
             source_created_at=issue.created_at,
             source_display_id=issue.number,
-            source_state=issue.state
+            source_state=issue.state,
+            is_epic=False,
         )
         if issue.pull_request is not None:
             return dict(
