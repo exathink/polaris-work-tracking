@@ -223,6 +223,7 @@ def sync_work_item(work_items_source_key, work_item_data, join_this=None):
     with db.orm_session(join_this) as session:
         work_item_key = None
         work_items_source = WorkItemsSource.find_by_key(session, work_items_source_key)
+        epic_source_display_id = work_item_data.pop('epic_source_display_id', None)
         if work_items_source:
             sync_result = dict()
             work_item = WorkItem.find_by_source_display_id(
@@ -230,6 +231,19 @@ def sync_work_item(work_items_source_key, work_item_data, join_this=None):
                 work_items_source.id,
                 work_item_data.get('source_display_id')
             )
+            # Find linked epic work item
+            # FIXME: Epics can be from a different work item source. But here we are setting epic ids \
+            #  only when epic is from same work item source.
+            if epic_source_display_id is None or epic_source_display_id == '':
+                work_item_data['epic_id'] = None
+            else:
+                epic_work_item = WorkItem.find_by_source_display_id(
+                    session,
+                    work_items_source.id,
+                    source_display_id=epic_source_display_id
+
+                )
+                work_item_data['epic_id'] = epic_work_item.id if epic_work_item else None
             if not work_item:
                 work_item_key = uuid.uuid4()
                 work_item = WorkItem(
@@ -243,6 +257,7 @@ def sync_work_item(work_items_source_key, work_item_data, join_this=None):
             else:
                 work_item_key = work_item.key
                 sync_result['is_updated'] = work_item.update(work_item_data)
+
 
         # The reason we do this flush and refetch from the database below as follows:
 
@@ -274,8 +289,11 @@ def sync_work_item(work_items_source_key, work_item_data, join_this=None):
                 work_items.c.key == work_item_key
             )
         ).fetchone()
-
         if work_item:
+            if work_item.epic_id is not None:
+                epic_key = WorkItem.find_by_key(session, key=work_item.key).epic.key
+            else:
+                epic_key = None
             return dict(
                 **sync_result,
                 **dict(
@@ -287,12 +305,13 @@ def sync_work_item(work_items_source_key, work_item_data, join_this=None):
                     description=work_item.description,
                     is_bug=work_item.is_bug,
                     is_epic=work_item.is_epic,
-                    epic_key=work_item.epic.key if work_item.epic_id is not None else None,
+                    epic_key=epic_key,
                     tags=work_item.tags,
                     state=work_item.source_state,
                     created_at=work_item.source_created_at,
                     updated_at=work_item.source_last_updated,
-                    last_sync=work_item.last_sync
+                    last_sync=work_item.last_sync,
+                    source_id=work_item.source_id,
                 )
             )
         else:

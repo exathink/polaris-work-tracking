@@ -18,8 +18,10 @@ from polaris.work_tracking.db.model import WorkItemsSource
 from polaris.work_tracking.integrations.atlassian.jira_work_items_source import JiraProject
 from polaris.common.enums import WorkItemsSourceImportState
 
+
 def handle_issue_events(jira_connector_key, jira_event_type, jira_event):
     issue = jira_event.get('issue')
+    changelog = jira_event.get('changelog', None)
     if issue:
         project_id = issue['fields']['project']['id']
         with db.orm_session() as session:
@@ -33,7 +35,7 @@ def handle_issue_events(jira_connector_key, jira_event_type, jira_event):
                 # This ensures that even though the connector is active, it wont import issues etc until
                 # the work_items_source is associated with a project and an initial import is done.
                 jira_project_source = JiraProject(work_items_source)
-                work_item_data = jira_project_source.map_issue_to_work_item_data(issue)
+                work_item_data = jira_project_source.map_issue_to_work_item_data(issue, changelog)
                 if work_item_data:
                     work_item = {}
                     if jira_event_type == 'issue_created':

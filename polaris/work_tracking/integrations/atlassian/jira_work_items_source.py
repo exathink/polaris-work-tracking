@@ -70,12 +70,10 @@ class JiraProject(JiraWorkItemsSource):
     def jira_time_string(timestamp):
         return timestamp.strftime("%Y-%m-%d %H:%M")
 
-    def map_issue_to_work_item_data(self, issue):
+    def map_issue_to_work_item_data(self, issue, changelog=None):
         fields = issue.get('fields')
         issue_type = fields.get('issuetype').get('name')
-
-        return (
-            dict(
+        mapped_data = dict(
                 name=fields.get('summary'),
                 description=fields.get('description'),
                 is_bug=issue_type == 'Bug',
@@ -88,8 +86,14 @@ class JiraProject(JiraWorkItemsSource):
                 source_created_at=self.jira_time_to_utc_time_string(fields.get('created')),
                 source_state=fields.get('status').get('name'),
                 is_epic=issue_type == 'Epic'
-            )
         )
+        if changelog is not None:
+            items = changelog.get('items')
+            for item in items:
+                if item.get('field') == 'Epic Link':
+                    #mapped_data['epic_source_id'] = item.get('to')
+                    mapped_data['epic_source_display_id'] = item.get('toString')
+        return mapped_data
 
     def get_server_timezone_offset(self):
         # This is an awful hack to get around Jira APIs
