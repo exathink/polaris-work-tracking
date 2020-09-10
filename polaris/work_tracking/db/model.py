@@ -67,6 +67,8 @@ class WorkItemsSource(Base):
     work_items_source_type = Column(String(128), nullable=False)
     # stores provider specific attributes for the work_items_source_type if needed.
     parameters = Column(JSONB, nullable=True, default={}, server_default='{}')
+    # Custom fields specific to work item source
+    custom_fields = Column(JSONB, nullable=True, default=[], server_default='[]')
 
     # App facing attributes.
     name = Column(String, nullable=False)
@@ -162,17 +164,15 @@ class WorkItemsSource(Base):
             ).where(
                 and_(
                     work_items.c.source_last_updated ==
-                        select(
-                            [func.max(work_items.c.source_last_updated)]
-                        ).where(
-                            work_items.c.work_items_source_id == self.id
-                        ).alias(),
+                    select(
+                        [func.max(work_items.c.source_last_updated)]
+                    ).where(
+                        work_items.c.work_items_source_id == self.id
+                    ).alias(),
                     work_items.c.work_items_source_id == self.id
                 )
             )
         )
-
-
 
     def get_summary_info(self):
         return dict(
@@ -268,7 +268,8 @@ class WorkItem(Base):
     # to decide whether or not to propagate the update to the rest of the system.
     def update(self, work_item_data):
         updated = False
-        for attribute in ['name', 'description', 'is_bug', 'is_epic', 'tags', 'url', 'source_state', 'source_display_id', 'epic_id']:
+        for attribute in ['name', 'description', 'is_bug', 'is_epic', 'tags', 'url', 'source_state',
+                          'source_display_id', 'epic_id']:
             if getattr(self, attribute) != work_item_data.get(attribute):
                 setattr(self, attribute, work_item_data.get(attribute))
                 updated = True
