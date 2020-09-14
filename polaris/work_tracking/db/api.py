@@ -43,6 +43,9 @@ def sync_work_items(work_items_source_key, work_item_list, join_this=None):
                             key=uuid.uuid4(),
                             work_items_source_id=work_items_source.id,
                             last_sync=last_sync,
+                            # Dropping epic_source_display_id if it is passed, \
+                            # as its handled in the sync_work_items_for_epic workflow. \
+                            # Handling it here will make things complicated
                             **dict_drop(work_item, ['epic_source_display_id'])
                         )
                         for work_item in work_item_list
