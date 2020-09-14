@@ -91,7 +91,6 @@ class JiraProject(JiraWorkItemsSource):
             items = changelog.get('items')
             for item in items:
                 if item.get('field') == 'Epic Link':
-                    #mapped_data['epic_source_id'] = item.get('to')
                     mapped_data['epic_source_display_id'] = item.get('toString')
         return mapped_data
 

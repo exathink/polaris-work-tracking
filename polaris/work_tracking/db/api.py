@@ -11,7 +11,7 @@
 import logging
 import uuid
 from datetime import datetime
-
+from polaris.utils.collections import dict_drop
 from sqlalchemy import select, and_, func, literal, Column, Integer
 from sqlalchemy.dialects.postgresql import insert, UUID
 
@@ -43,14 +43,13 @@ def sync_work_items(work_items_source_key, work_item_list, join_this=None):
                             key=uuid.uuid4(),
                             work_items_source_id=work_items_source.id,
                             last_sync=last_sync,
-                            **work_item
+                            **dict_drop(work_item, ['epic_source_display_id'])
                         )
                         for work_item in work_item_list
                     ]
                 )
             )
 
-            epic_work_items = work_items.alias('epic_work_items')
             work_items_before_insert = session.connection().execute(
                 select([*work_items_temp.columns, work_items.c.key.label('current_key'),
                         epic_work_items.c.key.label('epic_key')]).select_from(
