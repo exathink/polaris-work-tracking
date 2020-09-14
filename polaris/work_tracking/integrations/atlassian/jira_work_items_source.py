@@ -10,6 +10,7 @@
 
 import logging
 from datetime import datetime, timedelta
+from polaris.utils.collections import find
 
 import polaris.work_tracking.connector_factory
 from polaris.common.enums import JiraWorkItemType, JiraWorkItemSourceType
@@ -73,6 +74,11 @@ class JiraProject(JiraWorkItemsSource):
     def map_issue_to_work_item_data(self, issue, changelog=None):
         fields = issue.get('fields')
         issue_type = fields.get('issuetype').get('name')
+        if self.work_items_source.custom_fields != []:
+            epic_link_custom_field = find(self.work_items_source.custom_fields, lambda field: field['name'] == 'Epic Link')['key']
+        else:
+            # TODO: Remove this default once we update all existing work_items_sources with custom_fields details
+            epic_link_custom_field = 'customfield_10014'
         mapped_data = dict(
                 name=fields.get('summary'),
                 description=fields.get('description'),
@@ -85,13 +91,10 @@ class JiraProject(JiraWorkItemsSource):
                 source_last_updated=self.jira_time_to_utc_time_string(fields.get('updated')),
                 source_created_at=self.jira_time_to_utc_time_string(fields.get('created')),
                 source_state=fields.get('status').get('name'),
-                is_epic=issue_type == 'Epic'
+                is_epic=issue_type == 'Epic',
+                epic_source_display_id=issue.get('fields').get(epic_link_custom_field)
         )
-        if changelog is not None:
-            items = changelog.get('items')
-            for item in items:
-                if item.get('field') == 'Epic Link':
-                    mapped_data['epic_source_display_id'] = item.get('toString')
+
         return mapped_data
 
     def get_server_timezone_offset(self):

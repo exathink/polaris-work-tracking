@@ -50,6 +50,7 @@ def sync_work_items(work_items_source_key, work_item_list, join_this=None):
                 )
             )
 
+            epic_work_items = work_items.alias('epic_work_items')
             work_items_before_insert = session.connection().execute(
                 select([*work_items_temp.columns, work_items.c.key.label('current_key'),
                         epic_work_items.c.key.label('epic_key')]).select_from(
@@ -256,7 +257,6 @@ def sync_work_item(work_items_source_key, work_item_data, join_this=None):
             else:
                 work_item_key = work_item.key
                 sync_result['is_updated'] = work_item.update(work_item_data)
-
 
         # The reason we do this flush and refetch from the database below as follows:
 
@@ -548,7 +548,7 @@ def sync_work_items_for_epic(work_items_source_key, epic, work_item_list, join_t
                     )
                 )
 
-            #update work items
+            # update work items
             session.connection().execute(
                 work_items.update().where(
                     work_items.c.key == work_items_temp.c.key

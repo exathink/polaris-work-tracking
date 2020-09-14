@@ -90,6 +90,7 @@ class JiraConnector(PolarisAtlassianConnector):
                         id=field['id'],
                         key=field['key'])
                     )
+                    break
             return custom_fields
         else:
             raise ProcessingException(
