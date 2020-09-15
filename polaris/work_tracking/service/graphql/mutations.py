@@ -129,6 +129,26 @@ class ImportProjects(graphene.Mutation):
         )
 
 
+class WorkItemSourceParams(graphene.InputObjectType):
+    work_items_source_key = graphene.String(required=True)
+
+
+class ImportProjectCustomFieldsInput(graphene.InputObjectType):
+    work_items_sources = graphene.List(WorkItemSourceParams, required=True)
+
+
+class ImportProjectCustomFields(graphene.Mutation):
+    class Arguments:
+        import_project_custom_fields_input = ImportProjectCustomFieldsInput(required=True)
+
+    success = graphene.Boolean()
+
+    def mutate(self, info, import_project_custom_fields_input):
+        logger.info("ImportProjectCustomFields called")
+        result = commands.import_project_custom_fields(import_project_custom_fields_input)
+        return ImportProjectCustomFields(success=result['success'])
+
+
 class RefreshConnectorProjectsInput(graphene.InputObjectType):
     connector_key = graphene.String(required=True)
     track = graphene.Boolean(required=False, default_value=False)
@@ -236,5 +256,3 @@ class DeleteWorkTrackingConnector(DeleteConnector):
                     connector_name=delete_connector(connector_key, session),
                     disposition='deleted'
                 )
-
-

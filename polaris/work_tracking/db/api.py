@@ -485,6 +485,11 @@ def import_project(
         return project
 
 
+def import_work_items_source_custom_fields(work_items_source, custom_fields, join_this=None):
+    work_items_source.custom_fields = custom_fields[0]
+    return work_items_source.key
+
+
 def get_imported_work_items_sources_count(connector_key, join_this=None):
     with db.orm_session(join_this) as session:
         return session.connection().execute(
