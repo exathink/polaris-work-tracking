@@ -142,11 +142,12 @@ class ImportProjectCustomFields(graphene.Mutation):
         import_project_custom_fields_input = ImportProjectCustomFieldsInput(required=True)
 
     success = graphene.Boolean()
+    error_message = graphene.String()
 
     def mutate(self, info, import_project_custom_fields_input):
         logger.info("ImportProjectCustomFields called")
         result = commands.import_project_custom_fields(import_project_custom_fields_input)
-        return ImportProjectCustomFields(success=result['success'])
+        return ImportProjectCustomFields(success=result['success'], error_message=result.get('message'))
 
 
 class RefreshConnectorProjectsInput(graphene.InputObjectType):
