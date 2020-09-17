@@ -120,7 +120,7 @@ def import_project_custom_fields(import_project_custom_fields_input):
                 if work_items_source and work_items_source.import_state == WorkItemsSourceImportState.auto_update.value:
                     connector = connector_factory.get_connector(connector_key=work_items_source.connector_key)
                     if hasattr(connector, 'fetch_custom_fields') and callable(connector.fetch_custom_fields):
-                        work_items_source.custom_fields = connector.fetch_custom_fields()[0]
+                        work_items_source.custom_fields = connector.fetch_custom_fields()
                         projects.append(params.work_items_source_key)
                 else:
                     return db.failure_message(

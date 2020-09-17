@@ -134,7 +134,7 @@ class WorkItemSourceParams(graphene.InputObjectType):
 
 
 class ImportProjectCustomFieldsInput(graphene.InputObjectType):
-    work_items_sources = graphene.List(WorkItemSourceParams, required=True)
+    work_items_sources = graphene.List(WorkItemSourceParams)
 
 
 class ImportProjectCustomFields(graphene.Mutation):
