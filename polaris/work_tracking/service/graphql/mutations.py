@@ -146,8 +146,9 @@ class ImportProjectCustomFields(graphene.Mutation):
 
     def mutate(self, info, import_project_custom_fields_input):
         logger.info("ImportProjectCustomFields called")
-        result = commands.import_project_custom_fields(import_project_custom_fields_input)
-        return ImportProjectCustomFields(success=result['success'], error_message=result.get('message'))
+        with db.orm_session() as session:
+            result = commands.import_project_custom_fields(import_project_custom_fields_input, join_this=session)
+            return ImportProjectCustomFields(success=result['success'], error_message=result.get('message'))
 
 
 class RefreshConnectorProjectsInput(graphene.InputObjectType):
