@@ -16,9 +16,10 @@ from polaris.utils.config import get_config_provider
 from polaris.work_tracking import publish
 from polaris.work_tracking import work_items_source_factory, connector_factory
 from polaris.work_tracking.db import api
-from polaris.work_tracking.db.model import WorkItemsSource
+from polaris.work_tracking.db.model import WorkItemsSource, Project
 from polaris.integrations.db.api import tracking_receipt_updates
 from polaris.common import db
+from polaris.work_tracking.messages import ResolveWorkItemsForEpic
 
 logger = logging.getLogger('polaris.work_tracking.work_tracker')
 config = get_config_provider()
@@ -128,6 +129,32 @@ def update_work_items_source_custom_fields(update_work_items_source_custom_field
             return success(dict(projects=projects))
     except Exception as e:
         return db.failure_message(f"Import project custom fields failed", e)
+
+
+def resolve_work_items_for_project_epics(resolve_work_items_for_project_epics_input, join_this=None):
+    epics_to_publish = []
+    try:
+        with db.orm_session(join_this) as session:
+            project = Project.find_by_key(session, project_key=resolve_work_items_for_project_epics_input.project_key)
+            if project:
+                for work_items_source in project.work_items_sources:
+                    epics = api.get_work_items_source_epics(work_items_source, join_this=session)
+                    epics_to_publish.append(dict(work_items_source_key=work_items_source.key, epics=epics))
+            else:
+                return db.failure_message(f"Project with key: {resolve_work_items_for_project_epics_input.project_key} not found")
+        # Publishing all messages after transaction has committed. \
+        # This is to ensure that we do not happen to publish this message for some(and not all) \
+        # epics due to any db exception
+        for epic_to_publish in epics_to_publish:
+            # Publish ResolveWorkItemsForEpic
+            for epic in epic_to_publish['epics']:
+                publish.resolve_work_items_for_epic(organization_key=project.organization_key, \
+                                            work_items_source_key=epic_to_publish['work_items_source_key'], \
+                                            epic=epic)
+        return success(dict(project_key=project.key))
+
+    except Exception as e:
+        return db.failure_message(f"Resolve work items for project epics failed", e)
 
 
 def test_work_tracking_connector(connector_key, join_this=None):

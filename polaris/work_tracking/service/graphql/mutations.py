@@ -151,6 +151,24 @@ class UpdateWorkItemsSourceCustomFields(graphene.Mutation):
             return UpdateWorkItemsSourceCustomFields(success=result['success'], error_message=result.get('message'))
 
 
+class ResolveWorkItemsForProjectEpicsInput(graphene.InputObjectType):
+    project_key = graphene.String(required=True)
+
+
+class ResolveWorkItemsForProjectEpics(graphene.Mutation):
+    class Arguments:
+        resolve_work_items_for_project_epics_input = ResolveWorkItemsForProjectEpicsInput(required=True)
+
+    success = graphene.Boolean()
+    error_message = graphene.String()
+
+    def mutate(self, info, resolve_work_items_for_project_epics_input):
+        logger.info("ResolveWorkItemsForProjectEpics called")
+        with db.orm_session() as session:
+            result = commands.resolve_work_items_for_project_epics(resolve_work_items_for_project_epics_input, join_this=session)
+            return ResolveWorkItemsForProjectEpics(success=result['success'], error_message=result.get('message'))
+
+
 class RefreshConnectorProjectsInput(graphene.InputObjectType):
     connector_key = graphene.String(required=True)
     track = graphene.Boolean(required=False, default_value=False)

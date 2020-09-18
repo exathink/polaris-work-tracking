@@ -19,7 +19,7 @@ from .mutations import \
     CreateWorkItemsSource, ImportProjects, \
     RefreshConnectorProjects, DeleteWorkTrackingConnector, \
     CreateWorkTrackingConnector, TestWorkTrackingConnector, EditWorkTrackingConnector, \
-    UpdateWorkItemsSourceCustomFields
+    UpdateWorkItemsSourceCustomFields, ResolveWorkItemsForProjectEpics
 
 
 class Query(
@@ -44,6 +44,7 @@ class Mutations(
     create_work_items_source = CreateWorkItemsSource.Field()
     import_projects = ImportProjects.Field()
     update_work_items_source_custom_fields = UpdateWorkItemsSourceCustomFields.Field()
+    resolve_work_items_for_project_epics = ResolveWorkItemsForProjectEpics.Field()
     refresh_connector_projects = RefreshConnectorProjects.Field()
     test_connector = TestWorkTrackingConnector.Field()
 
