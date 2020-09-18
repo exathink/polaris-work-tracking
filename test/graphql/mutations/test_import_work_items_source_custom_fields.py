@@ -19,15 +19,14 @@ from polaris.utils.collections import Fixture
 from polaris.work_tracking.service.graphql import schema
 
 
-class TestImportProjectCustomFields:
+class TestImportWorkItemsSourceCustomFields:
 
     @pytest.yield_fixture
     def setup(self):
-        #work_items_source, _, _ = jira_work_item_source_fixture
         mutation_statement = """
-        mutation importProjectCustomFields($importProjectCustomFieldsInput: ImportProjectCustomFieldsInput!){
-            importProjectCustomFields(
-                importProjectCustomFieldsInput: $importProjectCustomFieldsInput) {
+        mutation importWorkItemsSourceCustomFields($importWorkItemsSourceCustomFieldsInput: ImportWorkItemsSourceCustomFieldsInput!){
+            importWorkItemsSourceCustomFields(
+                importWorkItemsSourceCustomFieldsInput: $importWorkItemsSourceCustomFieldsInput) {
                 success
                 errorMessage
             }
@@ -46,7 +45,7 @@ class TestImportProjectCustomFields:
             custom_fields=custom_fields
         )
 
-    class TestJiraImportProjectCustomFields:
+    class TestJiraImportWorkItemsSourceCustomFields:
 
         @pytest.yield_fixture()
         def setup(self, setup, jira_work_item_source_fixture, cleanup):
@@ -65,24 +64,37 @@ class TestImportProjectCustomFields:
                 with patch(
                         'polaris.work_tracking.integrations.atlassian.jira_connector.JiraConnector.fetch_custom_fields') as fetch_custom_fields:
                     fetch_custom_fields.return_value = fixture.custom_fields
-                    response = client.execute(fixture.mutation_statement, variable_values=dict(importProjectCustomFieldsInput=dict(workItemsSources=[dict(workItemsSourceKey=str(fixture.work_items_source.key))])))
-                    assert response['data']['importProjectCustomFields']['success']
-                assert db.connection().execute(f"select custom_fields from work_tracking.work_items_sources where key='{fixture.work_items_source.key}'").fetchall()[0][0] == fetch_custom_fields.return_value
+                    response = client.execute(
+                        fixture.mutation_statement,
+                        variable_values=dict(
+                            importWorkItemsSourceCustomFieldsInput=dict(
+                                workItemsSources=[
+                                    dict(
+                                        workItemsSourceKey=str(fixture.work_items_source.key)
+                                    )
+                                ]
+                            )
+                        ))
+                    assert response['data']['importWorkItemsSourceCustomFields']['success']
+                assert db.connection().execute(
+                    f"select custom_fields from work_tracking.work_items_sources where key='{fixture.work_items_source.key}'").fetchall()[
+                           0][0] == fetch_custom_fields.return_value
 
         class TestWhenWorkItemsSourceDoesNotExist:
 
             def it_does_not_import_but_returns_message_work_items_source_not_available_for_this_import(self, setup):
                 fixture = setup
-                work_items_source_key =uuid.uuid4()
+                work_items_source_key = uuid.uuid4()
                 client = Client(schema)
                 with patch(
                         'polaris.work_tracking.integrations.atlassian.jira_connector.JiraConnector.fetch_custom_fields') as fetch_custom_fields:
                     fetch_custom_fields.return_value = fixture.custom_fields
                     response = client.execute(fixture.mutation_statement, variable_values=dict(
-                        importProjectCustomFieldsInput=dict(
+                        importWorkItemsSourceCustomFieldsInput=dict(
                             workItemsSources=[dict(workItemsSourceKey=str(work_items_source_key))])))
-                    assert not response['data']['importProjectCustomFields']['success']
-                    assert response['data']['importProjectCustomFields']['errorMessage'] == f"Work Item source with key: {work_items_source_key} not available for this import"
+                    assert not response['data']['importWorkItemsSourceCustomFields']['success']
+                    assert response['data']['importWorkItemsSourceCustomFields'][
+                               'errorMessage'] == f"Work Item source with key: {work_items_source_key} not available for this import"
 
         class TestWhenInputKeyDoesNotMatchUUIDFormat:
 
@@ -93,19 +105,27 @@ class TestImportProjectCustomFields:
                 with patch(
                         'polaris.work_tracking.integrations.atlassian.jira_connector.JiraConnector.fetch_custom_fields') as fetch_custom_fields:
                     fetch_custom_fields.return_value = fixture.custom_fields
-                    response = client.execute(fixture.mutation_statement, variable_values=dict(
-                        importProjectCustomFieldsInput=dict(
-                            workItemsSources=[dict(workItemsSourceKey=str(work_items_source_key))])))
-                    assert not response['data']['importProjectCustomFields']['success']
-                    assert response['data']['importProjectCustomFields']['errorMessage'] == f"Import project custom fields failed"
-
+                    response = client.execute(
+                        fixture.mutation_statement,
+                        variable_values=dict(
+                            importWorkItemsSourceCustomFieldsInput=dict(
+                                workItemsSources=[
+                                    dict(
+                                        workItemsSourceKey=str(work_items_source_key)
+                                    )
+                                ]
+                            )
+                        ))
+                    assert not response['data']['importWorkItemsSourceCustomFields']['success']
+                    assert response['data']['importWorkItemsSourceCustomFields'][
+                               'errorMessage'] == f"Import project custom fields failed"
 
     class TestNonJiraCustomFieldsImport:
 
         @pytest.yield_fixture
         def setup(self, setup, setup_work_item_sources, cleanup):
             fixture = setup
-            _, work_items_sources= setup_work_item_sources
+            _, work_items_sources = setup_work_item_sources
             yield Fixture(
                 parent=fixture,
                 pivotal_source=work_items_sources['pivotal'],
@@ -121,13 +141,20 @@ class TestImportProjectCustomFields:
                 with patch(
                         'polaris.work_tracking.integrations.atlassian.jira_connector.JiraConnector.fetch_custom_fields') as fetch_custom_fields:
                     fetch_custom_fields.return_value = fixture.custom_fields
-                    response = client.execute(fixture.mutation_statement, variable_values=dict(
-                        importProjectCustomFieldsInput=dict(
-                            workItemsSources=[dict(workItemsSourceKey=str(work_items_source_key))])))
-                    assert not response['data']['importProjectCustomFields']['success']
-                    assert response['data']['importProjectCustomFields'][
+                    response = client.execute(
+                        fixture.mutation_statement,
+                        variable_values=dict(
+                            importWorkItemsSourceCustomFieldsInput=dict(
+                                workItemsSources=[
+                                    dict(
+                                        workItemsSourceKey=str(work_items_source_key)
+                                    )
+                                ]
+                            )
+                        ))
+                    assert not response['data']['importWorkItemsSourceCustomFields']['success']
+                    assert response['data']['importWorkItemsSourceCustomFields'][
                                'errorMessage'] == f"Work Item source with key: {work_items_source_key} not available for this import"
-
 
         class TestGithubCustomFieldsImport:
 
@@ -138,10 +165,17 @@ class TestImportProjectCustomFields:
                 with patch(
                         'polaris.work_tracking.integrations.atlassian.jira_connector.JiraConnector.fetch_custom_fields') as fetch_custom_fields:
                     fetch_custom_fields.return_value = fixture.custom_fields
-                    response = client.execute(fixture.mutation_statement, variable_values=dict(
-                        importProjectCustomFieldsInput=dict(
-                            workItemsSources=[dict(workItemsSourceKey=str(work_items_source_key))])))
-                    assert not response['data']['importProjectCustomFields']['success']
-                    assert response['data']['importProjectCustomFields'][
+                    response = client.execute(
+                        fixture.mutation_statement,
+                        variable_values=dict(
+                            importWorkItemsSourceCustomFieldsInput=dict(
+                                workItemsSources=[
+                                    dict(
+                                        workItemsSourceKey=str(work_items_source_key)
+                                    )
+                                ]
+                            )
+                        ))
+                    assert not response['data']['importWorkItemsSourceCustomFields']['success']
+                    assert response['data']['importWorkItemsSourceCustomFields'][
                                'errorMessage'] == f"Work Item source with key: {work_items_source_key} not available for this import"
-
