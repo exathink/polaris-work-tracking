@@ -133,22 +133,22 @@ class WorkItemSourceParams(graphene.InputObjectType):
     work_items_source_key = graphene.String(required=True)
 
 
-class ImportWorkItemsSourceCustomFieldsInput(graphene.InputObjectType):
+class UpdateWorkItemsSourceCustomFieldsInput(graphene.InputObjectType):
     work_items_sources = graphene.List(WorkItemSourceParams)
 
 
-class ImportWorkItemsSourceCustomFields(graphene.Mutation):
+class UpdateWorkItemsSourceCustomFields(graphene.Mutation):
     class Arguments:
-        import_work_items_source_custom_fields_input = ImportWorkItemsSourceCustomFieldsInput(required=True)
+        update_work_items_source_custom_fields_input = UpdateWorkItemsSourceCustomFieldsInput(required=True)
 
     success = graphene.Boolean()
     error_message = graphene.String()
 
-    def mutate(self, info, import_work_items_source_custom_fields_input):
-        logger.info("ImportWorkItemsSourceCustomFields called")
+    def mutate(self, info, update_work_items_source_custom_fields_input):
+        logger.info("UpdateWorkItemsSourceCustomFields called")
         with db.orm_session() as session:
-            result = commands.import_work_items_source_custom_fields(import_work_items_source_custom_fields_input, join_this=session)
-            return ImportWorkItemsSourceCustomFields(success=result['success'], error_message=result.get('message'))
+            result = commands.update_work_items_source_custom_fields(update_work_items_source_custom_fields_input, join_this=session)
+            return UpdateWorkItemsSourceCustomFields(success=result['success'], error_message=result.get('message'))
 
 
 class RefreshConnectorProjectsInput(graphene.InputObjectType):

@@ -19,14 +19,14 @@ from polaris.utils.collections import Fixture
 from polaris.work_tracking.service.graphql import schema
 
 
-class TestImportWorkItemsSourceCustomFields:
+class TestUpdateWorkItemsSourceCustomFields:
 
     @pytest.yield_fixture
     def setup(self):
         mutation_statement = """
-        mutation importWorkItemsSourceCustomFields($importWorkItemsSourceCustomFieldsInput: ImportWorkItemsSourceCustomFieldsInput!){
-            importWorkItemsSourceCustomFields(
-                importWorkItemsSourceCustomFieldsInput: $importWorkItemsSourceCustomFieldsInput) {
+        mutation updateWorkItemsSourceCustomFields($updateWorkItemsSourceCustomFieldsInput: UpdateWorkItemsSourceCustomFieldsInput!){
+            updateWorkItemsSourceCustomFields(
+                updateWorkItemsSourceCustomFieldsInput: $updateWorkItemsSourceCustomFieldsInput) {
                 success
                 errorMessage
             }
@@ -45,7 +45,7 @@ class TestImportWorkItemsSourceCustomFields:
             custom_fields=custom_fields
         )
 
-    class TestJiraImportWorkItemsSourceCustomFields:
+    class TestJiraUpdateWorkItemsSourceCustomFields:
 
         @pytest.yield_fixture()
         def setup(self, setup, jira_work_item_source_fixture, cleanup):
@@ -67,7 +67,7 @@ class TestImportWorkItemsSourceCustomFields:
                     response = client.execute(
                         fixture.mutation_statement,
                         variable_values=dict(
-                            importWorkItemsSourceCustomFieldsInput=dict(
+                            updateWorkItemsSourceCustomFieldsInput=dict(
                                 workItemsSources=[
                                     dict(
                                         workItemsSourceKey=str(fixture.work_items_source.key)
@@ -75,7 +75,7 @@ class TestImportWorkItemsSourceCustomFields:
                                 ]
                             )
                         ))
-                    assert response['data']['importWorkItemsSourceCustomFields']['success']
+                    assert response['data']['updateWorkItemsSourceCustomFields']['success']
                 assert db.connection().execute(
                     f"select custom_fields from work_tracking.work_items_sources where key='{fixture.work_items_source.key}'").fetchall()[
                            0][0] == fetch_custom_fields.return_value
@@ -90,10 +90,10 @@ class TestImportWorkItemsSourceCustomFields:
                         'polaris.work_tracking.integrations.atlassian.jira_connector.JiraConnector.fetch_custom_fields') as fetch_custom_fields:
                     fetch_custom_fields.return_value = fixture.custom_fields
                     response = client.execute(fixture.mutation_statement, variable_values=dict(
-                        importWorkItemsSourceCustomFieldsInput=dict(
+                        updateWorkItemsSourceCustomFieldsInput=dict(
                             workItemsSources=[dict(workItemsSourceKey=str(work_items_source_key))])))
-                    assert not response['data']['importWorkItemsSourceCustomFields']['success']
-                    assert response['data']['importWorkItemsSourceCustomFields'][
+                    assert not response['data']['updateWorkItemsSourceCustomFields']['success']
+                    assert response['data']['updateWorkItemsSourceCustomFields'][
                                'errorMessage'] == f"Work Item source with key: {work_items_source_key} not available for this import"
 
         class TestWhenInputKeyDoesNotMatchUUIDFormat:
@@ -108,7 +108,7 @@ class TestImportWorkItemsSourceCustomFields:
                     response = client.execute(
                         fixture.mutation_statement,
                         variable_values=dict(
-                            importWorkItemsSourceCustomFieldsInput=dict(
+                            updateWorkItemsSourceCustomFieldsInput=dict(
                                 workItemsSources=[
                                     dict(
                                         workItemsSourceKey=str(work_items_source_key)
@@ -116,8 +116,8 @@ class TestImportWorkItemsSourceCustomFields:
                                 ]
                             )
                         ))
-                    assert not response['data']['importWorkItemsSourceCustomFields']['success']
-                    assert response['data']['importWorkItemsSourceCustomFields'][
+                    assert not response['data']['updateWorkItemsSourceCustomFields']['success']
+                    assert response['data']['updateWorkItemsSourceCustomFields'][
                                'errorMessage'] == f"Import project custom fields failed"
 
     class TestNonJiraCustomFieldsImport:
@@ -144,7 +144,7 @@ class TestImportWorkItemsSourceCustomFields:
                     response = client.execute(
                         fixture.mutation_statement,
                         variable_values=dict(
-                            importWorkItemsSourceCustomFieldsInput=dict(
+                            updateWorkItemsSourceCustomFieldsInput=dict(
                                 workItemsSources=[
                                     dict(
                                         workItemsSourceKey=str(work_items_source_key)
@@ -152,8 +152,8 @@ class TestImportWorkItemsSourceCustomFields:
                                 ]
                             )
                         ))
-                    assert not response['data']['importWorkItemsSourceCustomFields']['success']
-                    assert response['data']['importWorkItemsSourceCustomFields'][
+                    assert not response['data']['updateWorkItemsSourceCustomFields']['success']
+                    assert response['data']['updateWorkItemsSourceCustomFields'][
                                'errorMessage'] == f"Work Item source with key: {work_items_source_key} not available for this import"
 
         class TestGithubCustomFieldsImport:
@@ -168,7 +168,7 @@ class TestImportWorkItemsSourceCustomFields:
                     response = client.execute(
                         fixture.mutation_statement,
                         variable_values=dict(
-                            importWorkItemsSourceCustomFieldsInput=dict(
+                            updateWorkItemsSourceCustomFieldsInput=dict(
                                 workItemsSources=[
                                     dict(
                                         workItemsSourceKey=str(work_items_source_key)
@@ -176,6 +176,6 @@ class TestImportWorkItemsSourceCustomFields:
                                 ]
                             )
                         ))
-                    assert not response['data']['importWorkItemsSourceCustomFields']['success']
-                    assert response['data']['importWorkItemsSourceCustomFields'][
+                    assert not response['data']['updateWorkItemsSourceCustomFields']['success']
+                    assert response['data']['updateWorkItemsSourceCustomFields'][
                                'errorMessage'] == f"Work Item source with key: {work_items_source_key} not available for this import"
