@@ -16,10 +16,16 @@ from polaris.utils.config import get_config_provider
 from polaris.work_tracking import publish
 from polaris.work_tracking import work_items_source_factory, connector_factory
 from polaris.work_tracking.db import api
+from polaris.work_tracking.db.model import WorkItemsSource
 from polaris.integrations.db.api import tracking_receipt_updates
+from polaris.common import db
 
 logger = logging.getLogger('polaris.work_tracking.work_tracker')
 config = get_config_provider()
+
+
+def success(result):
+    return dict(success=True, **result)
 
 
 def sync_work_items(token_provider, work_items_source_key):
@@ -98,11 +104,30 @@ def import_projects(import_projects_input):
             projects.append(
                 imported
             )
-    # DB transaction has commited we can publish messages.
+    # DB transaction has committed we can publish messages.
     for imported in projects:
         publish.project_imported(organization_key, imported)
 
     return projects
+
+
+def update_work_items_source_custom_fields(update_work_items_source_custom_fields_input, join_this=None):
+    projects = []
+    try:
+        with db.orm_session(join_this) as session:
+            for params in update_work_items_source_custom_fields_input.work_items_sources:
+                work_items_source = WorkItemsSource.find_by_key(session, params.work_items_source_key)
+                if work_items_source and work_items_source.import_state == WorkItemsSourceImportState.auto_update.value:
+                    connector = connector_factory.get_connector(connector_key=work_items_source.connector_key, join_this=session)
+                    if hasattr(connector, 'fetch_custom_fields') and callable(connector.fetch_custom_fields):
+                        work_items_source.custom_fields = connector.fetch_custom_fields()
+                        projects.append(params.work_items_source_key)
+                else:
+                    return db.failure_message(
+                        f"Work Item source with key: {params.work_items_source_key} not available for this import")
+            return success(dict(projects=projects))
+    except Exception as e:
+        return db.failure_message(f"Import project custom fields failed", e)
 
 
 def test_work_tracking_connector(connector_key, join_this=None):

@@ -83,7 +83,8 @@ class PivotalTrackerConnector(PivotalApiClient):
             source_id=project['id'],
             name=project['name'],
             url=project.get('url'),
-            description=project.get('description')
+            description=project.get('description'),
+            custom_fields=[]
 
         )
 

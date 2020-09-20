@@ -11,7 +11,7 @@
 import logging
 import uuid
 from datetime import datetime
-
+from polaris.utils.collections import dict_drop
 from sqlalchemy import select, and_, func, literal, Column, Integer
 from sqlalchemy.dialects.postgresql import insert, UUID
 
@@ -43,7 +43,10 @@ def sync_work_items(work_items_source_key, work_item_list, join_this=None):
                             key=uuid.uuid4(),
                             work_items_source_id=work_items_source.id,
                             last_sync=last_sync,
-                            **work_item
+                            # Dropping epic_source_display_id if it is passed, \
+                            # as its handled in the sync_work_items_for_epic workflow. \
+                            # Handling it here will make things complicated
+                            **dict_drop(work_item, ['epic_source_display_id'])
                         )
                         for work_item in work_item_list
                     ]
@@ -257,7 +260,6 @@ def sync_work_item(work_items_source_key, work_item_data, join_this=None):
             else:
                 work_item_key = work_item.key
                 sync_result['is_updated'] = work_item.update(work_item_data)
-
 
         # The reason we do this flush and refetch from the database below as follows:
 
@@ -483,6 +485,11 @@ def import_project(
         return project
 
 
+def import_work_items_source_custom_fields(work_items_source, custom_fields, join_this=None):
+    work_items_source.custom_fields = custom_fields[0]
+    return work_items_source.key
+
+
 def get_imported_work_items_sources_count(connector_key, join_this=None):
     with db.orm_session(join_this) as session:
         return session.connection().execute(
@@ -549,7 +556,7 @@ def sync_work_items_for_epic(work_items_source_key, epic, work_item_list, join_t
                     )
                 )
 
-            #update work items
+            # update work items
             session.connection().execute(
                 work_items.update().where(
                     work_items.c.key == work_items_temp.c.key

@@ -51,7 +51,8 @@ class JiraConnector(PolarisAtlassianConnector):
         if response.ok:
             return response.json()
         else:
-            raise ProcessingException(f'Failed to fetch projects from connnect {self.key} at offset {offset}: {response.text}')
+            raise ProcessingException(
+                f'Failed to fetch projects from connect {self.key} at offset {offset}: {response.text}')
 
     def fetch_projects(self, maxResults, offset):
         fetch_projects_url = '/project/search'
@@ -70,10 +71,33 @@ class JiraConnector(PolarisAtlassianConnector):
             body = response.json()
             return body.get('values'), body.get('total')
         else:
-            raise ProcessingException(f'Failed to fetch projects from connnect {self.key} at offset {offset}: {response.text}')
+            raise ProcessingException(
+                f'Failed to fetch projects from connect {self.key} at offset {offset}: {response.text}')
+
+    def fetch_custom_fields(self):
+        fetch_custom_fields_url = '/field'
+        response = self.get(
+            fetch_custom_fields_url,
+            headers={"Accept": "application/json"},
+        )
+        if response.ok:
+            body = response.json()
+            custom_fields = []
+            for field in body:
+                if field['name'] == 'Epic Link':
+                    custom_fields.append(dict(
+                        name=field['name'],
+                        id=field['id'],
+                        key=field['key'])
+                    )
+                    break
+            return custom_fields
+        else:
+            raise ProcessingException(
+                f'Failed to fetch custom fields from connect {self.key}: {response.text}')
 
     @staticmethod
-    def map_project_to_work_items_sources_data(project):
+    def map_project_to_work_items_sources_data(project, custom_fields):
         return dict(
             integration_type=WorkTrackingIntegrationType.jira.value,
             work_items_source_type=JiraWorkItemSourceType.project.value,
@@ -81,8 +105,8 @@ class JiraConnector(PolarisAtlassianConnector):
             source_id=project['id'],
             name=project['name'],
             url=project.get('url'),
-            description=project.get('description')
-
+            description=project.get('description'),
+            custom_fields=custom_fields
         )
 
     def fetch_work_items_sources_to_sync(self, batch_size=100):
@@ -93,8 +117,9 @@ class JiraConnector(PolarisAtlassianConnector):
                 break
 
             work_items_sources = []
+            custom_fields = self.fetch_custom_fields()
             for project in projects:
-                work_items_sources_data = self.map_project_to_work_items_sources_data(project)
+                work_items_sources_data = self.map_project_to_work_items_sources_data(project, custom_fields)
                 if work_items_sources_data:
                     work_items_sources.append(work_items_sources_data)
 
@@ -104,9 +129,5 @@ class JiraConnector(PolarisAtlassianConnector):
             projects, total = self.fetch_projects(maxResults=batch_size, offset=offset)
 
     def fetch_work_items_source_data_for_project(self, project_id):
-        return self.map_project_to_work_items_sources_data(self.fetch_project(project_id))
-
-
-
-
-
+        custom_fields = self.fetch_custom_fields()
+        return self.map_project_to_work_items_sources_data(self.fetch_project(project_id), custom_fields)
