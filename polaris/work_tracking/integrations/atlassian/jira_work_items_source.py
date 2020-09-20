@@ -82,7 +82,7 @@ class JiraProject(JiraWorkItemsSource):
                 description=fields.get('description'),
                 is_bug=issue_type == 'Bug',
                 work_item_type=self.work_item_type_map.get(issue_type, JiraWorkItemType.story.value),
-                tags=[],
+                tags=fields.get('labels'),
                 url=issue.get('self'),
                 source_id=str(issue.get('id')),
                 source_display_id=issue.get('key'),
