@@ -112,12 +112,13 @@ class JiraConnector(PolarisAtlassianConnector):
     def fetch_work_items_sources_to_sync(self, batch_size=100):
         offset = 0
         projects, total = self.fetch_projects(maxResults=batch_size, offset=offset)
+        custom_fields = self.fetch_custom_fields()
         while projects is not None and offset < total:
             if len(projects) == 0:
                 break
 
             work_items_sources = []
-            custom_fields = self.fetch_custom_fields()
+
             for project in projects:
                 work_items_sources_data = self.map_project_to_work_items_sources_data(project, custom_fields)
                 if work_items_sources_data:
