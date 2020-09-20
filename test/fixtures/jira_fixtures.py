@@ -43,9 +43,13 @@ payload = dict(
     serviceEntitlementNumber='42'
 )
 
+
+
+
 @pytest.fixture(scope='module')
 def setup_integrations_schema(db_up):
     integrations.recreate_all(db.engine())
+
 
 @pytest.fixture(scope='module')
 def setup_work_tracking_schema(db_up):
@@ -74,7 +78,7 @@ def app_fixture(setup_integrations_schema):
 
 @pytest.yield_fixture
 def jira_work_item_source_fixture(setup_work_tracking_schema, app_fixture):
-    _, _,  connector_key = app_fixture
+    _, _, connector_key = app_fixture
     jira_project_id = "10001"
     with db.orm_session() as session:
         session.expire_on_commit = False
@@ -89,7 +93,8 @@ def jira_work_item_source_fixture(setup_work_tracking_schema, app_fixture):
             account_key=account_key,
             organization_key=organization_key,
             commit_mapping_scope='organization',
-            import_state=WorkItemsSourceImportState.auto_update.value
+            import_state=WorkItemsSourceImportState.auto_update.value,
+            custom_fields=[{"id": "customfield_10014", "key": "customfield_10014", "name": "Epic Link"}]
         )
         session.add(work_items_source)
         session.flush()
@@ -157,7 +162,6 @@ def jira_work_items_fixture(jira_work_item_source_fixture):
 
 @pytest.yield_fixture
 def cleanup():
-
     yield
 
     with db.create_session() as session:
