@@ -127,7 +127,7 @@ def update_work_items_source_custom_fields(update_work_items_source_custom_field
                         f"Work Item source with key: {params.work_items_source_key} not available for this import")
             return success(dict(projects=projects))
     except Exception as e:
-        return db.failure_message(f"Import project custom fields failed", e)
+        return db.failure_message(f"Import work item source custom fields failed", e)
 
 
 def test_work_tracking_connector(connector_key, join_this=None):
