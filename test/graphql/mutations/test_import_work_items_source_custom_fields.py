@@ -118,7 +118,7 @@ class TestUpdateWorkItemsSourceCustomFields:
                         ))
                     assert not response['data']['updateWorkItemsSourceCustomFields']['success']
                     assert response['data']['updateWorkItemsSourceCustomFields'][
-                               'errorMessage'] == f"Import project custom fields failed"
+                               'errorMessage'] == f"Import work item source custom fields failed"
 
     class TestNonJiraCustomFieldsImport:
 
