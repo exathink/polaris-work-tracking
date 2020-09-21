@@ -611,7 +611,6 @@ def get_work_items_source_epics(work_items_source, join_this=None):
                 work_items.c.source_state.label('state'),
                 work_items.c.source_created_at.label('created_at'),
                 work_items.c.source_last_updated.label('updated_at'),
-                work_items.c.deleted_at,
                 work_items.c.source_id,
                 literal(None).label('epic_key')
             ]).select_from(
