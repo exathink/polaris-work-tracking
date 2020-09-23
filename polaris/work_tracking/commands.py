@@ -119,7 +119,8 @@ def update_work_items_source_custom_fields(update_work_items_source_custom_field
             for params in update_work_items_source_custom_fields_input.work_items_sources:
                 work_items_source = WorkItemsSource.find_by_key(session, params.work_items_source_key)
                 if work_items_source and work_items_source.import_state == WorkItemsSourceImportState.auto_update.value:
-                    connector = connector_factory.get_connector(connector_key=work_items_source.connector_key, join_this=session)
+                    connector = connector_factory.get_connector(connector_key=work_items_source.connector_key,
+                                                                join_this=session)
                     if hasattr(connector, 'fetch_custom_fields') and callable(connector.fetch_custom_fields):
                         work_items_source.custom_fields = connector.fetch_custom_fields()
                         projects.append(params.work_items_source_key)
@@ -131,28 +132,32 @@ def update_work_items_source_custom_fields(update_work_items_source_custom_field
         return db.failure_message(f"Import work item source custom fields failed", e)
 
 
+def get_epics_for_project(project, join_this=None):
+    work_items_source_epics = []
+    with db.orm_session(join_this) as session:
+        for work_items_source in project.work_items_sources:
+            epics = api.get_work_items_source_epics(work_items_source, join_this=session)
+            work_items_source_epics.append(dict(work_items_source_key=work_items_source.key, epics=epics))
+    return work_items_source_epics
+
+
 def resolve_work_items_for_project_epics(resolve_work_items_for_project_epics_input, join_this=None):
-    epics_to_publish = []
     try:
         with db.orm_session(join_this) as session:
             project = Project.find_by_key(session, project_key=resolve_work_items_for_project_epics_input.project_key)
             if project:
-                for work_items_source in project.work_items_sources:
-                    epics = api.get_work_items_source_epics(work_items_source, join_this=session)
-                    epics_to_publish.append(dict(work_items_source_key=work_items_source.key, epics=epics))
+                epics_to_publish = get_epics_for_project(project, join_this=session)
+                for epic_to_publish in epics_to_publish:
+                    # Publish ResolveWorkItemsForEpic
+                    for epic in epic_to_publish['epics']:
+                        publish.resolve_work_items_for_epic(organization_key=project.organization_key, \
+                                                            work_items_source_key=epic_to_publish[
+                                                                'work_items_source_key'], \
+                                                            epic=epic)
+                return success(dict(project_key=project.key))
             else:
-                return db.failure_message(f"Project with key: {resolve_work_items_for_project_epics_input.project_key} not found")
-        # Publishing all messages after transaction has committed. \
-        # This is to ensure that we do not happen to publish this message for some(and not all) \
-        # epics due to any db exception
-        for epic_to_publish in epics_to_publish:
-            # Publish ResolveWorkItemsForEpic
-            for epic in epic_to_publish['epics']:
-                publish.resolve_work_items_for_epic(organization_key=project.organization_key, \
-                                            work_items_source_key=epic_to_publish['work_items_source_key'], \
-                                            epic=epic)
-        return success(dict(project_key=project.key))
-
+                return db.failure_message(
+                    f"Project with key: {resolve_work_items_for_project_epics_input.project_key} not found")
     except Exception as e:
         return db.failure_message(f"Resolve work items for project epics failed", e)
 

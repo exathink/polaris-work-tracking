@@ -8,16 +8,9 @@
 
 # Author: Pragya Goyal
 
-import uuid
 import pytest
 from unittest.mock import patch
 from graphene.test import Client
-from unittest.mock import MagicMock
-
-from pika.channel import Channel
-from polaris.messaging.message_consumer import MessageConsumer
-from polaris.utils.token_provider import get_token_provider
-
 from polaris.common import db
 from test.fixtures.jira_fixtures import *
 from polaris.utils.collections import Fixture
@@ -25,20 +18,17 @@ from polaris.work_tracking.service.graphql import schema
 from polaris.work_tracking.db import model
 from test.constants import *
 from polaris.work_tracking.messages import ResolveWorkItemsForEpic
-from polaris.messaging.test_utils import mock_publisher
+from polaris.messaging.test_utils import assert_topic_and_message
 from polaris.messaging.topics import WorkItemsTopic
 
-mock_channel = MagicMock(Channel)
-mock_consumer = MagicMock(MessageConsumer)
-mock_consumer.token_provider = get_token_provider()
 
 @pytest.yield_fixture()
 def setup_project():
     project = model.Project(
-            name='TestProject',
-            key=uuid.uuid4(),
-            organization_key=polaris_organization_key,
-            account_key=exathink_account_key
+        name='TestProject',
+        key=uuid.uuid4(),
+        organization_key=polaris_organization_key,
+        account_key=exathink_account_key
     )
 
     yield project
@@ -97,17 +87,32 @@ class TestResolveWorkItemsForProjectEpics:
             def it_publishes_message_to_resolve_epic_work_items_for_each_epic_in_project(self, setup):
                 fixture = setup
 
+                with patch('polaris.work_tracking.publish.publish') as work_items_topic_publish:
+                    client = Client(schema)
+                    response = client.execute(
+                        fixture.mutation_statement,
+                        variable_values=fixture.variable_values
+                    )
+
+                    assert response['data']['resolveWorkItemsForProjectEpics']['success']
+                    work_items_topic_publish.assert_called()
+                    assert_topic_and_message(work_items_topic_publish, WorkItemsTopic, ResolveWorkItemsForEpic)
+
+        class TestWhenProjectDoesNotExist:
+
+            def it_returns_failure_message(self, setup):
+                fixture = setup
+                project_key = uuid.uuid4()
                 client = Client(schema)
                 response = client.execute(
                     fixture.mutation_statement,
-                    variable_values=fixture.variable_values
+                    variable_values=dict(
+                        resolveWorkItemsForProjectEpicsInput=dict(
+                            projectKey=str(project_key)
+                        )
+                    )
                 )
 
-                publisher = mock_publisher()
-                channel = mock_channel()
-                assert response['data']['resolveWorkItemsForProjectEpics']['success']
-                publisher.assert_topic_called_with_message(WorkItemsTopic, ResolveWorkItemsForEpic, call=0)
-
-
-
-
+                assert not response['data']['resolveWorkItemsForProjectEpics']['success']
+                assert response['data']['resolveWorkItemsForProjectEpics'][
+                           'errorMessage'] == f'Project with key: {project_key} not found'
