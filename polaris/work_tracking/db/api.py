@@ -593,3 +593,35 @@ def sync_work_items_for_epic(work_items_source_key, epic, work_item_list, join_t
             ]
             work_items_upserted.extend(additional_work_items_updated)
             return work_items_upserted
+
+
+def get_work_items_source_epics(work_items_source, join_this=None):
+    with db.orm_session(join_this) as session:
+        epic_work_items = session.connection().execute(
+            select([
+                work_items.c.key,
+                work_items.c.source_display_id.label('display_id'),
+                work_items.c.work_item_type,
+                work_items.c.url,
+                work_items.c.name,
+                work_items.c.description,
+                work_items.c.is_bug,
+                work_items.c.is_epic,
+                work_items.c.tags,
+                work_items.c.source_state.label('state'),
+                work_items.c.source_created_at.label('created_at'),
+                work_items.c.source_last_updated.label('updated_at'),
+                work_items.c.source_id,
+                literal(None).label('epic_key')
+            ]).select_from(
+                work_items
+            ).where(
+                and_(
+                    work_items.c.work_items_source_id == work_items_source.id,
+                    work_items.c.is_epic == True
+                    #work_items.c.source_state == 'Open' # TODO: To be added as optional argument
+                )
+            )
+        ).fetchall()
+
+        return epic_work_items

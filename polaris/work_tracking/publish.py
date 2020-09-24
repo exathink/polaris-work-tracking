@@ -12,7 +12,8 @@
 from polaris.messaging.messages import WorkItemsSourceCreated, ProjectImported
 from polaris.messaging.topics import WorkItemsTopic, ConnectorsTopic
 from polaris.messaging.utils import publish
-from polaris.work_tracking.messages import AtlassianConnectWorkItemEvent, RefreshConnectorProjects
+from polaris.work_tracking.messages import AtlassianConnectWorkItemEvent, RefreshConnectorProjects, \
+    ResolveWorkItemsForEpic
 
 
 def work_items_source_created(work_items_source, channel=None):
@@ -94,6 +95,22 @@ def refresh_connector_projects(connector_key, tracking_receipt=None, channel=Non
     )
     publish(
         ConnectorsTopic,
+        message,
+        channel=channel
+    )
+    return message
+
+
+def resolve_work_items_for_epic(organization_key, work_items_source_key, epic, channel=None):
+    message = ResolveWorkItemsForEpic(
+        send=dict(
+            organization_key=organization_key,
+            work_items_source_key=work_items_source_key,
+            epic=epic
+        )
+    )
+    publish(
+        WorkItemsTopic,
         message,
         channel=channel
     )
