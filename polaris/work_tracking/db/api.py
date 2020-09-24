@@ -31,7 +31,7 @@ def sync_work_items(work_items_source_key, work_item_list, join_this=None):
             work_items_temp = db.temp_table_from(
                 work_items,
                 table_name='work_items_temp',
-                exclude_columns=[work_items.c.id, work_items.c.epic_id]
+                exclude_columns=[work_items.c.id, work_items.c.parent_id]
             )
             work_items_temp.create(session.connection(), checkfirst=True)
 
@@ -43,20 +43,20 @@ def sync_work_items(work_items_source_key, work_item_list, join_this=None):
                             key=uuid.uuid4(),
                             work_items_source_id=work_items_source.id,
                             last_sync=last_sync,
-                            # Dropping epic_source_display_id if it is passed, \
-                            # as its handled in the sync_work_items_for_epic workflow. \
+                            # Dropping parent_source_display_id if it is passed, \
+                            # as its handled in the sync_work_items_for_parent workflow. \
                             # Handling it here will make things complicated
-                            **dict_drop(work_item, ['epic_source_display_id'])
+                            **dict_drop(work_item, ['parent_source_display_id'])
                         )
                         for work_item in work_item_list
                     ]
                 )
             )
 
-            epic_work_items = work_items.alias('epic_work_items')
+            parent_work_items = work_items.alias('parent_work_items')
             work_items_before_insert = session.connection().execute(
                 select([*work_items_temp.columns, work_items.c.key.label('current_key'),
-                        epic_work_items.c.key.label('epic_key')]).select_from(
+                        parent_work_items.c.key.label('parent_key')]).select_from(
                     work_items_temp.outerjoin(
                         work_items,
                         and_(
@@ -64,10 +64,10 @@ def sync_work_items(work_items_source_key, work_item_list, join_this=None):
                             work_items_temp.c.source_id == work_items.c.source_id
                         )
                     ).outerjoin(
-                        epic_work_items,
+                        parent_work_items,
                         and_(
-                            epic_work_items.c.work_items_source_id == work_items.c.work_items_source_id,
-                            epic_work_items.c.id == work_items.c.epic_id
+                            parent_work_items.c.work_items_source_id == work_items.c.work_items_source_id,
+                            parent_work_items.c.id == work_items.c.parent_id
                         )
                     )
                 )
@@ -106,7 +106,7 @@ def sync_work_items(work_items_source_key, work_item_list, join_this=None):
                     description=work_item.description,
                     is_bug=work_item.is_bug,
                     is_epic=work_item.is_epic,
-                    epic_key=work_item.epic_key,
+                    parent_key=work_item.parent_key,
                     tags=work_item.tags,
                     state=work_item.source_state,
                     created_at=work_item.source_created_at,
@@ -226,7 +226,7 @@ def sync_work_item(work_items_source_key, work_item_data, join_this=None):
     with db.orm_session(join_this) as session:
         work_item_key = None
         work_items_source = WorkItemsSource.find_by_key(session, work_items_source_key)
-        epic_source_display_id = work_item_data.pop('epic_source_display_id', None)
+        parent_source_display_id = work_item_data.pop('parent_source_display_id', None)
         if work_items_source:
             sync_result = dict()
             work_item = WorkItem.find_by_source_display_id(
@@ -234,19 +234,19 @@ def sync_work_item(work_items_source_key, work_item_data, join_this=None):
                 work_items_source.id,
                 work_item_data.get('source_display_id')
             )
-            # Find linked epic work item
-            # FIXME: Epics can be from a different work item source. But here we are setting epic ids \
-            #  only when epic is from same work item source.
-            if epic_source_display_id is None or epic_source_display_id == '':
-                work_item_data['epic_id'] = None
+            # Find linked parent work item
+            # FIXME: Epics can be from a different work item source. But here we are setting parent ids \
+            #  only when parent is from same work item source.
+            if parent_source_display_id is None or parent_source_display_id == '':
+                work_item_data['parent_id'] = None
             else:
-                epic_work_item = WorkItem.find_by_source_display_id(
+                parent_work_item = WorkItem.find_by_source_display_id(
                     session,
                     work_items_source.id,
-                    source_display_id=epic_source_display_id
+                    source_display_id=parent_source_display_id
 
                 )
-                work_item_data['epic_id'] = epic_work_item.id if epic_work_item else None
+                work_item_data['parent_id'] = parent_work_item.id if parent_work_item else None
             if not work_item:
                 work_item_key = uuid.uuid4()
                 work_item = WorkItem(
@@ -292,10 +292,10 @@ def sync_work_item(work_items_source_key, work_item_data, join_this=None):
             )
         ).fetchone()
         if work_item:
-            if work_item.epic_id is not None:
-                epic_key = WorkItem.find_by_key(session, key=work_item.key).epic.key
+            if work_item.parent_id is not None:
+                parent_key = WorkItem.find_by_key(session, key=work_item.key).parent.key
             else:
-                epic_key = None
+                parent_key = None
             return dict(
                 **sync_result,
                 **dict(
@@ -307,7 +307,7 @@ def sync_work_item(work_items_source_key, work_item_data, join_this=None):
                     description=work_item.description,
                     is_bug=work_item.is_bug,
                     is_epic=work_item.is_epic,
-                    epic_key=epic_key,
+                    parent_key=parent_key,
                     tags=work_item.tags,
                     state=work_item.source_state,
                     created_at=work_item.source_created_at,
@@ -353,7 +353,7 @@ def delete_work_item(work_items_source_key, work_item_data, join_this=None):
                     description=work_item.description,
                     is_bug=work_item.is_bug,
                     is_epic=work_item.is_epic,
-                    epic_key=work_item.epic.key if work_item.epic_id is not None else None,
+                    parent_key=work_item.parent.key if work_item.parent_id is not None else None,
                     tags=work_item.tags,
                     state=work_item.source_state,
                     created_at=work_item.source_created_at,
@@ -505,14 +505,14 @@ def get_imported_work_items_sources_count(connector_key, join_this=None):
 
 
 def sync_work_items_for_epic(work_items_source_key, epic, work_item_list, join_this=None):
-    # sync work items first then update epic_id
+    # sync work items first then update parent_id
     if len(work_item_list) > 0:
         with db.orm_session(join_this) as session:
             synced_work_items = sync_work_items(work_items_source_key, work_item_list, join_this=session)
             work_items_temp = db.create_temp_table(
                 'work_items_temp_table', [
                     Column('key', UUID(as_uuid=True), unique=True),
-                    Column('epic_id', Integer)
+                    Column('parent_id', Integer)
                 ]
             )
             work_items_temp.create(session.connection(), checkfirst=True)
@@ -522,7 +522,7 @@ def sync_work_items_for_epic(work_items_source_key, epic, work_item_list, join_t
                     [
                         dict(
                             key=work_item['key'],
-                            epic_id=epic_work_item.id
+                            parent_id=epic_work_item.id
                         )
                         for work_item in synced_work_items
                     ]
@@ -537,7 +537,7 @@ def sync_work_items_for_epic(work_items_source_key, epic, work_item_list, join_t
                     work_items
                 ).where(
                     and_(
-                        work_items.c.epic_id == epic_work_item.id,
+                        work_items.c.parent_id == epic_work_item.id,
                         work_items.c.key.notin_([wi['key'] for wi in synced_work_items])
                     )
 
@@ -549,7 +549,7 @@ def sync_work_items_for_epic(work_items_source_key, epic, work_item_list, join_t
                     work_items_temp.insert().values([
                         dict(
                             key=work_item['key'],
-                            epic_id=None
+                            parent_id=None
                         )
                         for work_item in work_items_removed_from_epic
                     ]
@@ -561,14 +561,14 @@ def sync_work_items_for_epic(work_items_source_key, epic, work_item_list, join_t
                 work_items.update().where(
                     work_items.c.key == work_items_temp.c.key
                 ).values(
-                    epic_id=work_items_temp.c.epic_id
+                    parent_id=work_items_temp.c.parent_id
                 )
             )
 
             # Collecting all work items inserted/updated
             work_items_upserted = []
             for work_item in synced_work_items:
-                work_item['epic_key'] = epic_work_item.key
+                work_item['parent_key'] = epic_work_item.key
             work_items_upserted.extend(synced_work_items)
             additional_work_items_updated = [
                 dict(
@@ -581,7 +581,7 @@ def sync_work_items_for_epic(work_items_source_key, epic, work_item_list, join_t
                     description=work_item.description,
                     is_bug=work_item.is_bug,
                     is_epic=work_item.is_epic,
-                    epic_key=None,
+                    parent_key=None,
                     tags=work_item.tags,
                     state=work_item.source_state,
                     created_at=work_item.source_created_at,
@@ -612,7 +612,7 @@ def get_work_items_source_epics(work_items_source, join_this=None):
                 work_items.c.source_created_at.label('created_at'),
                 work_items.c.source_last_updated.label('updated_at'),
                 work_items.c.source_id,
-                literal(None).label('epic_key')
+                literal(None).label('parent_key')
             ]).select_from(
                 work_items
             ).where(

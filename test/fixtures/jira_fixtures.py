@@ -120,7 +120,7 @@ def setup_jira_work_items(work_items_source):
                 source_created_at=datetime.utcnow(),
                 source_last_updated=datetime.utcnow(),
                 last_sync=datetime.utcnow(),
-                epic_id=None
+                parent_id=None
             )
         )
     # add an epic
@@ -141,7 +141,7 @@ def setup_jira_work_items(work_items_source):
             source_created_at=datetime.utcnow(),
             source_last_updated=datetime.utcnow(),
             last_sync=datetime.utcnow(),
-            epic_id=None
+            parent_id=None
         )
     )
 

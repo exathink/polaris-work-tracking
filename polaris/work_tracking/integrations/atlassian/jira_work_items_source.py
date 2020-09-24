@@ -75,8 +75,8 @@ class JiraProject(JiraWorkItemsSource):
         fields = issue.get('fields')
         issue_type = fields.get('issuetype').get('name')
 
-        epic_link = find(self.work_items_source.custom_fields, lambda field: field['name'] == 'Epic Link')
-        epic_link_custom_field = epic_link.get('key') if epic_link else None
+        parent_link = find(self.work_items_source.custom_fields, lambda field: field['name'] == 'Epic Link')
+        parent_link_custom_field = parent_link.get('key') if parent_link else None
         mapped_data = dict(
                 name=fields.get('summary'),
                 description=fields.get('description'),
@@ -90,7 +90,7 @@ class JiraProject(JiraWorkItemsSource):
                 source_created_at=self.jira_time_to_utc_time_string(fields.get('created')),
                 source_state=fields.get('status').get('name'),
                 is_epic=issue_type == 'Epic',
-                epic_source_display_id=issue.get('fields').get(epic_link_custom_field) if epic_link_custom_field else None
+                parent_source_display_id=issue.get('fields').get(parent_link_custom_field) if parent_link_custom_field else None
         )
 
         return mapped_data

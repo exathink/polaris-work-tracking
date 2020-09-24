@@ -82,13 +82,13 @@ class TestResolveIssuesForJiraEpic:
                  'source_created_at',
                  'source_last_updated',
                  'last_sync',
-                 'epic_id'],
+                 'parent_id'],
                 {
                     'source_display_id': 'display_id',
                     'source_created_at': 'created_at',
                     'source_last_updated': 'last_updated',
                     'source_state': 'state',
-                    'epic_id': 'epic_key'}
+                    'parent_id': 'parent_key'}
             )
             message = fake_send(
                 ResolveWorkItemsForEpic(
@@ -145,13 +145,13 @@ class TestResolveIssuesForJiraEpic:
                  'source_created_at',
                  'source_last_updated',
                  'last_sync',
-                 'epic_id'],
+                 'parent_id'],
                 {
                     'source_display_id': 'display_id',
                     'source_created_at': 'created_at',
                     'source_last_updated': 'last_updated',
                     'source_state': 'state',
-                    'epic_id': 'epic_key'}
+                    'parent_id': 'parent_key'}
             )
             message = fake_send(
                 ResolveWorkItemsForEpic(
@@ -210,13 +210,13 @@ class TestResolveIssuesForJiraEpic:
                  'source_created_at',
                  'source_last_updated',
                  'last_sync',
-                 'epic_id'],
+                 'parent_id'],
                 {
                     'source_display_id': 'display_id',
                     'source_created_at': 'created_at',
                     'source_last_updated': 'last_updated',
                     'source_state': 'state',
-                    'epic_id': 'epic_key'}
+                    'parent_id': 'parent_key'}
             )
             message = fake_send(
                 ResolveWorkItemsForEpic(
@@ -258,13 +258,13 @@ class TestResolveIssuesForJiraEpic:
                  'source_created_at',
                  'source_last_updated',
                  'last_sync',
-                 'epic_id'],
+                 'parent_id'],
                 {
                     'source_display_id': 'display_id',
                     'source_created_at': 'created_at',
                     'source_last_updated': 'last_updated',
                     'source_state': 'state',
-                    'epic_id': 'epic_key'}
+                    'parent_id': 'parent_key'}
             )
             message = fake_send(
                 ResolveWorkItemsForEpic(

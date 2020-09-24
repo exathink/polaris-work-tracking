@@ -75,19 +75,19 @@ class TestSyncWorkItemsForJiraEpic:
              'source_created_at',
              'source_last_updated',
              'last_sync',
-             'epic_id'],
+             'parent_id'],
             {
                 'source_display_id': 'display_id',
                 'source_created_at': 'created_at',
                 'source_last_updated': 'last_updated',
                 'source_state': 'state',
-                'epic_id': 'epic_key'}
+                'parent_id': 'parent_key'}
         )
         created = api.sync_work_items_for_epic(work_items_source.key, epic, work_items_list)
-        epic_id = db.connection().execute(f"select id from work_tracking.work_items where key='{epic['key']}'").scalar()
+        parent_id = db.connection().execute(f"select id from work_tracking.work_items where key='{epic['key']}'").scalar()
         assert len(created) == len(new_work_items)
         assert db.connection().execute(
-            f"select count(id) from work_tracking.work_items where work_items_source_id={work_items_source.id} and epic_id={epic_id} "
+            f"select count(id) from work_tracking.work_items where work_items_source_id={work_items_source.id} and parent_id={parent_id} "
         ).scalar() == len(new_work_items)
 
     def it_updates_and_adds_epic_id_for_existing_work_item_mapped_to_an_epic(self, jira_work_items_fixture, cleanup):
@@ -128,19 +128,19 @@ class TestSyncWorkItemsForJiraEpic:
              'source_created_at',
              'source_last_updated',
              'last_sync',
-             'epic_id'],
+             'parent_id'],
             {
                 'source_display_id': 'display_id',
                 'source_created_at': 'created_at',
                 'source_last_updated': 'last_updated',
                 'source_state': 'state',
-                'epic_id': 'epic_key'}
+                'parent_id': 'parent_key'}
         )
         updated = api.sync_work_items_for_epic(work_items_source.key, epic, work_items_list)
-        epic_id = db.connection().execute(f"select id from work_tracking.work_items where key='{epic['key']}'").scalar()
+        parent_id = db.connection().execute(f"select id from work_tracking.work_items where key='{epic['key']}'").scalar()
         assert len(updated) == len(work_items_list)
         assert db.connection().execute(
-            f"select count(id) from work_tracking.work_items where work_items_source_id={work_items_source.id} and epic_id={epic_id} "
+            f"select count(id) from work_tracking.work_items where work_items_source_id={work_items_source.id} and parent_id={parent_id} "
         ).scalar() == len(work_items_list)
 
     def it_does_nothing_when_no_mapped_work_items_found(self, jira_work_items_fixture, cleanup):
@@ -163,19 +163,19 @@ class TestSyncWorkItemsForJiraEpic:
              'source_created_at',
              'source_last_updated',
              'last_sync',
-             'epic_id'],
+             'parent_id'],
             {
                 'source_display_id': 'display_id',
                 'source_created_at': 'created_at',
                 'source_last_updated': 'last_updated',
                 'source_state': 'state',
-                'epic_id': 'epic_key'}
+                'parent_id': 'parent_key'}
         )
         updated = api.sync_work_items_for_epic(work_items_source.key, epic, work_items_list)
-        epic_id = db.connection().execute(f"select id from work_tracking.work_items where key='{epic['key']}'").scalar()
+        parent_id = db.connection().execute(f"select id from work_tracking.work_items where key='{epic['key']}'").scalar()
         assert not updated
         assert db.connection().execute(
-            f"select count(id) from work_tracking.work_items where work_items_source_id={work_items_source.id} and epic_id={epic_id} "
+            f"select count(id) from work_tracking.work_items where work_items_source_id={work_items_source.id} and parent_id={parent_id} "
         ).scalar() == 0
 
     def it_sets_epic_id_to_null_for_an_existing_work_item_with_non_null_epic_id(self, jira_work_items_fixture, cleanup):
@@ -216,23 +216,23 @@ class TestSyncWorkItemsForJiraEpic:
              'source_created_at',
              'source_last_updated',
              'last_sync',
-             'epic_id'],
+             'parent_id'],
             {
                 'source_display_id': 'display_id',
                 'source_created_at': 'created_at',
                 'source_last_updated': 'last_updated',
                 'source_state': 'state',
-                'epic_id': 'epic_key'}
+                'parent_id': 'parent_key'}
         )
         api.sync_work_items_for_epic(work_items_source.key, epic, work_items_list)
         # remove a work item from work_items_list which are part of epic
         updated = api.sync_work_items_for_epic(work_items_source.key, epic, work_items_list[:2])
-        epic_id = db.connection().execute(f"select id from work_tracking.work_items where key='{epic['key']}'").scalar()
+        parent_id = db.connection().execute(f"select id from work_tracking.work_items where key='{epic['key']}'").scalar()
         assert len(updated) == len(work_items_list)
         assert db.connection().execute(
-            f"select count(id) from work_tracking.work_items where work_items_source_id={work_items_source.id} and epic_id={epic_id} "
+            f"select count(id) from work_tracking.work_items where work_items_source_id={work_items_source.id} and parent_id={parent_id} "
         ).scalar() == 2
-        assert db.connection().execute(f"select count(id) from work_tracking.work_items where epic_id is NULL and is_epic=FALSE ").scalar() == 8
+        assert db.connection().execute(f"select count(id) from work_tracking.work_items where parent_id is NULL and is_epic=FALSE ").scalar() == 8
 
 
 class TestSyncWorkItem:
@@ -268,11 +268,11 @@ class TestSyncWorkItem:
         new_work_items[-1]['is_epic'] = True
         api.sync_work_items(empty_source.key, work_item_list=new_work_items)
         updated_work_item = new_work_items[0]
-        updated_work_item['epic_source_display_id'] = new_work_items[-1]['source_display_id']
+        updated_work_item['parent_source_display_id'] = new_work_items[-1]['source_display_id']
         result = api.sync_work_item(empty_source.key, work_item_data=updated_work_item)
         assert result['is_updated']
         assert db.connection().execute(
-            f"select count(id) from work_tracking.work_items where work_items_source_id={empty_source.id} and key='{result['key']}' and epic_id is not NULL"
+            f"select count(id) from work_tracking.work_items where work_items_source_id={empty_source.id} and key='{result['key']}' and parent_id is not NULL"
         ).scalar() == 1
 
     def it_does_not_update_epic_id_when_epic_work_item_does_not_exist(self, setup_work_items, new_work_items):
@@ -285,6 +285,6 @@ class TestSyncWorkItem:
         result = api.sync_work_item(empty_source.key, work_item_data=updated_work_item)
         assert not result['is_updated']
         assert db.connection().execute(
-            f"select count(id) from work_tracking.work_items where work_items_source_id={empty_source.id} and key='{result['key']}' and epic_id is NULL"
+            f"select count(id) from work_tracking.work_items where work_items_source_id={empty_source.id} and key='{result['key']}' and parent_id is NULL"
         ).scalar() == 1
 

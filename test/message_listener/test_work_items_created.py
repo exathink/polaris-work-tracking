@@ -69,7 +69,7 @@ class TestJiraWorkItemsCreated:
                     new_work_items=[
                         dict_merge(
                             dict_drop(work_item, ['epic_id']),
-                            dict(epic_key=None)
+                            dict(parent_key=None)
                         )
                         for work_item in work_items
                     ]
@@ -97,7 +97,7 @@ class TestJiraWorkItemsCreated:
                     new_work_items=[
                         dict_merge(
                             dict_drop(work_item, ['epic_id']),
-                            dict(epic_key=None, is_epic=False)
+                            dict(parent_key=None, is_epic=False)
                         )
                         for work_item in work_items
                     ]

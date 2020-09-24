@@ -133,7 +133,7 @@ class TestJiraWorkItemSource:
         assert mapped_data['source_created_at']
         assert mapped_data['source_state']
         assert not mapped_data['is_epic']
-        assert not mapped_data['epic_source_display_id']
+        assert not mapped_data['parent_source_display_id']
         # explicitly assert that these are the only fields mapped. The test should fail
         # and force a change in assertions if we change the mapping
         assert len(mapped_data.keys()) == 13
