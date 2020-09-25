@@ -69,7 +69,7 @@ class TestJiraWorkItemsUpdated:
                     work_items_source_key=jira_work_items_source_key,
                     updated_work_items=[
                         dict_merge(
-                            dict_drop(work_item, ['epic_id']),
+                            dict_drop(work_item, ['parent_id']),
                             dict(parent_key=None)
                         )
                         for work_item in work_items
@@ -97,7 +97,7 @@ class TestJiraWorkItemsUpdated:
                     work_items_source_key=jira_work_items_source_key,
                     updated_work_items=[
                         dict_merge(
-                            dict_drop(work_item, ['epic_id']),
+                            dict_drop(work_item, ['parent_id']),
                             dict(parent_key=None, is_epic=False)
                         )
                         for work_item in work_items
