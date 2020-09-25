@@ -96,11 +96,135 @@ jira_api_issue_payload = {'id': '10343', 'self': 'https://urjuna.atlassian.net/r
                                      'votes': {'self': 'https://urjuna.atlassian.net/rest/api/2/issue/PO-298/votes',
                                                'votes': 0, 'hasVoted': False}}}
 
+jira_api_issue_payload_with_parent = {'id': '10357', 'self': 'https://urjuna.atlassian.net/rest/api/2/10357',
+                                      'key': 'TP1-8',
+                                      'fields': {'statuscategorychangedate': '2020-09-25T07:23:38.936-0500',
+                                                 'issuetype': {
+                                                     'self': 'https://urjuna.atlassian.net/rest/api/2/issuetype/10121',
+                                                     'id': '10121',
+                                                     'description': 'Tasks track small, distinct pieces of work.',
+                                                     'iconUrl': 'https://urjuna.atlassian.net/secure/viewavatar?size=medium&avatarId=10318&avatarType=issuetype',
+                                                     'name': 'Task', 'subtask': False, 'avatarId': 10318,
+                                                     'entityId': '346cf461-4a32-415c-8267-2813698df807'},
+                                                 'parent': {'id': '10326', 'key': 'TP1-1',
+                                                            'self': 'https://urjuna.atlassian.net/rest/api/3/issue/10326',
+                                                            'fields': {
+                                                                'summary': 'Creating new Epic to test webhook update',
+                                                                'status': {
+                                                                    'self': 'https://urjuna.atlassian.net/rest/api/3/status/10041',
+                                                                    'description': '',
+                                                                    'iconUrl': 'https://urjuna.atlassian.net/',
+                                                                    'name': 'To Do', 'id': '10041',
+                                                                    'statusCategory': {
+                                                                        'self': 'https://urjuna.atlassian.net/rest/api/3/statuscategory/2',
+                                                                        'id': 2, 'key': 'new',
+                                                                        'colorName': 'blue-gray',
+                                                                        'name': 'To Do'}}, 'priority': {
+                                                                    'self': 'https://urjuna.atlassian.net/rest/api/3/priority/3',
+                                                                    'iconUrl': 'https://urjuna.atlassian.net/images/icons/priorities/medium.svg',
+                                                                    'name': 'Medium', 'id': '3'}, 'issuetype': {
+                                                                    'self': 'https://urjuna.atlassian.net/rest/api/3/issuetype/10122',
+                                                                    'id': '10122',
+                                                                    'description': 'Epics track collections of related bugs, stories, and tasks.',
+                                                                    'iconUrl': 'https://urjuna.atlassian.net/secure/viewavatar?size=medium&avatarId=10307&avatarType=issuetype',
+                                                                    'name': 'Epic', 'subtask': False,
+                                                                    'avatarId': 10307,
+                                                                    'entityId': '88618eff-8718-4531-bfee-13b076c496fd'}}},
+                                                 'timespent': None, 'project': {
+                                              'self': 'https://urjuna.atlassian.net/rest/api/2/project/10011',
+                                              'id': '10011', 'key': 'TP1', 'name': 'Test Project 1',
+                                              'projectTypeKey': 'software', 'simplified': True, 'avatarUrls': {
+                                                  '48x48': 'https://urjuna.atlassian.net/secure/projectavatar?pid=10011&avatarId=10405',
+                                                  '24x24': 'https://urjuna.atlassian.net/secure/projectavatar?size=small&s=small&pid=10011&avatarId=10405',
+                                                  '16x16': 'https://urjuna.atlassian.net/secure/projectavatar?size=xsmall&s=xsmall&pid=10011&avatarId=10405',
+                                                  '32x32': 'https://urjuna.atlassian.net/secure/projectavatar?size=medium&s=medium&pid=10011&avatarId=10405'}},
+                                                 'fixVersions': [], 'customfield_10110': None,
+                                                 'aggregatetimespent': None, 'customfield_10111': None,
+                                                 'resolution': None, 'customfield_10112': None,
+                                                 'customfield_10113': None, 'customfield_10114': None,
+                                                 'customfield_10105': None, 'customfield_10106': [],
+                                                 'customfield_10107': None, 'customfield_10108': None,
+                                                 'customfield_10109': None, 'resolutiondate': None,
+                                                 'workratio': -1, 'lastViewed': '2020-09-25T07:24:16.233-0500',
+                                                 'watches': {
+                                                     'self': 'https://urjuna.atlassian.net/rest/api/2/issue/TP1-8/watchers',
+                                                     'watchCount': 1, 'isWatching': True},
+                                                 'issuerestriction': {'issuerestrictions': {},
+                                                                      'shouldDisplay': True},
+                                                 'created': '2020-09-25T07:23:38.653-0500',
+                                                 'customfield_10020': None, 'customfield_10021': None,
+                                                 'priority': {
+                                                     'self': 'https://urjuna.atlassian.net/rest/api/2/priority/3',
+                                                     'iconUrl': 'https://urjuna.atlassian.net/images/icons/priorities/medium.svg',
+                                                     'name': 'Medium', 'id': '3'}, 'customfield_10100': None,
+                                                 'customfield_10101': None, 'labels': [],
+                                                 'customfield_10016': None, 'customfield_10017': None,
+                                                 'customfield_10018': {'hasEpicLinkFieldDependency': False,
+                                                                       'showField': False, 'nonEditableReason': {
+                                                         'reason': 'PLUGIN_LICENSE_ERROR',
+                                                         'message': 'The Parent Link is only available to Jira Premium users.'}},
+                                                 'customfield_10019': '0|i001ym:',
+                                                 'aggregatetimeoriginalestimate': None, 'timeestimate': None,
+                                                 'versions': [], 'issuelinks': [], 'assignee': {
+                                              'self': 'https://urjuna.atlassian.net/rest/api/2/user?accountId=5e176e8885a8c90ecaca3c63',
+                                              'accountId': '5e176e8885a8c90ecaca3c63', 'avatarUrls': {
+                                                  '48x48': 'https://secure.gravatar.com/avatar/f4e5904c494e37510101ac9ce50e7ddf?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FPG-2.png',
+                                                  '24x24': 'https://secure.gravatar.com/avatar/f4e5904c494e37510101ac9ce50e7ddf?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FPG-2.png',
+                                                  '16x16': 'https://secure.gravatar.com/avatar/f4e5904c494e37510101ac9ce50e7ddf?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FPG-2.png',
+                                                  '32x32': 'https://secure.gravatar.com/avatar/f4e5904c494e37510101ac9ce50e7ddf?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FPG-2.png'},
+                                              'displayName': 'Pragya Goyal', 'active': True,
+                                              'timeZone': 'America/Chicago', 'accountType': 'atlassian'},
+                                                 'updated': '2020-09-25T07:26:14.184-0500', 'status': {
+                                              'self': 'https://urjuna.atlassian.net/rest/api/2/status/10041',
+                                              'description': '', 'iconUrl': 'https://urjuna.atlassian.net/',
+                                              'name': 'To Do', 'id': '10041', 'statusCategory': {
+                                                  'self': 'https://urjuna.atlassian.net/rest/api/2/statuscategory/2',
+                                                  'id': 2, 'key': 'new', 'colorName': 'blue-gray', 'name': 'New'}},
+                                                 'components': [], 'timeoriginalestimate': None,
+                                                 'description': None, 'customfield_10010': None,
+                                                 'customfield_10014': None, 'customfield_10015': None,
+                                                 'timetracking': {}, 'customfield_10005': None,
+                                                 'customfield_10006': None, 'security': None,
+                                                 'customfield_10007': None, 'customfield_10008': None,
+                                                 'customfield_10009': None, 'attachment': [],
+                                                 'aggregatetimeestimate': None,
+                                                 'summary': 'Issue to get API payload', 'creator': {
+                                              'self': 'https://urjuna.atlassian.net/rest/api/2/user?accountId=5e176e8885a8c90ecaca3c63',
+                                              'accountId': '5e176e8885a8c90ecaca3c63', 'avatarUrls': {
+                                                  '48x48': 'https://secure.gravatar.com/avatar/f4e5904c494e37510101ac9ce50e7ddf?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FPG-2.png',
+                                                  '24x24': 'https://secure.gravatar.com/avatar/f4e5904c494e37510101ac9ce50e7ddf?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FPG-2.png',
+                                                  '16x16': 'https://secure.gravatar.com/avatar/f4e5904c494e37510101ac9ce50e7ddf?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FPG-2.png',
+                                                  '32x32': 'https://secure.gravatar.com/avatar/f4e5904c494e37510101ac9ce50e7ddf?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FPG-2.png'},
+                                              'displayName': 'Pragya Goyal', 'active': True,
+                                              'timeZone': 'America/Chicago', 'accountType': 'atlassian'},
+                                                 'subtasks': [], 'customfield_10120': None, 'reporter': {
+                                              'self': 'https://urjuna.atlassian.net/rest/api/2/user?accountId=5e176e8885a8c90ecaca3c63',
+                                              'accountId': '5e176e8885a8c90ecaca3c63', 'avatarUrls': {
+                                                  '48x48': 'https://secure.gravatar.com/avatar/f4e5904c494e37510101ac9ce50e7ddf?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FPG-2.png',
+                                                  '24x24': 'https://secure.gravatar.com/avatar/f4e5904c494e37510101ac9ce50e7ddf?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FPG-2.png',
+                                                  '16x16': 'https://secure.gravatar.com/avatar/f4e5904c494e37510101ac9ce50e7ddf?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FPG-2.png',
+                                                  '32x32': 'https://secure.gravatar.com/avatar/f4e5904c494e37510101ac9ce50e7ddf?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FPG-2.png'},
+                                              'displayName': 'Pragya Goyal', 'active': True,
+                                              'timeZone': 'America/Chicago', 'accountType': 'atlassian'},
+                                                 'customfield_10121': None, 'customfield_10000': '{}',
+                                                 'aggregateprogress': {'progress': 0, 'total': 0},
+                                                 'customfield_10122': None, 'customfield_10001': None,
+                                                 'customfield_10002': None, 'customfield_10123': None,
+                                                 'customfield_10003': None, 'customfield_10124': None,
+                                                 'customfield_10125': None, 'customfield_10004': None,
+                                                 'customfield_10115': None, 'customfield_10116': None,
+                                                 'customfield_10117': None, 'environment': None,
+                                                 'customfield_10118': None, 'customfield_10119': None,
+                                                 'duedate': None, 'progress': {'progress': 0, 'total': 0},
+                                                 'votes': {
+                                                     'self': 'https://urjuna.atlassian.net/rest/api/2/issue/TP1-8/votes',
+                                                     'votes': 0, 'hasVoted': False}}}
+
 
 class TestJiraWorkItemSource:
 
     @pytest.yield_fixture
-    def setup(self, jira_work_item_source_fixture):
+    def setup(self, jira_work_item_source_fixture, cleanup):
         work_items_source, _, _ = jira_work_item_source_fixture
 
         with db.orm_session() as session:
@@ -109,7 +233,8 @@ class TestJiraWorkItemSource:
 
         yield Fixture(
             jira_project=jira_project,
-            jira_issue=jira_api_issue_payload
+            jira_issue=jira_api_issue_payload,
+            jira_issue_with_parent=jira_api_issue_payload_with_parent
         )
 
     def it_maps_work_item_data_correctly(self, setup):
@@ -134,6 +259,32 @@ class TestJiraWorkItemSource:
         assert mapped_data['source_state']
         assert not mapped_data['is_epic']
         assert not mapped_data['parent_source_display_id']
+        # explicitly assert that these are the only fields mapped. The test should fail
+        # and force a change in assertions if we change the mapping
+        assert len(mapped_data.keys()) == 13
+
+    def it_maps_work_item_data_correctly_when_issue_has_parent_field(self, setup):
+        fixture = setup
+
+        project = fixture.jira_project
+
+        mapped_data = project.map_issue_to_work_item_data(fixture.jira_issue_with_parent)
+
+        assert mapped_data
+
+        assert mapped_data['name']
+        assert not mapped_data['description']
+        assert not mapped_data['is_bug']
+        assert mapped_data['work_item_type'] == 'task'
+        assert len(mapped_data['tags']) == 0
+        assert mapped_data['url']
+        assert mapped_data['source_id']
+        assert mapped_data['source_display_id']
+        assert mapped_data['source_last_updated']
+        assert mapped_data['source_created_at']
+        assert mapped_data['source_state']
+        assert not mapped_data['is_epic']
+        assert mapped_data['parent_source_display_id']
         # explicitly assert that these are the only fields mapped. The test should fail
         # and force a change in assertions if we change the mapping
         assert len(mapped_data.keys()) == 13
