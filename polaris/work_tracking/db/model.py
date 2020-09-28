@@ -233,8 +233,8 @@ class WorkItem(Base):
 
     # Information related to Epic
     is_epic = Column(Boolean, nullable=False, default=False, server_default='FALSE')
-    epic_id = Column(Integer, ForeignKey('work_items.id'), nullable=True)
-    epic = relationship('WorkItem', remote_side='WorkItem.id')
+    parent_id = Column(Integer, ForeignKey('work_items.id'), nullable=True)
+    parent = relationship('WorkItem', remote_side='WorkItem.id')
 
     # Work Items Source relationship
     work_items_source_id = Column(Integer, ForeignKey('work_items_sources.id'))
@@ -269,7 +269,7 @@ class WorkItem(Base):
     def update(self, work_item_data):
         updated = False
         for attribute in ['name', 'description', 'is_bug', 'work_item_type', 'is_epic', 'tags', 'url', 'source_state',
-                          'source_display_id', 'epic_id']:
+                          'source_display_id', 'parent_id']:
             if getattr(self, attribute) != work_item_data.get(attribute):
                 setattr(self, attribute, work_item_data.get(attribute))
                 updated = True

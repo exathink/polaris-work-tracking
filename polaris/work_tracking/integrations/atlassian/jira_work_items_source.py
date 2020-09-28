@@ -74,23 +74,28 @@ class JiraProject(JiraWorkItemsSource):
     def map_issue_to_work_item_data(self, issue, changelog=None):
         fields = issue.get('fields')
         issue_type = fields.get('issuetype').get('name')
-
-        epic_link = find(self.work_items_source.custom_fields, lambda field: field['name'] == 'Epic Link')
-        epic_link_custom_field = epic_link.get('key') if epic_link else None
+        parent_link = issue.get('fields').get('parent')  # We have parent in next-gen project issue fields
+        if not parent_link:
+            parent_link = find(self.work_items_source.custom_fields, lambda field: field['name'] == 'Epic Link')
+            parent_link_custom_field = parent_link.get('key') if parent_link else None
+            parent_source_display_id = issue.get('fields').get(
+                parent_link_custom_field) if parent_link_custom_field else None
+        else:
+            parent_source_display_id = parent_link.get('key')
         mapped_data = dict(
-                name=fields.get('summary'),
-                description=fields.get('description'),
-                is_bug=issue_type == 'Bug',
-                work_item_type=self.work_item_type_map.get(issue_type, JiraWorkItemType.story.value),
-                tags=fields.get('labels', []),
-                url=issue.get('self'),
-                source_id=str(issue.get('id')),
-                source_display_id=issue.get('key'),
-                source_last_updated=self.jira_time_to_utc_time_string(fields.get('updated')),
-                source_created_at=self.jira_time_to_utc_time_string(fields.get('created')),
-                source_state=fields.get('status').get('name'),
-                is_epic=issue_type == 'Epic',
-                epic_source_display_id=issue.get('fields').get(epic_link_custom_field) if epic_link_custom_field else None
+            name=fields.get('summary'),
+            description=fields.get('description'),
+            is_bug=issue_type == 'Bug',
+            work_item_type=self.work_item_type_map.get(issue_type, JiraWorkItemType.story.value),
+            tags=fields.get('labels', []),
+            url=issue.get('self'),
+            source_id=str(issue.get('id')),
+            source_display_id=issue.get('key'),
+            source_last_updated=self.jira_time_to_utc_time_string(fields.get('updated')),
+            source_created_at=self.jira_time_to_utc_time_string(fields.get('created')),
+            source_state=fields.get('status').get('name'),
+            is_epic=issue_type == 'Epic',
+            parent_source_display_id=parent_source_display_id
         )
 
         return mapped_data
@@ -168,7 +173,7 @@ class JiraProject(JiraWorkItemsSource):
     def fetch_work_items_for_epic(self, epic):
         epic_source_id = epic['source_id']
         jql_base = f"project = {self.project_id} "
-        jql = f'{jql_base} AND \"Epic Link\" = {epic_source_id}'
+        jql = f'{jql_base} AND parent={epic_source_id} OR \"Epic Link\" = {epic_source_id}'
 
         query_params = dict(
             fields="summary,created,updated, description,labels,issuetype,status",

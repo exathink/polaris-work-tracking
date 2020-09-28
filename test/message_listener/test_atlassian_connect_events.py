@@ -128,7 +128,7 @@ class TestAtlassianConnectEvent:
         assert message
         publisher.assert_topic_called_with_message(WorkItemsTopic, WorkItemsCreated)
 
-        epic_id = db.connection().execute(f"Select id from work_tracking.work_items "
+        parent_id = db.connection().execute(f"Select id from work_tracking.work_items "
                                        f"where "
                                        f"work_items_source_id={work_items_source.id} "
                                        f"and source_display_id='{source_epic_key}' "
@@ -161,7 +161,7 @@ class TestAtlassianConnectEvent:
                                        f"where "
                                        f"work_items_source_id={work_items_source.id} "
                                        f"and source_display_id='{issue_key}' "
-                                       f"and epic_id={epic_id}").scalar() == 1
+                                       f"and parent_id={parent_id}").scalar() == 1
 
 
     def it_sends_an_update_message_when_an_issue_is_updated_and_app_relevant_fields_change(
