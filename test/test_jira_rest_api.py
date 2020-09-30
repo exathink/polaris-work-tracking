@@ -259,9 +259,10 @@ class TestJiraWorkItemSource:
         assert mapped_data['source_state']
         assert not mapped_data['is_epic']
         assert not mapped_data['parent_source_display_id']
+        assert mapped_data['api_payload']
         # explicitly assert that these are the only fields mapped. The test should fail
         # and force a change in assertions if we change the mapping
-        assert len(mapped_data.keys()) == 13
+        assert len(mapped_data.keys()) == 14
 
     def it_maps_work_item_data_correctly_when_issue_has_parent_field(self, setup):
         fixture = setup
@@ -285,6 +286,7 @@ class TestJiraWorkItemSource:
         assert mapped_data['source_state']
         assert not mapped_data['is_epic']
         assert mapped_data['parent_source_display_id']
+        assert mapped_data['api_payload']
         # explicitly assert that these are the only fields mapped. The test should fail
         # and force a change in assertions if we change the mapping
-        assert len(mapped_data.keys()) == 13
+        assert len(mapped_data.keys()) == 14
