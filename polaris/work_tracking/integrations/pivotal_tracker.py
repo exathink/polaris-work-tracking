@@ -95,7 +95,6 @@ class PivotalTrackerConnector(PivotalApiClient):
         ]
 
 
-
 class PivotalTrackerWorkItemsSource:
 
     @staticmethod
@@ -125,7 +124,7 @@ class PivotalTrackerProject(PivotalTrackerWorkItemsSource):
             query_params['updated_after'] = (
                     datetime.utcnow() -
                     timedelta(days=int(self.work_items_source.parameters.get('initial_import_days', 90)))
-                ).isoformat()
+            ).isoformat()
 
         if self.last_updated:
             query_params['updated_after'] = self.last_updated.isoformat()
@@ -158,7 +157,8 @@ class PivotalTrackerProject(PivotalTrackerWorkItemsSource):
                         source_state=story.get('current_state'),
                         # hard coding this for stories. When we load epics
                         # we can set those explicitly to true.
-                        is_epic=False
+                        is_epic=False,
+                        api_payload=story
 
                     )
                     for story in stories
@@ -173,5 +173,3 @@ class PivotalTrackerProject(PivotalTrackerWorkItemsSource):
                     params=query_params
                 )
                 total = int(response.headers.get('X-Tracker-Pagination-Total'))
-
-
