@@ -44,7 +44,7 @@ def sync_work_items(work_items_source_key, work_item_list, join_this=None):
                             work_items_source_id=work_items_source.id,
                             last_sync=last_sync,
                             # Dropping parent_source_display_id if it is passed, \
-                            # as its handled in the sync_work_items_for_parent workflow. \
+                            # as its handled in the sync_work_items_for_epic workflow. \
                             # Handling it here will make things complicated
                             **dict_drop(work_item, ['parent_source_display_id'])
                         )
@@ -91,7 +91,8 @@ def sync_work_items(work_items_source_key, work_item_list, join_this=None):
                         source_last_updated=upsert.excluded.source_last_updated,
                         source_display_id=upsert.excluded.source_display_id,
                         source_state=upsert.excluded.source_state,
-                        last_sync=upsert.excluded.last_sync
+                        last_sync=upsert.excluded.last_sync,
+                        api_payload=upsert.excluded.api_payload
                     )
                 )
             )

@@ -71,7 +71,7 @@ class JiraProject(JiraWorkItemsSource):
     def jira_time_string(timestamp):
         return timestamp.strftime("%Y-%m-%d %H:%M")
 
-    def map_issue_to_work_item_data(self, issue, changelog=None):
+    def map_issue_to_work_item_data(self, issue):
         fields = issue.get('fields')
         issue_type = fields.get('issuetype').get('name')
         parent_link = issue.get('fields').get('parent')  # We have parent in next-gen project issue fields
@@ -95,7 +95,8 @@ class JiraProject(JiraWorkItemsSource):
             source_created_at=self.jira_time_to_utc_time_string(fields.get('created')),
             source_state=fields.get('status').get('name'),
             is_epic=issue_type == 'Epic',
-            parent_source_display_id=parent_source_display_id
+            parent_source_display_id=parent_source_display_id,
+            api_payload=issue
         )
 
         return mapped_data

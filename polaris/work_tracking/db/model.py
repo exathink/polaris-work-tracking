@@ -272,7 +272,7 @@ class WorkItem(Base):
     def update(self, work_item_data):
         updated = False
         for attribute in ['name', 'description', 'is_bug', 'work_item_type', 'is_epic', 'tags', 'url', 'source_state',
-                          'source_display_id', 'parent_id']:
+                          'source_display_id', 'parent_id', 'api_payload']:
             if getattr(self, attribute) != work_item_data.get(attribute):
                 setattr(self, attribute, work_item_data.get(attribute))
                 updated = True
