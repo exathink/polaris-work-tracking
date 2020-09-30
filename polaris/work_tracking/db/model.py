@@ -240,6 +240,9 @@ class WorkItem(Base):
     work_items_source_id = Column(Integer, ForeignKey('work_items_sources.id'))
     work_items_source = relationship('WorkItemsSource', back_populates='work_items')
 
+    # Work Item Source Payload from API
+    api_payload = Column(JSONB, nullable=True, default={}, server_default='{}')
+
     @classmethod
     def find_by_key(cls, session, key):
         return session.query(cls).filter(
