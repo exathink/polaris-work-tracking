@@ -14,6 +14,7 @@ from polaris.utils.exceptions import ProcessingException
 from polaris.work_tracking.integrations.atlassian.jira_connector import JiraConnector
 from polaris.work_tracking.integrations.pivotal_tracker import PivotalTrackerConnector
 from polaris.work_tracking.integrations.github import GithubWorkTrackingConnector
+from polaris.work_tracking.integrations.gitlab import GitlabWorkTrackingConnector
 
 
 def get_connector(connector_name=None, connector_key=None, join_this=None):
@@ -30,6 +31,8 @@ def get_connector(connector_name=None, connector_key=None, join_this=None):
                 return PivotalTrackerConnector(connector)
             elif connector.type == ConnectorType.github.value:
                 return GithubWorkTrackingConnector(connector)
+            elif connector.type == ConnectorType.gitlab.value:
+                return GitlabWorkTrackingConnector(connector)
             else:
                 raise ProcessingException(f'Cannot create a work tracking connector for connector_key {connector_key}')
 

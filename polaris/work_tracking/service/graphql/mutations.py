@@ -22,7 +22,7 @@ from polaris.utils.exceptions import ProcessingException
 from polaris.work_tracking import commands
 from polaris.work_tracking import publish
 from polaris.work_tracking.db import api
-from polaris.work_tracking.integrations import pivotal_tracker, github
+from polaris.work_tracking.integrations import pivotal_tracker, github, gitlab
 from polaris.work_tracking.integrations.atlassian import jira_work_items_source
 from .work_tracking_connector import WorkTrackingConnector
 
@@ -31,6 +31,7 @@ logger = logging.getLogger('polaris.work_tracking.mutations')
 # Input Types
 IntegrationType = graphene.Enum.from_enum(WorkTrackingIntegrationType)
 GithubSourceType = graphene.Enum.from_enum(github.GithubWorkItemSourceType)
+GitlabSourceType = graphene.Enum.from_enum(gitlab.GitlabWorkItemSourceType)
 PivotalSourceType = graphene.Enum.from_enum(pivotal_tracker.PivotalWorkItemSourceType)
 JiraSourceType = graphene.Enum.from_enum(jira_work_items_source.JiraWorkItemSourceType)
 
@@ -43,6 +44,14 @@ class CommitMappingScope(graphene.Enum):
 
 class GithubWorkItemSourceParams(graphene.InputObjectType):
     work_items_source_type = GithubSourceType(required=True)
+
+    organization = graphene.String(required=True)
+    repository = graphene.String(required=False)
+    bug_tags = graphene.List(graphene.String)
+
+
+class GitlabWorkItemSourceParams(graphene.InputObjectType):
+    work_items_source_type = GitlabSourceType(required=True)
 
     organization = graphene.String(required=True)
     repository = graphene.String(required=False)
@@ -70,6 +79,7 @@ class WorkItemsSourceInput(graphene.InputObjectType):
     pivotal_parameters = PivotalWorkItemsSourceParams(required=False)
     github_parameters = GithubWorkItemSourceParams(required=False)
     jira_parameters = JiraWorkItemsSourceParams(required=False)
+    gitlab_parameters = GitlabWorkItemSourceParams(required=False)
 
     description = graphene.String(required=False)
     account_key = graphene.String(required=True)
@@ -147,7 +157,8 @@ class UpdateWorkItemsSourceCustomFields(graphene.Mutation):
     def mutate(self, info, update_work_items_source_custom_fields_input):
         logger.info("UpdateWorkItemsSourceCustomFields called")
         with db.orm_session() as session:
-            result = commands.update_work_items_source_custom_fields(update_work_items_source_custom_fields_input, join_this=session)
+            result = commands.update_work_items_source_custom_fields(update_work_items_source_custom_fields_input,
+                                                                     join_this=session)
             return UpdateWorkItemsSourceCustomFields(success=result['success'], error_message=result.get('message'))
 
 
@@ -165,7 +176,8 @@ class ResolveWorkItemsForProjectEpics(graphene.Mutation):
     def mutate(self, info, resolve_work_items_for_project_epics_input):
         logger.info("ResolveWorkItemsForProjectEpics called")
         with db.orm_session() as session:
-            result = commands.resolve_work_items_for_project_epics(resolve_work_items_for_project_epics_input, join_this=session)
+            result = commands.resolve_work_items_for_project_epics(resolve_work_items_for_project_epics_input,
+                                                                   join_this=session)
             return ResolveWorkItemsForProjectEpics(success=result['success'], error_message=result.get('message'))
 
 
