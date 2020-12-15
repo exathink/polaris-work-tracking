@@ -37,6 +37,7 @@ setup(
         'polaris.work_tracking.db',
         'polaris.work_tracking.integrations',
         'polaris.work_tracking.integrations.atlassian',
+        'polaris.work_tracking.integrations.gitlab',
         'polaris.work_tracking.service',
         'polaris.work_tracking.messages',
         'polaris.work_tracking.service.graphql',

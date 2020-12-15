@@ -87,6 +87,38 @@ class TestCreateWorkItemSource:
             assert result['key']
             assert result['name'] == 'rails'
 
+    def it_creates_gitlab_source(self, setup_schema):
+        client = Client(schema)
+        with patch('polaris.work_tracking.publish.work_items_source_created'):
+            response = client.execute("""
+                        mutation createWorkItemsSource {
+                                createWorkItemsSource(
+                                    createWorkItemsSourceInput:{
+                                        accountKey: "3a0480a3-2eb8-4728-987f-674cbe3cf48c",
+                                        organizationKey:"8850852b-9187-4284-bb1f-98ea89ae31fe",
+                                        commitMappingScope:organization,
+                                        commitMappingScopeKey: "8850852b-9187-4284-bb1f-98ea89ae31fe",
+                                        integrationType: gitlab,
+                                        name: "rails",
+                                        gitlabParameters:{
+                                            workItemsSourceType: repository_issues,
+                                            organization: "rails",
+                                            repository: "rails",
+                                            bugTags: ["With reproduction steps"]
+                                        }
+                                    }                     
+                                ) 
+                        {
+                            name
+                            key
+                        }
+                    }
+                    """)
+            result = response['data']['createWorkItemsSource']
+            assert result
+            assert result['key']
+            assert result['name'] == 'rails'
+
     def it_publishes_the_notification_correctly(self, setup_schema):
         client = Client(schema)
         with patch('polaris.work_tracking.publish.publish') as publish:
@@ -293,32 +325,32 @@ class TestImportProject:
                     }
                 }
             """,
-              variable_values=
-                  dict(
-                      importProjectsInput=dict(
-                          accountKey=str(exathink_account_key),
-                          organizationKey=str(polaris_organization_key),
-                          projects=[
-                              dict(
-                                  importedProjectName='test1',
-                                  workItemsSources=[
+                                      variable_values=
                                       dict(
-                                          workItemsSourceKey=str(source_key),
-                                          workItemsSourceName='foo',
-                                          importDays=90
+                                          importProjectsInput=dict(
+                                              accountKey=str(exathink_account_key),
+                                              organizationKey=str(polaris_organization_key),
+                                              projects=[
+                                                  dict(
+                                                      importedProjectName='test1',
+                                                      workItemsSources=[
+                                                          dict(
+                                                              workItemsSourceKey=str(source_key),
+                                                              workItemsSourceName='foo',
+                                                              importDays=90
+                                                          )
+                                                          for source_key in work_items_sources_keys
+                                                      ]
+                                                  )
+                                              ]
+                                          )
                                       )
-                                      for source_key in work_items_sources_keys
-                                  ]
-                              )
-                          ]
-                      )
-                  )
-              )
+                                      )
             assert len(response['data']['importProjects']['projectKeys']) == 1
             new_project_key = response['data']['importProjects']['projectKeys'][0]
 
-            assert db.connection().execute(f"select count(id) from work_tracking.projects where key='{new_project_key}'").scalar() == 1
-
+            assert db.connection().execute(
+                f"select count(id) from work_tracking.projects where key='{new_project_key}'").scalar() == 1
 
     def it_imports_a_project_with_work_items_in_separate_mode(self, setup_import_project):
         _, work_items_sources_keys = setup_import_project
@@ -332,34 +364,33 @@ class TestImportProject:
                     }
                 }
             """,
-              variable_values=
-                  dict(
-                      importProjectsInput=dict(
-                          accountKey=str(exathink_account_key),
-                          organizationKey=str(polaris_organization_key),
-                          projects=[
-                              dict(
-                                  importedProjectName=f'test{source_key}',
-                                  workItemsSources=[
+                                      variable_values=
                                       dict(
-                                          workItemsSourceKey=str(source_key),
-                                          workItemsSourceName='foo',
-                                          importDays=90
+                                          importProjectsInput=dict(
+                                              accountKey=str(exathink_account_key),
+                                              organizationKey=str(polaris_organization_key),
+                                              projects=[
+                                                  dict(
+                                                      importedProjectName=f'test{source_key}',
+                                                      workItemsSources=[
+                                                          dict(
+                                                              workItemsSourceKey=str(source_key),
+                                                              workItemsSourceName='foo',
+                                                              importDays=90
+                                                          )
+                                                      ]
+                                                  )
+                                                  for source_key in work_items_sources_keys
+                                              ]
+                                          )
                                       )
-                                  ]
-                              )
-                              for source_key in work_items_sources_keys
-                          ]
-                      )
-                  )
-              )
+                                      )
             assert len(response['data']['importProjects']['projectKeys']) == len(work_items_sources_keys)
             project_keys = response['data']['importProjects']['projectKeys']
 
             for key in project_keys:
                 assert db.connection().execute(
                     f"select count(id) from work_tracking.projects where key='{key}'").scalar() == 1
-
 
     def it_imports_into_an_existing_project(self, setup_import_project):
         project_key, work_items_sources_keys = setup_import_project
@@ -373,34 +404,34 @@ class TestImportProject:
                     }
                 }
             """,
-              variable_values=
-                  dict(
-                      importProjectsInput=dict(
-                          accountKey=str(exathink_account_key),
-                          organizationKey=str(polaris_organization_key),
-                          projects=[
-                              dict(
-                                  existingProjectKey=str(project_key),
-                                  workItemsSources=[
+                                      variable_values=
                                       dict(
-                                          workItemsSourceKey=str(source_key),
-                                          workItemsSourceName='foo',
-                                          importDays=90
+                                          importProjectsInput=dict(
+                                              accountKey=str(exathink_account_key),
+                                              organizationKey=str(polaris_organization_key),
+                                              projects=[
+                                                  dict(
+                                                      existingProjectKey=str(project_key),
+                                                      workItemsSources=[
+                                                          dict(
+                                                              workItemsSourceKey=str(source_key),
+                                                              workItemsSourceName='foo',
+                                                              importDays=90
+                                                          )
+                                                          for source_key in work_items_sources_keys
+                                                      ]
+                                                  )
+                                              ]
+                                          )
                                       )
-                                      for source_key in work_items_sources_keys
-                                  ]
-                              )
-                          ]
-                      )
-                  )
-              )
+                                      )
             assert len(response['data']['importProjects']['projectKeys']) == 1
-
 
             assert db.connection().execute(f"select count(work_tracking.work_items_sources.id) from "
                                            f"work_tracking.work_items_sources "
                                            f"inner join work_tracking.projects on projects.id = work_items_sources.project_id "
-                                           f"where projects.key='{project_key}'").scalar() == len(work_items_sources_keys) + 1
+                                           f"where projects.key='{project_key}'").scalar() == len(
+                work_items_sources_keys) + 1
 
     def it_publishes_work_items_sources_created_message_in_separate_mode(self, setup_import_project):
         _, work_items_sources_keys = setup_import_project
@@ -414,27 +445,27 @@ class TestImportProject:
                     }
                 }
             """,
-              variable_values=
-                  dict(
-                      importProjectsInput=dict(
-                          accountKey=str(exathink_account_key),
-                          organizationKey=str(polaris_organization_key),
-                          projects=[
-                              dict(
-                                  importedProjectName=f'test{source_key}',
-                                  workItemsSources=[
+                                      variable_values=
                                       dict(
-                                          workItemsSourceKey=str(source_key),
-                                          workItemsSourceName='foo',
-                                          importDays=90
+                                          importProjectsInput=dict(
+                                              accountKey=str(exathink_account_key),
+                                              organizationKey=str(polaris_organization_key),
+                                              projects=[
+                                                  dict(
+                                                      importedProjectName=f'test{source_key}',
+                                                      workItemsSources=[
+                                                          dict(
+                                                              workItemsSourceKey=str(source_key),
+                                                              workItemsSourceName='foo',
+                                                              importDays=90
+                                                          )
+                                                      ]
+                                                  )
+                                                  for source_key in work_items_sources_keys
+                                              ]
+                                          )
                                       )
-                                  ]
-                              )
-                              for source_key in work_items_sources_keys
-                          ]
-                      )
-                  )
-              )
+                                      )
             publish.assert_called()
             assert publish.call_count == len(work_items_sources_keys)
 
@@ -450,27 +481,27 @@ class TestImportProject:
                     }
                 }
             """,
-              variable_values=
-                  dict(
-                      importProjectsInput=dict(
-                          accountKey=str(exathink_account_key),
-                          organizationKey=str(polaris_organization_key),
-                          projects=[
-                              dict(
-                                  importedProjectName=f'test{source_key}',
-                                  workItemsSources=[
+                                      variable_values=
                                       dict(
-                                          # create a random work item source key so the transaction fails
-                                          workItemsSourceKey=str(uuid.uuid4()),
-                                          workItemsSourceName='foo',
-                                          importDays=90
+                                          importProjectsInput=dict(
+                                              accountKey=str(exathink_account_key),
+                                              organizationKey=str(polaris_organization_key),
+                                              projects=[
+                                                  dict(
+                                                      importedProjectName=f'test{source_key}',
+                                                      workItemsSources=[
+                                                          dict(
+                                                              # create a random work item source key so the transaction fails
+                                                              workItemsSourceKey=str(uuid.uuid4()),
+                                                              workItemsSourceName='foo',
+                                                              importDays=90
+                                                          )
+                                                      ]
+                                                  )
+                                                  for source_key in work_items_sources_keys
+                                              ]
+                                          )
                                       )
-                                  ]
-                              )
-                              for source_key in work_items_sources_keys
-                          ]
-                      )
-                  )
-              )
+                                      )
             assert response['errors']
             publish.assert_not_called()

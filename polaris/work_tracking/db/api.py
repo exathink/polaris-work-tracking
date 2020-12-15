@@ -197,6 +197,8 @@ def get_parameters(work_items_source_input):
         return work_items_source_input['github_parameters']
     elif WorkTrackingIntegrationType.jira.value == integration_type:
         return work_items_source_input['jira_parameters']
+    elif WorkTrackingIntegrationType.gitlab.value == integration_type:
+        return work_items_source_input['gitlab_parameters']
     else:
         raise IllegalArgumentError(f"Unknown integration type {integration_type}")
 
@@ -620,7 +622,7 @@ def get_work_items_source_epics(work_items_source, join_this=None):
                 and_(
                     work_items.c.work_items_source_id == work_items_source.id,
                     work_items.c.is_epic == True
-                    #work_items.c.source_state == 'Open' # TODO: To be added as optional argument
+                    # work_items.c.source_state == 'Open' # TODO: To be added as optional argument
                 )
             )
         ).fetchall()
