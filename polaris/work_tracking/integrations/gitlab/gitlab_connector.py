@@ -44,7 +44,7 @@ class GitlabWorkTrackingConnector(GitlabConnector):
         while fetch_repos_url is not None:
             response = requests.get(
                 fetch_repos_url,
-                params=dict(membership=True),
+                params=dict(membership=True, with_issues_enabled=True),
                 headers={"Authorization": f"Bearer {self.personal_access_token}"},
             )
             if response.ok:
