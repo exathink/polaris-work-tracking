@@ -27,66 +27,63 @@ class GitlabWorkTrackingConnector(GitlabConnector):
     def __init__(self, connector):
         super().__init__(connector)
 
-    def map_repository_to_work_items_sources_data(self, repository):
+    def map_project_to_work_items_sources_data(self, project):
         return dict(
             integration_type=WorkTrackingIntegrationType.gitlab.value,
-            work_items_source_type=GitlabWorkItemSourceType.repository_issues.value,
+            work_items_source_type=GitlabWorkItemSourceType.projects.value,
             parameters=dict(
-                # TODO: Check if we need to add bug tags like github
-                repository=repository['name']
+                repository=project['name']
             ),
             commit_mapping_scope='repository',
-            source_id=repository['id'],
-            name=repository['name'],
-            url=repository["_links"]['issues'],
-            description=repository['description'],
+            source_id=project['id'],
+            name=project['name'],
+            url=project["_links"]['issues'],
+            description=project['description'],
             custom_fields=[]
         )
 
-    def fetch_repositories(self):
-        fetch_repos_url = f'{self.base_url}/projects'
-        while fetch_repos_url is not None:
+    def fetch_gitlab_projects(self):
+        fetch_projects_url = f'{self.base_url}/projects'
+        while fetch_projects_url is not None:
             response = requests.get(
-                fetch_repos_url,
-                params=dict(membership=True),
+                fetch_projects_url,
+                params=dict(membership=True, with_issues_enabled=True),
                 headers={"Authorization": f"Bearer {self.personal_access_token}"},
             )
             if response.ok:
                 yield response.json()
                 if 'next' in response.links:
-                    fetch_repos_url = response.links['next']['url']
+                    fetch_projects_url = response.links['next']['url']
                 else:
-                    fetch_repos_url = None
+                    fetch_projects_url = None
             else:
                 raise ProcessingException(
                     f"Server test failed {response.text} status: {response.status_code}\n"
                 )
 
     def fetch_work_items_sources_to_sync(self):
-        for repositories in self.fetch_repositories():
+        for projects in self.fetch_gitlab_projects():
             yield [
-                self.map_repository_to_work_items_sources_data(repo)
-                for repo in repositories
-                if repo['issues_enabled']
+                self.map_project_to_work_items_sources_data(project)
+                for project in projects
             ]
 
 
 class GitlabWorkItemSourceType(Enum):
-    repository_issues = 'repository_issues'
+    projects = 'projects'
 
 
 class GitlabIssuesWorkItemsSource:
 
     @staticmethod
-    def create(work_items_source):
-        if work_items_source.work_items_source_type == GitlabWorkItemSourceType.repository_issues.value:
-            return GitlabRepositoryIssues(work_items_source)
-
+    def create(token_provider, work_items_source):
+        if work_items_source.work_items_source_type == GitlabWorkItemSourceType.projects.value:
+            return GitlabProject(token_provider, work_items_source)
         else:
             raise ProcessingException(f"Unknown work items source type {work_items_source.work_items_source_type}")
 
 
-class GitlabRepositoryIssues(GitlabIssuesWorkItemsSource):
+class GitlabProject(GitlabIssuesWorkItemsSource):
 
     def __init__(self, work_items_source):
         self.work_items_source = work_items_source
