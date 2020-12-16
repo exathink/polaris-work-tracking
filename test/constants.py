@@ -14,6 +14,7 @@ exathink_account_key = uuid.uuid4()
 
 # Organizations
 rails_organization_key = uuid.uuid4()
+pypy_organization_key = uuid.uuid4()
 polaris_organization_key = uuid.uuid4()
 exathink_organization_key = uuid.uuid4()
 
@@ -23,6 +24,7 @@ rails_repository_key = uuid.uuid4()
 
 # work_item_sources
 rails_work_items_source_key = uuid.uuid4()
+pypy_work_items_source_key = uuid.uuid4()
 polaris_work_items_source_key = uuid.uuid4()
 empty_work_items_source_key = uuid.uuid4()
 

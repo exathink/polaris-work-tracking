@@ -9,7 +9,9 @@
 # Author: Pragya Goyal
 
 import logging
+import requests
 from enum import Enum
+from polaris.common.enums import WorkTrackingIntegrationType
 from polaris.integrations.gitlab import GitlabConnector
 from polaris.utils.exceptions import ProcessingException
 from polaris.work_tracking import connector_factory
@@ -18,7 +20,51 @@ logger = logging.getLogger('polaris.work_tracking.gitlab')
 
 
 class GitlabWorkTrackingConnector(GitlabConnector):
-    pass
+
+    def __init__(self, connector):
+        super().__init__(connector)
+
+    def map_repository_to_work_items_sources_data(self, repository):
+        return dict(
+            integration_type=WorkTrackingIntegrationType.gitlab.value,
+            work_items_source_type=GitlabWorkItemSourceType.repository_issues.value,
+            parameters=dict(
+                repository=repository['name']
+            ),
+            commit_mapping_scope='repository',
+            source_id=repository['id'],
+            name=repository['name'],
+            url=repository["_links"]['issues'],
+            description=repository['description'],
+            custom_fields=[]
+        )
+
+    def fetch_repositories(self):
+        fetch_repos_url = f'{self.base_url}/projects'
+        while fetch_repos_url is not None:
+            response = requests.get(
+                fetch_repos_url,
+                params=dict(membership=True),
+                headers={"Authorization": f"Bearer {self.personal_access_token}"},
+            )
+            if response.ok:
+                yield response.json()
+                if 'next' in response.links:
+                    fetch_repos_url = response.links['next']['url']
+                else:
+                    fetch_repos_url = None
+            else:
+                raise ProcessingException(
+                    f"Server test failed {response.text} status: {response.status_code}\n"
+                )
+
+    def fetch_work_items_sources_to_sync(self):
+        for repositories in self.fetch_repositories():
+            yield [
+                self.map_repository_to_work_items_sources_data(repo)
+                for repo in repositories
+                if repo['issues_enabled']
+            ]
 
 
 class GitlabWorkItemSourceType(Enum):

@@ -61,3 +61,25 @@ class TestConnectorCreated:
             ConnectorsTopicSubscriber(channel, publisher=publisher).dispatch(
                 channel, message)
             fetch_work_items_sources_to_sync.assert_called()
+
+    def it_kicks_off_project_fetches_for_gitlab_connector(self, setup_connectors):
+        connector_keys = setup_connectors
+        message = fake_send(ConnectorCreated(
+            send=dict(
+                connector_key=connector_keys['gitlab'],
+                connector_type=ConnectorType.gitlab.value,
+                product_type=ConnectorProductType.gitlab.value,
+                state='enabled'
+            )
+        ))
+
+        channel = mock_channel()
+        publisher = mock_publisher()
+
+        with patch(
+                'polaris.work_tracking.integrations.gitlab.GitlabWorkTrackingConnector.fetch_work_items_sources_to_sync') as fetch_work_items_sources_to_sync:
+            fetch_work_items_sources_to_sync.return_value = []
+
+            ConnectorsTopicSubscriber(channel, publisher=publisher).dispatch(
+                channel, message)
+            fetch_work_items_sources_to_sync.assert_called()

@@ -34,7 +34,7 @@ def import_work_items(organization_key=None, work_items_source_key=None):
 
 
 def import_work_items_sources(connector_name):
-    connector = polaris.work_tracking.connector_factory.get_connector(connector_name=connector_name)
+    connector = polaris.work_tracking.connector_factory.get_connector(connector_name="Polaris Gitlab")
     if connector:
         for work_items_sources in commands.sync_work_items_sources(connector.key):
             print(work_items_sources)
