@@ -101,7 +101,7 @@ class TestCreateWorkItemSource:
                                         integrationType: gitlab,
                                         name: "rails",
                                         gitlabParameters:{
-                                            workItemsSourceType: repository_issues,
+                                            workItemsSourceType: projects,
                                             organization: "rails",
                                             repository: "rails",
                                             bugTags: ["With reproduction steps"]

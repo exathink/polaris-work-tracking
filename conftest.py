@@ -104,7 +104,7 @@ def setup_work_item_sources(setup_schema, setup_connectors):
         work_items_sources['gitlab'] = model.WorkItemsSource(
             key=pypy_work_items_source_key,
             integration_type='gitlab',
-            work_items_source_type='repository_issues',
+            work_items_source_type='projects',
             parameters=dict(repository='pypy', organization='pypy'),
             name='pypy repository issues',
             account_key=exathink_account_key,
