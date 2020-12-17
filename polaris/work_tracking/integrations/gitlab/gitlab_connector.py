@@ -14,7 +14,7 @@ from enum import Enum
 from datetime import datetime, timedelta
 from polaris.utils.collections import find
 
-from polaris.common.enums import WorkTrackingIntegrationType
+from polaris.common.enums import WorkTrackingIntegrationType, GitlabWorkItemType
 from polaris.integrations.gitlab import GitlabConnector
 from polaris.utils.exceptions import ProcessingException
 from polaris.work_tracking import connector_factory
@@ -85,31 +85,32 @@ class GitlabIssuesWorkItemsSource:
 
 class GitlabProject(GitlabIssuesWorkItemsSource):
 
-    def __init__(self, work_items_source):
+    def __init__(self, token_provider, work_items_source):
         self.work_items_source = work_items_source
         self.gitlab_connector = connector_factory.get_connector(
             connector_key=self.work_items_source.connector_key
         )
         self.source_project_id = work_items_source.source_id
-        self.last_updated = work_items_source.latest_work_item_update_timestamp
         self.personal_access_token = self.gitlab_connector.personal_access_token
 
     def map_issue_to_work_item(self, issue):
         bug_tags = ['bug', *self.work_items_source.parameters.get('bug_tags', [])]
         work_item = dict(
-            name=issue.title[:255],
-            description=issue.description,
-            is_bug=find(issue.labels, lambda label: label.name in bug_tags) is not None,
-            tags=[label for label in issue.labels],
-            source_id=str(issue.id),
-            source_last_updated=issue.updated_at,
-            source_created_at=issue.created_at,
-            source_display_id=issue.iid,
-            source_state=issue.state,
+            name=issue['title'][:255],
+            description=issue['description'],
+            is_bug=find(issue['labels'], lambda label: label in bug_tags) is not None,
+            tags=[label for label in issue['labels']],
+            source_id=str(issue['id']),
+            source_last_updated=issue['updated_at'],
+            source_created_at=issue['created_at'],
+            source_display_id=issue['iid'],
+            source_state=issue['state'],
             is_epic=False,
-            url=issue.web_url,
-            api_payload=issue.raw_data
+            url=issue['web_url'],
+            work_item_type=GitlabWorkItemType.issue.value,
+            api_payload=issue
         )
+        return work_item
 
     def fetch_work_items(self):
         query_params = dict(limit=100)
@@ -117,8 +118,8 @@ class GitlabProject(GitlabIssuesWorkItemsSource):
             query_params['updated_after'] = (datetime.utcnow() - timedelta(
                 days=int(self.work_items_source.parameters.get('initial_import_days', 90))))
         else:
-            query_params['updated_after'] = self.last_updated.isoformat()
-        fetch_issues_url = f'{self.base_url}/projects/{self.source_project_id}/issues'
+            query_params['updated_after'] = self.work_items_source.latest_work_item_update_timestamp.isoformat()
+        fetch_issues_url = f'{self.gitlab_connector.base_url}/projects/{self.source_project_id}/issues'
         while fetch_issues_url is not None:
             response = requests.get(
                 fetch_issues_url,
