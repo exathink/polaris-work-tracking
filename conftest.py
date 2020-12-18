@@ -37,6 +37,7 @@ def setup_schema(db_up):
 def setup_connectors(setup_schema):
     pivotal_connector_key = uuid.uuid4()
     github_connector_key = uuid.uuid4()
+    gitlab_connector_key = uuid.uuid4()
 
     with db.orm_session() as session:
         session.expire_on_commit = False
@@ -62,11 +63,23 @@ def setup_connectors(setup_schema):
                 state='enabled'
             )
         )
+        session.add(
+            integrations_model.Gitlab(
+                key=gitlab_connector_key,
+                name='test-gitlab-connector',
+                base_url='https://gitlab.com',
+                account_key=exathink_account_key,
+                personal_access_token='foobar',
+                product_type=ConnectorProductType.gitlab.value,
+                state='enabled'
+            )
+        )
 
 
     yield dict(
         pivotal=pivotal_connector_key,
-        github=github_connector_key
+        github=github_connector_key,
+        gitlab=gitlab_connector_key
     )
 
 
@@ -86,6 +99,18 @@ def setup_work_item_sources(setup_schema, setup_connectors):
             organization_key=rails_organization_key,
             commit_mapping_scope='organization',
             commit_mapping_scope_key=rails_organization_key,
+            import_state=WorkItemsSourceImportState.ready.value
+        )
+        work_items_sources['gitlab'] = model.WorkItemsSource(
+            key=pypy_work_items_source_key,
+            integration_type='gitlab',
+            work_items_source_type='projects',
+            parameters=dict(repository='pypy', organization='pypy'),
+            name='pypy repository issues',
+            account_key=exathink_account_key,
+            organization_key=pypy_organization_key,
+            commit_mapping_scope='organization',
+            commit_mapping_scope_key=pypy_organization_key,
             import_state=WorkItemsSourceImportState.ready.value
         )
         work_items_sources['pivotal'] = model.WorkItemsSource(

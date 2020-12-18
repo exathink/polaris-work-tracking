@@ -42,6 +42,7 @@ def is_work_tracking_connector(connector_type, product_type):
     return connector_type in [
         ConnectorType.pivotal.value,
         ConnectorType.github.value,
+        ConnectorType.gitlab.value,
     ] or product_type in [
                ConnectorProductType.jira.value
            ]
@@ -339,7 +340,7 @@ class ConnectorsTopicSubscriber(TopicSubscriber):
                 f" Product Type: {product_type}"
             )
             try:
-                if connector_type in ['pivotal', 'github']:
+                if connector_type in ['pivotal', 'github', 'gitlab']:
                     yield from ConnectorsTopicSubscriber.sync_work_items_sources(connector_key)
             except Exception as exc:
                 raise_message_processing_error(message, 'Failed to sync work items sources', str(exc))
