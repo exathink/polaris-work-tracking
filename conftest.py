@@ -103,6 +103,7 @@ def setup_work_item_sources(setup_schema, setup_connectors):
         )
         work_items_sources['gitlab'] = model.WorkItemsSource(
             key=pypy_work_items_source_key,
+            connector_key=connector_keys['gitlab'],
             integration_type='gitlab',
             work_items_source_type='projects',
             parameters=dict(repository='pypy', organization='pypy'),
@@ -153,6 +154,7 @@ def setup_work_items(setup_work_item_sources, cleanup):
     with db.orm_session(session) as session:
         work_items.extend(setup_github_work_items(work_items_sources['github']))
         work_items.extend(setup_pivotal_work_items(work_items_sources['pivotal']))
+        work_items.extend(setup_gitlab_work_items(work_items_sources['gitlab']))
         session.flush()
 
     yield work_items, work_items_sources
@@ -189,6 +191,30 @@ def setup_pivotal_work_items(work_item_source):
                 key=uuid.uuid4(),
                 name=f"Story {display_id}",
                 work_item_type=PivotalTrackerWorkItemType.story.value,
+                is_bug=False,
+                is_epic=False,
+                tags=[],
+                source_id=str(display_id),
+                source_display_id=str(display_id),
+                source_state='',
+                url='',
+                source_created_at=datetime.utcnow(),
+                source_last_updated=datetime.utcnow(),
+                last_sync=datetime.utcnow()
+            )
+        )
+
+    return work_item_source.work_items
+
+
+def setup_gitlab_work_items(work_item_source):
+    for display_id in range(3000, 3010):
+        work_item_source.work_items.append(
+            model.WorkItem(
+                key=uuid.uuid4(),
+                name=f"Issue {display_id}",
+                description="An issue in detail",
+                work_item_type=GithubWorkItemType.issue.value,
                 is_bug=False,
                 is_epic=False,
                 tags=[],

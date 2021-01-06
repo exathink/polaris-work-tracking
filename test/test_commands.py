@@ -49,6 +49,34 @@ class TestPivotalSyncWorkItems:
                 assert all(map(lambda item: not item['is_new'], result))
 
 
+class TestGitlabSyncWorkItems:
+
+    def it_imports_work_items_when_the_source_has_no_work_items(self, setup_work_items, new_work_items):
+        _, work_items_sources = setup_work_items
+        empty_source = work_items_sources['gitlab']
+        with patch(
+                'polaris.work_tracking.integrations.gitlab.GitlabProject.fetch_work_items_to_sync') as fetch_work_items_to_sync:
+            fetch_work_items_to_sync.return_value = [new_work_items]
+
+            for result in commands.sync_work_items(token_provider, empty_source.key):
+                assert len(result) == len(new_work_items)
+                assert all(map(lambda item: item['is_new'], result))
+
+    def it_updates_work_items_that_already_exist(self, setup_work_items, new_work_items):
+        _, work_items_sources = setup_work_items
+        empty_source = work_items_sources['gitlab']
+        with patch(
+                'polaris.work_tracking.integrations.gitlab.GitlabProject.fetch_work_items_to_sync') as fetch_work_items_to_sync:
+            fetch_work_items_to_sync.return_value = [new_work_items]
+            # import once and ignore results
+            for _ in commands.sync_work_items(token_provider, empty_source.key):
+                pass
+
+            # import again
+            for result in commands.sync_work_items(token_provider, empty_source.key):
+                assert len(result) == len(new_work_items)
+                assert all(map(lambda item: not item['is_new'], result))
+
 class TestJiraSyncWorkItemsForEpic:
 
     def it_creates_when_a_mapped_work_item_is_new(self, jira_work_items_fixture, new_work_items, cleanup):
