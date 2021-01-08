@@ -102,7 +102,8 @@ class WorkItemsSource(Base):
     source_id = Column(String, nullable=True, index=True)
     source_created_at = Column(DateTime, nullable=True)
     source_updated_at = Column(DateTime, nullable=True)
-
+    # Stores webhook details or any other info related to source
+    source_data = Column(JSONB, nullable=False, default={}, server_default='{}')
     # Import: Legal values from WorkItemsSourceImportState enum
     import_state = Column(String, nullable=False, server_default=WorkItemsSourceImportState.disabled.value)
 
