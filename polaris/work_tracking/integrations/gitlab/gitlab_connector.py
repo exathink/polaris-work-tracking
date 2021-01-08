@@ -18,6 +18,9 @@ from polaris.common.enums import WorkTrackingIntegrationType, GitlabWorkItemType
 from polaris.integrations.gitlab import GitlabConnector
 from polaris.utils.exceptions import ProcessingException
 from polaris.work_tracking import connector_factory
+from polaris.utils.config import get_config_provider
+
+config_provider = get_config_provider()
 
 logger = logging.getLogger('polaris.work_tracking.gitlab')
 
@@ -26,6 +29,8 @@ class GitlabWorkTrackingConnector(GitlabConnector):
 
     def __init__(self, connector):
         super().__init__(connector)
+        self.webhook_secret = connector.webhook_secret
+        self.webhook_events = ['issue_events']
 
     def map_project_to_work_items_sources_data(self, project):
         return dict(
@@ -67,6 +72,65 @@ class GitlabWorkTrackingConnector(GitlabConnector):
                 self.map_project_to_work_items_sources_data(project)
                 for project in projects
             ]
+
+    def register_project_webhooks(self, project_source_id, registered_webhooks):
+        deleted_hook_ids = []
+        for inactive_hook_id in registered_webhooks:
+            if self.delete_project_webhook(project_source_id, inactive_hook_id):
+                logger.info(f"Deleted webhook with id {inactive_hook_id} for repo {project_source_id}")
+                deleted_hook_ids.append(inactive_hook_id)
+            else:
+                logger.info(f"Webhook with id {inactive_hook_id} for project {project_source_id} could not be deleted")
+
+        # Register new webhook now
+        project_webhooks_callback_url = f"{config_provider.get('GITLAB_WEBHOOKS_BASE_URL')}" \
+                                           f"/project/webhooks/{self.key}/"
+
+        add_hook_url = f"{self.base_url}/projects/{project_source_id}/hooks"
+
+        post_data = dict(
+            id=project_source_id,
+            url=project_webhooks_callback_url,
+            push_events=True,
+            merge_requests_events=True,
+            enable_ssl_verification=True,
+            token=self.webhook_secret
+        )
+        for event in self.webhook_events:
+            post_data[f'{event}'] = True
+
+        response = requests.post(
+            add_hook_url,
+            headers={"Authorization": f"Bearer {self.personal_access_token}"},
+            data=post_data
+        )
+        if response.ok:
+            result = response.json()
+            active_hook_id = result['id']
+        else:
+            raise ProcessingException(
+                f"Webhook registration failed due to status:{response.status_code} message:{response.text}")
+        return dict(
+            success=True,
+            active_webhook=active_hook_id,
+            deleted_webhooks=deleted_hook_ids,
+            registered_events=self.webhook_events,
+        )
+
+    def delete_project_webhook(self, project_source_id, inactive_hook_id):
+        delete_hook_url = f"{self.base_url}/projects/{project_source_id}/hooks/{inactive_hook_id}"
+        response = requests.delete(
+            delete_hook_url,
+            headers={"Authorization": f"Bearer {self.personal_access_token}"}
+        )
+        if response.ok or response.status_code == 404:
+            # Case when hook was already non-existent or deleted successfully
+            return True
+        else:
+            logger.info(
+                f"Failed to delete webhooks for project with source id: ({project_source_id})"
+                f'{response.status_code} {response.text}'
+            )
 
 
 class GitlabWorkItemSourceType(Enum):
