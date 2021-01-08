@@ -15,6 +15,7 @@ from polaris.messaging.utils import publish
 from polaris.work_tracking.messages import AtlassianConnectWorkItemEvent, RefreshConnectorProjects, \
     ResolveWorkItemsForEpic
 
+from polaris.integrations.publish import connector_event
 
 def work_items_source_created(work_items_source, channel=None):
     message = WorkItemsSourceCreated(
@@ -115,3 +116,13 @@ def resolve_work_items_for_epic(organization_key, work_items_source_key, epic, c
         channel=channel
     )
     return message
+
+
+# This shim is here only to explictly mark connector event as a referenced symbol.
+# PyCharm apparently does not correctly recognize re-exported names. In this case publish.connector_events
+# is marked as an unreferenced name and optimized out if we do optimize imports. This causes run time failures
+# when this function is called. Hacky fix is to simply assign this imported name to _dont_optimize_import
+# so the import is
+# not optimized out by mistake.
+_dont_optimize_import = (connector_event,)
+
