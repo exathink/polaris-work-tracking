@@ -26,8 +26,8 @@ class JiraConnectorContext:
 
     app_name = "Polaris Flow for Jira"
     addon_name = "Polaris Flow for Jira"
-    addon_key = config_provider.get('JIRA_CONNECTOR_APP_KEY', 'polaris.jira')
-    addon_description = "Jira Connector for Polaris Flow"
+    addon_key = config_provider.get('JIRA_CONNECTOR_APP_KEY', 'localdev.exathink.polaris.jira')
+    addon_description = config_provider.get('JIRA_CONNECTOR_DESCRIPTION', "Jira Connector for Polaris Flow")
     addon_scopes = ["READ", "WRITE"]
     addon_version = 1
 
