@@ -17,6 +17,7 @@ from polaris.work_tracking import publish
 from polaris.work_tracking import work_items_source_factory, connector_factory
 from polaris.work_tracking.db import api
 from polaris.work_tracking.db.model import WorkItemsSource, Project
+from polaris.utils.exceptions import ProcessingException
 from polaris.integrations.db.api import tracking_receipt_updates
 from polaris.common import db
 from polaris.work_tracking.messages import ResolveWorkItemsForEpic
@@ -84,6 +85,57 @@ def sync_work_items_sources(connector_key, tracking_receipt_key=None):
                 yield api.sync_work_items_sources(connector, work_items_sources)
 
 
+def register_work_items_source_webhooks(connector_key, work_items_source_key, join_this=None):
+    with db.orm_session(join_this) as session:
+        try:
+            connector = connector_factory.get_connector(connector_key=connector_key, join_this=session)
+            if connector and getattr(connector, 'register_project_webhooks', None):
+                work_items_source = WorkItemsSource.find_by_key(session, work_items_source_key=work_items_source_key)
+                if work_items_source:
+                    get_hooks_result = api.get_registered_webhooks(work_items_source_key, join_this=session)
+                    if get_hooks_result['success']:
+                        webhook_info = connector.register_project_webhooks(work_items_source.source_id,
+                                                                              get_hooks_result['registered_webhooks'])
+                        if webhook_info['success']:
+                            register_result = api.register_webhooks(work_items_source_key, webhook_info, join_this=session)
+                            if register_result['success']:
+                                return dict(
+                                    success=True,
+                                    work_items_source_key=work_items_source_key
+                                )
+                            else:
+                                return db.failure_message(
+                                    f"Could not register webhook due to: {register_result.get('exception')}")
+                else:
+                    return db.failure_message(f"Could not find work items source with key {work_items_source_key}")
+            elif connector:
+                # TODO: Remove this when github and bitbucket register webhook implementation is done.
+                return dict(
+                    success=True,
+                    work_items_source_key=work_items_source_key
+                )
+            else:
+                return db.failure_message(f"Could not find connector with key {connector_key}")
+        except ProcessingException as e:
+            return db.failure_message(f"Register webhooks failed due to: {e}")
+
+
+def register_work_items_sources_webhooks(connector_key, work_items_source_keys, join_this=None):
+    result = []
+    for work_items_source_key in work_items_source_keys:
+        registration_status = register_work_items_source_webhooks(connector_key, work_items_source_key, join_this=join_this)
+        if registration_status['success']:
+            result.append(registration_status)
+        else:
+            result.append(dict(
+                work_items_source_key=work_items_source_key,
+                success=False,
+                message=registration_status.get('message'),
+                exception=registration_status.get('exception')
+            ))
+    return result
+
+
 def import_projects(import_projects_input):
     projects = []
     # We execute this in a separate transaction because we need the transaction to commit before
@@ -105,6 +157,14 @@ def import_projects(import_projects_input):
             projects.append(
                 imported
             )
+            if imported: # FIXME: Convert api result to include a success param
+                for work_items_source in imported.work_items_sources:
+                    connector_key = work_items_source.connector_key
+                    register_webhooks_result = register_work_items_source_webhooks(connector_key, work_items_source.key, join_this=session)
+                    if not register_webhooks_result['success']:
+                        logger.error(
+                            f"Register webhooks failed while importing projects: {register_webhooks_result.get('exception')}"
+                        )
     # DB transaction has committed we can publish messages.
     for imported in projects:
         publish.project_imported(organization_key, imported)

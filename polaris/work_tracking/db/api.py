@@ -14,6 +14,7 @@ from datetime import datetime
 from polaris.utils.collections import dict_drop
 from sqlalchemy import select, and_, func, literal, Column, Integer
 from sqlalchemy.dialects.postgresql import insert, UUID
+from sqlalchemy.exc import SQLAlchemyError
 
 from polaris.common import db
 from polaris.common.enums import WorkTrackingIntegrationType, WorkItemsSourceImportState
@@ -628,3 +629,62 @@ def get_work_items_source_epics(work_items_source, join_this=None):
         ).fetchall()
 
         return epic_work_items
+
+
+def get_registered_webhooks(work_items_source_key, join_this=None):
+    try:
+        with db.orm_session(join_this) as session:
+            work_items_source = WorkItemsSource.find_by_key(session, work_items_source_key)
+            if work_items_source:
+                logger.info(f'Getting registered webhooks for Work items source {work_items_source.name}')
+                source_data = dict(work_items_source.source_data)
+                registered_webhooks = []
+                if source_data.get('active_webhook'):
+                    registered_webhooks.extend(source_data.get('inactive_webhooks', []))
+                    registered_webhooks.append(source_data.get('active_webhook'))
+                return dict(
+                    success=True,
+                    work_items_source_key=work_items_source_key,
+                    registered_webhooks=registered_webhooks
+                )
+            else:
+                raise ProcessingException(f'Could not find work items source with key {work_items_source_key}')
+    except SQLAlchemyError as exc:
+        return db.process_exception("Register Webhook", exc)
+    except Exception as e:
+        return db.failure_message('Register Webhook', e)
+
+
+def register_webhooks(work_items_source_key, webhook_info, join_this=None):
+    try:
+        with db.orm_session(join_this) as session:
+            # Replaces active webhook with the latest registered webhook.
+            # Moves old active webhook to inactive webhooks
+            # Deletes inactive webhook ids which are passed in webhook info and present in source_data
+            work_items_source = WorkItemsSource.find_by_key(session, work_items_source_key)
+            if work_items_source is not None:
+                logger.info(f'Registering webhook for work_items_source {work_items_source.name}')
+                source_data = dict(work_items_source.source_data)
+                if webhook_info['active_webhook']:
+                    if source_data.get('active_webhook'):
+                        inactive_webhooks = source_data.get('inactive_webhooks', [])
+                        inactive_webhooks.append(source_data.get('active_webhook'))
+                        source_data['inactive_webhooks'] = inactive_webhooks
+                    source_data['active_webhook'] = webhook_info['active_webhook']
+                for wid in webhook_info['deleted_webhooks']:
+                    if source_data.get('inactive_webhooks') and wid in source_data.get('inactive_webhooks'):
+                        source_data['inactive_webhooks'].remove(wid)
+                if source_data.get('webhooks'):
+                    del source_data['webhooks']
+                work_items_source.source_data = source_data
+                return dict(
+                    success=True,
+                    work_items_source_key=work_items_source_key
+                )
+            else:
+                raise ProcessingException(f"Could not find work items source with key {work_items_source_key}")
+    except SQLAlchemyError as exc:
+        return db.process_exception("Register Webhook", exc)
+    except Exception as e:
+        return db.failure_message('Register Webhook', e)
+
