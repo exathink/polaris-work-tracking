@@ -86,15 +86,14 @@ class GitlabWorkTrackingConnector(GitlabConnector):
         # Register new webhook now
         project_webhooks_callback_url = f"{config_provider.get('GITLAB_WEBHOOKS_BASE_URL')}" \
                                            f"/project/webhooks/{self.key}/"
-        project_webhooks_callback_url = f"{config_provider.get('GITLAB_WEBHOOKS_BASE_URL')}" \
-                                        f"/project/webhooks/{self.key}/"
 
         add_hook_url = f"{self.base_url}/projects/{project_source_id}/hooks"
 
         post_data = dict(
             id=project_source_id,
             url=project_webhooks_callback_url,
-            issue_events=True,
+            push_events=False,
+            issues_events=True,
             enable_ssl_verification=True,
             token=self.webhook_secret
         )

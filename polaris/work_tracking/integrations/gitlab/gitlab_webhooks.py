@@ -18,4 +18,8 @@ webhook = Blueprint('gitlab_webhooks', __name__)
 
 @webhook.route(f"/project/webhooks/<connector_key>/", methods=('GET', 'POST'))
 def project_webhooks(connector_key):
-    pass
+    logger.info('Received webhook event @project/webhooks')
+
+    event_type = request.json['object_kind']
+    #publish.gitlab_repository_event(event_type, connector_key, request.data)
+    return ''
