@@ -44,7 +44,8 @@ class GitlabWorkTrackingConnector(GitlabConnector):
             name=project['name'],
             url=project["_links"]['issues'],
             description=project['description'],
-            custom_fields=[]
+            custom_fields=[],
+            source_data={}
         )
 
     def fetch_gitlab_projects(self):
@@ -85,14 +86,15 @@ class GitlabWorkTrackingConnector(GitlabConnector):
         # Register new webhook now
         project_webhooks_callback_url = f"{config_provider.get('GITLAB_WEBHOOKS_BASE_URL')}" \
                                            f"/project/webhooks/{self.key}/"
+        project_webhooks_callback_url = f"{config_provider.get('GITLAB_WEBHOOKS_BASE_URL')}" \
+                                        f"/project/webhooks/{self.key}/"
 
         add_hook_url = f"{self.base_url}/projects/{project_source_id}/hooks"
 
         post_data = dict(
             id=project_source_id,
             url=project_webhooks_callback_url,
-            push_events=True,
-            merge_requests_events=True,
+            issue_events=True,
             enable_ssl_verification=True,
             token=self.webhook_secret
         )

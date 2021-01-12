@@ -97,7 +97,7 @@ def register_work_items_source_webhooks(connector_key, work_items_source_key, jo
                         webhook_info = connector.register_project_webhooks(work_items_source.source_id,
                                                                               get_hooks_result['registered_webhooks'])
                         if webhook_info['success']:
-                            register_result = api.register_webhooks(repository_key, webhook_info, join_this=session)
+                            register_result = api.register_webhooks(work_items_source_key, webhook_info, join_this=session)
                             if register_result['success']:
                                 return dict(
                                     success=True,
