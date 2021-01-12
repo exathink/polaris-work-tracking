@@ -120,6 +120,22 @@ def register_work_items_source_webhooks(connector_key, work_items_source_key, jo
             return db.failure_message(f"Register webhooks failed due to: {e}")
 
 
+def register_work_items_sources_webhooks(connector_key, work_items_source_keys, join_this=None):
+    result = []
+    for work_items_source_key in work_items_source_keys:
+        registration_status = register_work_items_source_webhooks(connector_key, work_items_source_key, join_this=join_this)
+        if registration_status['success']:
+            result.append(registration_status)
+        else:
+            result.append(dict(
+                work_items_source_key=work_items_source_key,
+                success=False,
+                message=registration_status.get('message'),
+                exception=registration_status.get('exception')
+            ))
+    return result
+
+
 def import_projects(import_projects_input):
     projects = []
     # We execute this in a separate transaction because we need the transaction to commit before

@@ -288,3 +288,41 @@ class DeleteWorkTrackingConnector(DeleteConnector):
                     connector_name=delete_connector(connector_key, session),
                     disposition='deleted'
                 )
+
+
+class RegisterWebhooksInput(graphene.InputObjectType):
+    connector_key = graphene.String(required=True)
+    work_items_source_keys = graphene.List(graphene.String, required=True)
+
+
+class WebhooksRegistrationStatus(graphene.ObjectType):
+    work_items_source_key = graphene.String(required=True)
+    success = graphene.Boolean(required=True)
+    message = graphene.String(required=False)
+    exception = graphene.String(required=False)
+
+
+class RegisterWorkItemsSourcesConnectorWebhooks(graphene.Mutation):
+    class Arguments:
+        register_webhooks_input = RegisterWebhooksInput(required=True)
+
+    webhooks_registration_status = graphene.List(WebhooksRegistrationStatus)
+
+    def mutate(self, info, register_webhooks_input):
+        connector_key = register_webhooks_input.connector_key
+        work_items_source_keys = register_webhooks_input.work_items_source_keys
+
+        logger.info(f'Register webhooks called for connector: {connector_key}')
+        with db.orm_session() as session:
+            result = commands.register_work_items_sources_webhooks(connector_key, work_items_source_keys, join_this=session)
+            if result:
+                return RegisterWorkItemsSourcesConnectorWebhooks(
+                    webhooks_registration_status=[
+                        WebhooksRegistrationStatus(
+                            work_items_source_key=status.get('work_items_source_key'),
+                            success=status.get('success'),
+                            message=status.get('message'),
+                            exception=status.get('exception')
+                        )
+                        for status in result]
+                )
