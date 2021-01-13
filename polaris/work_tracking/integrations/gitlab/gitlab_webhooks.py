@@ -10,6 +10,7 @@
 
 import logging
 from flask import Blueprint, request
+from polaris.work_tracking import publish
 
 logger = logging.getLogger('polaris.work_tracking.integrations.gitlab.webhook')
 
@@ -21,5 +22,5 @@ def project_webhooks(connector_key):
     logger.info('Received webhook event @project/webhooks')
 
     event_type = request.json['object_kind']
-    #publish.gitlab_repository_event(event_type, connector_key, request.data)
+    publish.gitlab_project_event(event_type, connector_key, request.data)
     return ''
