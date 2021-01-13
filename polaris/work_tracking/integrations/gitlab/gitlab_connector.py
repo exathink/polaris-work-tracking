@@ -164,7 +164,7 @@ class GitlabProject(GitlabIssuesWorkItemsSource):
             name=issue['title'][:255],
             description=issue['description'],
             is_bug=find(issue['labels'], lambda label: label in bug_tags) is not None,
-            tags=[label for label in issue['labels']],
+            tags=[label['title'] for label in issue['labels']],
             source_id=str(issue['id']),
             source_last_updated=issue['updated_at'],
             source_created_at=issue['created_at'],

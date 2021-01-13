@@ -151,11 +151,11 @@ def work_item_created_event(organization_key, work_items_source_key, new_work_it
 
 
 def work_item_updated_event(organization_key, work_items_source_key, updated_work_items, channel=None):
-    message = WorkItemsCreated(
+    message = WorkItemsUpdated(
         send=dict(
             organization_key=organization_key,
             work_items_source_key=work_items_source_key,
-            update_work_items=updated_work_items
+            updated_work_items=updated_work_items
         )
     )
     publish(
