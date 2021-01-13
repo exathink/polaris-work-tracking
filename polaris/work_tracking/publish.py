@@ -9,7 +9,8 @@
 # Author: Krishna Kumar
 
 
-from polaris.messaging.messages import WorkItemsSourceCreated, ProjectImported
+from polaris.messaging.messages import WorkItemsSourceCreated, ProjectImported, \
+    WorkItemsCreated, WorkItemsUpdated
 from polaris.messaging.topics import WorkItemsTopic, ConnectorsTopic
 from polaris.messaging.utils import publish
 from polaris.work_tracking.messages import AtlassianConnectWorkItemEvent, RefreshConnectorProjects, \
@@ -115,3 +116,49 @@ def resolve_work_items_for_epic(organization_key, work_items_source_key, epic, c
         channel=channel
     )
     return message
+
+
+def gitlab_project_event(event_type, connector_key, payload, channel=None):
+    message = GitlabProjectEvent(
+        send=dict(
+            event_type=event_type,
+            connector_key=connector_key,
+            payload=payload
+        )
+    )
+    publish(
+        WorkItemsTopic,
+        message,
+        channel=channel
+    )
+    return message
+
+
+def work_item_created_event(organization_key, work_items_source_key, new_work_items):
+    message = WorkItemsCreated(
+        send=dict(
+            organization_key=organization_key,
+            work_items_source_key=work_items_source_key,
+            new_work_items=new_work_items
+        )
+    )
+    publish(
+        WorkItemsTopic,
+        message,
+        channel=channel
+    )
+
+
+def work_item_updated_event(organization_key, work_items_source_key, updated_work_items):
+    message = WorkItemsCreated(
+        send=dict(
+            organization_key=organization_key,
+            work_items_source_key=work_items_source_key,
+            update_work_items=updated_work_items
+        )
+    )
+    publish(
+        WorkItemsTopic,
+        message,
+        channel=channel
+    )
