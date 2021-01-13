@@ -135,7 +135,7 @@ def gitlab_project_event(event_type, connector_key, payload, channel=None):
     return message
 
 
-def work_item_created_event(organization_key, work_items_source_key, new_work_items):
+def work_item_created_event(organization_key, work_items_source_key, new_work_items, channel=None):
     message = WorkItemsCreated(
         send=dict(
             organization_key=organization_key,
@@ -150,7 +150,7 @@ def work_item_created_event(organization_key, work_items_source_key, new_work_it
     )
 
 
-def work_item_updated_event(organization_key, work_items_source_key, updated_work_items):
+def work_item_updated_event(organization_key, work_items_source_key, updated_work_items, channel=None):
     message = WorkItemsCreated(
         send=dict(
             organization_key=organization_key,

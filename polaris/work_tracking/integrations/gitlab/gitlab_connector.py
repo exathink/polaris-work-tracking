@@ -171,7 +171,7 @@ class GitlabProject(GitlabIssuesWorkItemsSource):
             source_display_id=issue['iid'],
             source_state=issue['state'],
             is_epic=False,
-            url=issue['web_url'],
+            url=issue.get('web_url') if issue.get('web_url') else issue.get('url'),
             work_item_type=GitlabWorkItemType.issue.value,
             api_payload=issue
         )

@@ -33,26 +33,25 @@ def handle_issue_event(connector_key, payload, channel=None):
                 join_this=session
             )
             if connector:
-                gitlab_project = GitlabProject(work_items_source, connector)
+                gitlab_project = GitlabProject(token_provider=None, work_items_source=work_items_source)
                 issue_object = event.get('object_attributes')
                 issue_data = gitlab_project.map_issue_to_work_item(issue_object)
 
-                result = api.sync_work_item(work_items_source.key, [[issue_data]])
-                if result['success']:
-                    synced_issues = result['issues']
-                    if len(synced_issues) > 0:
-                        if synced_issues[0]['is_new']:
-                            publish.work_item_created_event(
-                                organization_key=work_items_source.organization_key,
-                                work_items_source_key=work_items_source.key,
-                                new_work_items=synced_issues
-                            )
-                        else:
-                            publish.work_item_updated_event(
-                                organization_key=work_items_source.organization_key,
-                                work_items_source_key=work_items_source.key,
-                                updated_work_items=synced_issues
-                    return synced_issues
+                synced_issues = api.sync_work_items(work_items_source.key, [issue_data], join_this=session)
+                if len(synced_issues) > 0:
+                    if synced_issues[0]['is_new']:
+                        publish.work_item_created_event(
+                            organization_key=work_items_source.organization_key,
+                            work_items_source_key=work_items_source.key,
+                            new_work_items=synced_issues
+                        )
+                    else:
+                        publish.work_item_updated_event(
+                            organization_key=work_items_source.organization_key,
+                            work_items_source_key=work_items_source.key,
+                            updated_work_items=synced_issues
+                        )
+                return synced_issues
 
 
 def handle_gitlab_event(connector_key, event_type, payload, channel=None):
