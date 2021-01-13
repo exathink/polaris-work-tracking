@@ -31,9 +31,10 @@ gitlab_api_issue_payload = {
         "avatar_url": "https://secure.gravatar.com/avatar/ff19230d4b6d9a5d7d441dc62fec4619?s=80&d=identicon",
         "web_url": "https://gitlab.com/krishnaku"
     },
+    # TODO: Assuming these are hardcoded values and not real data. Discuss.
     "labels": [
-        "DEV-DONE",
-        "enhancement"
+        {"title": "DEV-DONE"},
+        {"title": "enhancement"}
     ],
     "milestone": "None",
     "assignees": [
