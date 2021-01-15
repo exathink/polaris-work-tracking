@@ -28,3 +28,7 @@ pypy_work_items_source_key = uuid.uuid4()
 polaris_work_items_source_key = uuid.uuid4()
 empty_work_items_source_key = uuid.uuid4()
 
+# work items source source ids
+gitlab_work_items_source_id = '2000'
+github_work_items_source_id = '2001'
+pivotal_work_items_source_id = '2002'

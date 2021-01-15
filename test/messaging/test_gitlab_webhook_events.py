@@ -35,51 +35,14 @@ mock_consumer.token_provider = get_token_provider()
 # Publish both types of events and validate the changes
 
 
-@pytest.yield_fixture
-def setup_project_and_work_items_sources(setup_connectors):
-    connector_keys = setup_connectors
-    work_items_sources_keys = dict(
-        gitlab=uuid.uuid4(),
-        github=uuid.uuid4(),
-        pivotal_tracker=uuid.uuid4()
-    )
-    with db.orm_session() as session:
-        project = model.Project(
-            name='TestProject',
-            key=uuid.uuid4(),
-            organization_key=polaris_organization_key,
-            account_key=exathink_account_key
-        )
-
-        project.work_items_sources.append(
-            model.WorkItemsSource(
-                key=work_items_sources_keys['gitlab'],
-                connector_key=connector_keys['gitlab'],
-                integration_type='gitlab',
-                work_items_source_type='project',
-                parameters=dict(id="1934657", name="polaris-web"),
-                name='polaris-web',
-                account_key=exathink_account_key,
-                organization_key=polaris_organization_key,
-                commit_mapping_scope='organization',
-                commit_mapping_scope_key=polaris_organization_key,
-                import_state=WorkItemsSourceImportState.ready.value
-            )
-        )
-
-        session.add(project)
-
-        session.flush()
-        yield project, work_items_sources_keys, connector_keys
-
-
 class TestGitlabWebhookEvents:
     class TestGitlabIssueEvents:
 
         @pytest.yield_fixture()
-        def setup(self, setup_project_and_work_items_sources):
-            project, work_items_sources_key, connector_keys = setup_project_and_work_items_sources
-            connector_key = connector_keys['gitlab']
+        def setup(self, setup_work_item_sources):
+            session, work_items_sources = setup_work_item_sources
+            session.commit()
+            connector_key = work_items_sources['gitlab'].connector_key
             event_type = 'issue'
             yield Fixture(
                 organization_key=polaris_organization_key,
@@ -104,7 +67,7 @@ class TestGitlabWebhookEvents:
                         "email": "pragya@64sqs.com"
                     },
                     "project": {
-                        "id": 9576833,
+                        "id": gitlab_work_items_source_id,
                         "name": "test-repo",
                         "description": "",
                         "web_url": "https://gitlab.com/polaris-test/test-repo",
@@ -129,14 +92,14 @@ class TestGitlabWebhookEvents:
                         "description": "",
                         "discussion_locked": None,
                         "due_date": None,
-                        "id": 77215100,
+                        "id": gitlab_work_items_source_id,
                         "iid": 9,
                         "last_edited_at": None,
                         "last_edited_by_id": None,
                         "milestone_id": None,
                         "moved_to_id": None,
                         "duplicated_to_id": None,
-                        "project_id": 9576833,
+                        "project_id": gitlab_work_items_source_id,
                         "relative_position": None,
                         "state_id": 1,
                         "time_estimate": 0,
@@ -178,7 +141,7 @@ class TestGitlabWebhookEvents:
                         },
                         "project_id": {
                             "previous": None,
-                            "current": 9576833
+                            "current": gitlab_work_items_source_id
                         },
                         "title": {
                             "previous": None,
@@ -214,12 +177,11 @@ class TestGitlabWebhookEvents:
                 )
                 publisher = mock_publisher()
                 channel = mock_channel()
-
                 with patch('polaris.work_tracking.publish.publish') as publish:
                     subscriber = WorkItemsTopicSubscriber(channel, publisher=publisher)
                     subscriber.consumer_context = mock_consumer
                     message = subscriber.dispatch(channel, gitlab_new_issue_event)
-                    #assert message
+                    assert message
                     source_issue_id = str(fixture.new_payload['object_attributes']['id'])
                     url = str(fixture.new_payload['object_attributes']['url'])
                     assert db.connection().execute(
@@ -227,3 +189,4 @@ class TestGitlabWebhookEvents:
                         where source_id='{source_issue_id}' and url='{url}'"
                     ).scalar() == 1
                     assert_topic_and_message(publish, WorkItemsTopic, WorkItemsCreated)
+
