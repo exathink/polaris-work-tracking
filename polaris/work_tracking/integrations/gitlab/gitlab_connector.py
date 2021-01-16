@@ -160,18 +160,29 @@ class GitlabProject(GitlabIssuesWorkItemsSource):
 
     def map_issue_to_work_item(self, issue):
         bug_tags = ['bug', *self.work_items_source.parameters.get('bug_tags', [])]
+        labels = issue['labels']
+        derived_labels = []
+        # A quick hack to process the two types of labels seen in issues and webhook events
+        # TODO: To be refined when working on gitlab states
+        for label in labels:
+            if type(label) == str:
+                derived_labels.append(label)
+            if type(label) == dict:
+                new_label = label.get('title')
+                if new_label:
+                    derived_labels.append(new_label)
         work_item = dict(
             name=issue['title'][:255],
             description=issue['description'],
             is_bug=find(issue['labels'], lambda label: label in bug_tags) is not None,
-            tags=[label for label in issue['labels']],
+            tags=derived_labels,
             source_id=str(issue['id']),
             source_last_updated=issue['updated_at'],
             source_created_at=issue['created_at'],
             source_display_id=issue['iid'],
             source_state=issue['state'],
             is_epic=False,
-            url=issue['web_url'],
+            url=issue.get('web_url') if issue.get('web_url') else issue.get('url'),
             work_item_type=GitlabWorkItemType.issue.value,
             api_payload=issue
         )
