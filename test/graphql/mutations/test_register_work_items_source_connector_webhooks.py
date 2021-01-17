@@ -174,3 +174,32 @@ class TestRegisterWorkItemsSourceConnectorWebhooks:
                 assert not status[0]['success']
                 assert status[0][
                            'message'] == f"Register webhooks failed due to: Cannot find connector for connector_key {test_connector_key}"
+
+        def it_returns_work_items_source_not_found_error_when_work_items_source_id_is_incorrect(self, setup):
+            fixture = setup
+            client = Client(schema)
+            test_work_items_source_key = str(uuid.uuid4())
+            with patch(
+                    'polaris.work_tracking.integrations.gitlab.GitlabWorkTrackingConnector.register_project_webhooks'
+            ) as register_webhooks:
+                register_webhooks.return_value = dict(
+                    success=True,
+                    active_webhook=fixture.active_hook_id,
+                    deleted_webhooks=[],
+                    registered_events=fixture.registered_events
+                )
+                response = client.execute(
+                    fixture.mutation_string,
+                    variable_values=dict(
+                        registerWebhooksInput=dict(
+                            connectorKey=str(fixture.connector_key),
+                            workItemsSourceKeys=[str(test_work_items_source_key)]
+                        )
+                    )
+                )
+                assert 'data' in response
+                status = response['data']['registerWorkItemsSourceConnectorWebhooks']['webhooksRegistrationStatus']
+                assert len(status) == 1
+                assert not status[0]['success']
+                assert status[0][
+                           'message'] == f"Could not find work items source with key {test_work_items_source_key}"
