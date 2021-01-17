@@ -22,7 +22,7 @@ class TestRegisterWorkItemsSourceConnectorWebhooks:
     class TestWithGitlabConnector:
 
         @pytest.yield_fixture()
-        def setup(self, setup_work_item_sources):
+        def setup(self, setup_work_item_sources, cleanup):
             session, work_items_sources = setup_work_item_sources
             session.commit()
             gitlab_work_items_source_key = work_items_sources['gitlab'].key
@@ -80,4 +80,68 @@ class TestRegisterWorkItemsSourceConnectorWebhooks:
                     f"select count(*) from work_tracking.work_items_sources \
                     where key='{fixture.work_items_source_key}' \
                     and source_data->>'active_webhook'='{fixture.active_hook_id}'" \
+                    ).scalar() == 1
+
+        def it_re_registers_webhooks_and_updates_source_data(self, setup):
+            fixture = setup
+            client = Client(schema)
+            new_webhook_id = 1001
+
+            with patch(
+                    'polaris.work_tracking.integrations.gitlab.GitlabWorkTrackingConnector.register_project_webhooks'
+            ) as register_webhooks:
+                register_webhooks.return_value = dict(
+                    success=True,
+                    active_webhook=fixture.active_hook_id,
+                    deleted_webhooks=[],
+                    registered_events=fixture.registered_events
+                )
+                response = client.execute(
+                    fixture.mutation_string,
+                    variable_values=dict(
+                        registerWebhooksInput=dict(
+                            connectorKey=str(fixture.connector_key),
+                            workItemsSourceKeys=[str(fixture.work_items_source_key)]
+                        )
+                    )
+                )
+                assert 'data' in response
+                status = response['data']['registerWorkItemsSourceConnectorWebhooks']['webhooksRegistrationStatus']
+                assert len(status) == 1
+                assert status[0]['success']
+
+                assert db.connection().execute(
+                    f"select count(*) from work_tracking.work_items_sources \
+                    where key='{fixture.work_items_source_key}' \
+                    and source_data->>'active_webhook'='{fixture.active_hook_id}'" \
+                    ).scalar() == 1
+
+            with patch(
+                    'polaris.work_tracking.integrations.gitlab.GitlabWorkTrackingConnector.register_project_webhooks'
+            ) as register_webhooks:
+                register_webhooks.return_value = dict(
+                    success=True,
+                    active_webhook=new_webhook_id,
+                    deleted_webhooks=[fixture.active_hook_id],
+                    registered_events=fixture.registered_events
+                )
+                response = client.execute(
+                    fixture.mutation_string,
+                    variable_values=dict(
+                        registerWebhooksInput=dict(
+                            connectorKey=str(fixture.connector_key),
+                            workItemsSourceKeys=[str(fixture.work_items_source_key)]
+                        )
+                    )
+                )
+                assert 'data' in response
+                status = response['data']['registerWorkItemsSourceConnectorWebhooks']['webhooksRegistrationStatus']
+                assert len(status) == 1
+                assert status[0]['success']
+
+                assert db.connection().execute(
+                    f"select count(*) from work_tracking.work_items_sources \
+                    where key='{fixture.work_items_source_key}' \
+                    and source_data->>'active_webhook'='{new_webhook_id}' \
+                    and source_data->>'inactive_webhooks'='[]'" \
                     ).scalar() == 1
