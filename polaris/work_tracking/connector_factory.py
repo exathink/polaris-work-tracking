@@ -37,4 +37,4 @@ def get_connector(connector_name=None, connector_key=None, join_this=None):
                 raise ProcessingException(f'Cannot create a work tracking connector for connector_key {connector_key}')
 
         else:
-            raise ProcessingException(f'Connot find connector for connector_key {connector_key}')
+            raise ProcessingException(f'Cannot find connector for connector_key {connector_key}')
