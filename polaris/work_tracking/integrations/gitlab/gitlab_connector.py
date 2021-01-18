@@ -85,7 +85,7 @@ class GitlabWorkTrackingConnector(GitlabConnector):
 
         # Register new webhook now
         project_webhooks_callback_url = f"{config_provider.get('GITLAB_WEBHOOKS_BASE_URL')}" \
-                                           f"/project/webhooks/{self.key}/"
+                                        f"/project/webhooks/{self.key}/"
 
         add_hook_url = f"{self.base_url}/projects/{project_source_id}/hooks"
 
@@ -214,7 +214,6 @@ class GitlabProject(GitlabIssuesWorkItemsSource):
                 )
 
     def fetch_work_items_to_sync(self):
-        project_boards = self.fetch_project_boards()
         for issues in self.fetch_work_items():
             yield [
                 self.map_issue_to_work_item(issue)

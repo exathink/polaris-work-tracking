@@ -688,3 +688,24 @@ def register_webhooks(work_items_source_key, webhook_info, join_this=None):
     except Exception as e:
         return db.failure_message('Register Webhook', e)
 
+
+def update_work_items_source_source_data(work_items_source_key, update_data, join_this=None):
+    try:
+        with db.orm_session(join_this) as session:
+            work_items_source = WorkItemsSource.find_by_key(session, work_items_source_key)
+            if work_items_source is not None:
+                logger.info(f'Updating source data for work_items_source {work_items_source.name}')
+                source_data = dict(work_items_source.source_data)
+                for key, value in update_data.items():
+                    source_data[key] = value
+                work_items_source.source_data = source_data
+                return dict(
+                    success=True,
+                    work_items_source_key=work_items_source_key
+                )
+            else:
+                raise ProcessingException(f"Could not find work items source with key {work_items_source_key}")
+    except SQLAlchemyError as exc:
+        return db.process_exception("Update source data", exc)
+    except Exception as e:
+        return db.failure_message('Update source data', e)
