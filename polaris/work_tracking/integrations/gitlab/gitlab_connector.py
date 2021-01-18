@@ -214,8 +214,29 @@ class GitlabProject(GitlabIssuesWorkItemsSource):
                 )
 
     def fetch_work_items_to_sync(self):
+        project_boards = self.fetch_project_boards()
         for issues in self.fetch_work_items():
             yield [
                 self.map_issue_to_work_item(issue)
                 for issue in issues
             ]
+
+    def fetch_project_boards(self):
+        query_params = dict(limit=100)
+        fetch_boards_url = f'{self.gitlab_connector.base_url}/projects/{self.source_project_id}/boards'
+        while fetch_boards_url is not None:
+            response = requests.get(
+                fetch_boards_url,
+                params=query_params,
+                headers={"Authorization": f"Bearer {self.personal_access_token}"},
+            )
+            if response.ok:
+                yield response.json()
+                if 'next' in response.links:
+                    fetch_boards_url = response.links['next']['url']
+                else:
+                    fetch_boards_url = None
+            else:
+                raise ProcessingException(
+                    f"Fetch project boards from server failed {response.text} status: {response.status_code}\n"
+                )
