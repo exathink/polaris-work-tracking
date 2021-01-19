@@ -129,7 +129,7 @@ class TestGitlabSyncWorkItems:
                         f"select count(id) from work_tracking.work_items_sources \
                                             where key='{gitlab_source.key}' \
                                             and source_data->'boards' is not NULL \
-                                            and source_states is not NULL"
+                                            and source_states!='[]'"
                     ).scalar() == 1
 
     def it_updates_work_items_that_already_exist(self, setup_work_items, new_work_items):
@@ -215,8 +215,9 @@ class TestGitlabSyncWorkItems:
                         f"select count(id) from work_tracking.work_items_sources \
                         where key='{gitlab_source.key}' \
                         and source_data->'boards' is not NULL \
-                        and source_states is not NULL"
+                        and source_states!='[]'"
                     ).scalar() == 1
+
 
 class TestJiraSyncWorkItemsForEpic:
 
