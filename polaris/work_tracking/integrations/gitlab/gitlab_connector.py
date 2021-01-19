@@ -158,7 +158,7 @@ class GitlabProject(GitlabIssuesWorkItemsSource):
         self.source_project_id = work_items_source.source_id
         self.personal_access_token = self.gitlab_connector.personal_access_token
 
-    def map_issue_to_work_item(self, issue):
+    def map_issue_to_work_item(self, issue): # TODO: Add a parameter with available states list
         bug_tags = ['bug', *self.work_items_source.parameters.get('bug_tags', [])]
         labels = issue['labels']
         derived_labels = []
