@@ -700,13 +700,13 @@ def update_work_items_source_source_data(work_items_source_key, update_data, joi
                     source_data[key] = value
                     # TODO: Can move this piece of code into a separate function, \
                     #  but not doing right now as it is specific to Gitlab and not useful generally
-                    if key == 'boards': # Gitlab specific code
+                    if key == 'boards':
                         # Get all list labels and save into source_states
                         source_states = []
                         for board in value:
                             for board_list in board['lists']:
                                 source_states.append(board_list['label']['name'])
-                        # work_items_source.source_states = source_states
+                        work_items_source.source_states = source_states
                 work_items_source.source_data = source_data
                 return dict(
                     success=True,
