@@ -53,12 +53,13 @@ class TestGitlabSyncWorkItems:
 
     def it_imports_work_items_when_the_source_has_no_work_items(self, setup_work_items, new_work_items):
         _, work_items_sources = setup_work_items
-        empty_source = work_items_sources['gitlab']
+        gitlab_source = work_items_sources['gitlab']
         with patch(
                 'polaris.work_tracking.integrations.gitlab.GitlabProject.fetch_work_items_to_sync') as fetch_work_items_to_sync:
             with patch('polaris.work_tracking.integrations.gitlab.GitlabProject.fetch_project_boards') as fetch_project_boards:
                 fetch_work_items_to_sync.return_value = [new_work_items]
                 fetch_project_boards.return_value = [
+                    [
                     {
                         "id": 2245441,
                         "name": "Development",
@@ -112,19 +113,34 @@ class TestGitlabSyncWorkItems:
                         ],
                     }
                 ]
+                ]
 
-                for result in commands.sync_work_items(token_provider, empty_source.key):
+                for result in commands.sync_work_items(token_provider, gitlab_source.key):
                     assert len(result) == len(new_work_items)
                     assert all(map(lambda item: item['is_new'], result))
 
+                    # Check that work_items_source is updated with latest boards metadata and source states
+                    source_states = []
+                    for board in fetch_project_boards.return_value[0]:
+                        for board_list in board['lists']:
+                            source_states.append(board_list['label']['name'])
+
+                    assert db.connection().execute(
+                        f"select count(id) from work_tracking.work_items_sources \
+                                            where key='{gitlab_source.key}' \
+                                            and source_data->'boards' is not NULL \
+                                            and source_states is not NULL"
+                    ).scalar() == 1
+
     def it_updates_work_items_that_already_exist(self, setup_work_items, new_work_items):
         _, work_items_sources = setup_work_items
-        empty_source = work_items_sources['gitlab']
+        gitlab_source = work_items_sources['gitlab']
         with patch(
                 'polaris.work_tracking.integrations.gitlab.GitlabProject.fetch_work_items_to_sync') as fetch_work_items_to_sync:
             with patch('polaris.work_tracking.integrations.gitlab.GitlabProject.fetch_project_boards') as fetch_project_boards:
                 fetch_work_items_to_sync.return_value = [new_work_items]
                 fetch_project_boards.return_value = [
+                    [
                     {
                         "id": 2245441,
                         "name": "Development",
@@ -178,15 +194,29 @@ class TestGitlabSyncWorkItems:
                         ],
                     }
                 ]
+                ]
                 fetch_work_items_to_sync.return_value = [new_work_items]
                 # import once and ignore results
-                for _ in commands.sync_work_items(token_provider, empty_source.key):
+                for _ in commands.sync_work_items(token_provider, gitlab_source.key):
                     pass
 
                 # import again
-                for result in commands.sync_work_items(token_provider, empty_source.key):
+                for result in commands.sync_work_items(token_provider, gitlab_source.key):
                     assert len(result) == len(new_work_items)
                     assert all(map(lambda item: not item['is_new'], result))
+
+                    # Check that work_items_source is updated with latest boards metadata and source states
+                    source_states = []
+                    for board in fetch_project_boards.return_value[0]:
+                        for board_list in board['lists']:
+                            source_states.append(board_list['label']['name'])
+
+                    assert db.connection().execute(
+                        f"select count(id) from work_tracking.work_items_sources \
+                        where key='{gitlab_source.key}' \
+                        and source_data->'boards' is not NULL \
+                        and source_states is not NULL"
+                    ).scalar() == 1
 
 class TestJiraSyncWorkItemsForEpic:
 
