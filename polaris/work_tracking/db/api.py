@@ -689,29 +689,18 @@ def register_webhooks(work_items_source_key, webhook_info, join_this=None):
         return db.failure_message('Register Webhook', e)
 
 
-def update_work_items_source_source_data(work_items_source_key, update_data, join_this=None):
+def update_work_items_source_before_work_item_sync(work_items_source_key, work_items_source_data, join_this=None):
     try:
         with db.orm_session(join_this) as session:
             work_items_source = WorkItemsSource.find_by_key(session, work_items_source_key)
             if work_items_source is not None:
-                logger.info(f'Updating source data for work_items_source {work_items_source.name}')
-                source_data = dict(work_items_source.source_data)
-                for key, value in update_data.items():
-                    source_data[key] = value
-                    # TODO: Can move this piece of code into a separate function, \
-                    #  but not doing right now as it is specific to Gitlab and not useful generally
-                    if key == 'boards':
-                        # Get all list labels and save into source_states
-                        source_states = []
-                        for board in value:
-                            for board_list in board['lists']:
-                                source_states.append(board_list['label']['name'])
-                        work_items_source.source_states = source_states
-                work_items_source.source_data = source_data
-                return dict(
-                    success=True,
-                    work_items_source_key=work_items_source_key
-                )
+                if work_items_source.update(work_items_source_data):
+                    return dict(
+                        success=True,
+                        work_items_source_key=work_items_source_key
+                    )
+                else:
+                    raise ProcessingException(f"Could not update work_items_sourc with key {work_items_source_key}")
             else:
                 raise ProcessingException(f"Could not find work items source with key {work_items_source_key}")
     except SQLAlchemyError as exc:

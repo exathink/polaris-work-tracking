@@ -42,11 +42,11 @@ def sync_work_items(token_provider, work_items_source_key):
         # TODO: Here we are importing project boards which will be used to determine \
         #  states and state mappings for Gitlab. This is something specific to provider, \
         #  so can discuss if this code fits here
-        if getattr(work_items_source_provider, 'fetch_project_boards', None):
-            project_boards = [data for data in work_items_source_provider.fetch_project_boards()][0]
-            api.update_work_items_source_source_data(
-                work_items_source_key,
-                update_data=dict(boards=project_boards)
+        if getattr(work_items_source_provider, 'before_work_item_sync', None):
+            work_items_source_data = work_items_source_provider.before_work_item_sync()
+            api.update_work_items_source_before_work_item_sync(
+                work_items_source_key=work_items_source_key,
+                work_items_source_data=work_items_source_data
             )
         for work_items in work_items_source_provider.fetch_work_items_to_sync():
             yield api.sync_work_items(work_items_source_key, work_items) or []

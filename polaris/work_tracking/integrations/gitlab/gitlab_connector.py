@@ -239,3 +239,21 @@ class GitlabProject(GitlabIssuesWorkItemsSource):
                 raise ProcessingException(
                     f"Fetch project boards from server failed {response.text} status: {response.status_code}\n"
                 )
+
+    def before_work_item_sync(self):
+        project_boards = [data for data in self.fetch_project_boards()][0]
+        source_data = self.work_items_source.source_data
+        if source_data is not None:
+            source_data['boards'] = project_boards
+        else:
+            source_data = dict(boards=project_boards)
+
+        source_states = []
+        for board in project_boards:
+            for board_list in board['lists']:
+                source_states.append(board_list['label']['name'])
+
+        return dict(
+            source_data=source_data,
+            source_states=source_states
+        )
