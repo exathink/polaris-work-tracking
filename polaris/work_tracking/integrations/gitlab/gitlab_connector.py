@@ -152,6 +152,7 @@ class GitlabProject(GitlabIssuesWorkItemsSource):
 
     def __init__(self, token_provider, work_items_source):
         self.work_items_source = work_items_source
+        self.source_states = self.work_items_source.source_states
         self.gitlab_connector = connector_factory.get_connector(
             connector_key=self.work_items_source.connector_key
         )
@@ -162,8 +163,12 @@ class GitlabProject(GitlabIssuesWorkItemsSource):
         bug_tags = ['bug', *self.work_items_source.parameters.get('bug_tags', [])]
         labels = issue['labels']
         derived_labels = []
-        # A quick hack to process the two types of labels seen in issues and webhook events
-        # TODO: To be refined when working on gitlab states
+        # TODO: Compare self.source_states with label. \
+        #  If any label is present in source_states, that should be assigned to source_state. \
+        #  But DISCUSS if gitlab state (open/closed) will be reflected in labels too. \
+        #  If not we may have issues which are closed but not updated as the label does not say so. \
+        #  So we may have to research and use both labels and state values to determine source_state.
+        #  We may also need to update our state->state_type (in analytics service) mapping for gitlab.
         for label in labels:
             if type(label) == str:
                 derived_labels.append(label)
@@ -252,6 +257,8 @@ class GitlabProject(GitlabIssuesWorkItemsSource):
         for board in project_boards:
             for board_list in board['lists']:
                 source_states.append(board_list['label']['name'])
+        # Update class variable for source_states to latest
+        self.source_states = source_states
 
         return dict(
             source_data=source_data,
