@@ -200,20 +200,33 @@ class WorkItemsSource(Base):
     def set_synced(self):
         self.last_synced = datetime.utcnow()
 
-    # This method will be used to update any work items source attributes \
-    # which need to be updated from source before syncing work items
     def update(self, work_items_source_data):
-        updated = False
-        for attribute in ['source_data', 'source_states']:
-            if getattr(self, attribute) != work_items_source_data.get(attribute):
-                setattr(self, attribute, work_items_source_data.get(attribute))
-                updated = True
-        # FIXME: Not sure if the last updated date we get from the \
-        #  workflow (the gitlab boards API which has led to writing of this function) \
-        #  is a valid update date for work items source. Hence not updating, \
-        #  but keeping commented as a reminder to be fixed if this causes issues
-        # self.source_updated_at = work_items_source_data.get('source_last_updated')
-        return updated
+        updatable_fields = [
+            'parameters',
+            'custom_fields',
+            'name',
+            'description',
+            'url',
+            'commit_mapping_scope',
+            'commit_mapping_scope_key',
+            'last_synced',
+            'source_updated_at',
+            'source_data',
+            'source_states',
+            'import_state'
+        ]
+        updated = []
+        for attribute, value in work_items_source_data.items():
+            if attribute in updatable_fields:
+                if getattr(self, attribute) != value:
+                    setattr(self, attribute, value)
+                else:
+                    logger.info(f"Attribute value unchanged for attribute: {attribute}")
+                updated.append(True)
+            else:
+                logger.info(f"Cannot update attribute : {attribute}")
+                updated.append(False)
+        return all(updated)
 
 
 work_items_sources = WorkItemsSource.__table__

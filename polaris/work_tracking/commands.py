@@ -30,24 +30,23 @@ def success(result):
     return dict(success=True, **result)
 
 
+def update_work_items_source_before_work_item_sync(work_items_source_provider):
+    work_items_source = work_items_source_provider.work_items_source
+    with db.orm_session() as session:
+        session.add(work_items_source)
+        if work_items_source.import_state == WorkItemsSourceImportState.ready.value:
+            # Initial Import
+            work_items_source.import_state = WorkItemsSourceImportState.importing.value
+        if getattr(work_items_source_provider, 'before_work_item_sync', None):
+            work_items_source_data = work_items_source_provider.before_work_item_sync()
+            work_items_source.update(work_items_source_data)
+
+
 def sync_work_items(token_provider, work_items_source_key):
     work_items_source_provider = work_items_source_factory.get_provider_impl(token_provider, work_items_source_key)
     work_items_source = work_items_source_provider.work_items_source
     if work_items_source.import_state != WorkItemsSourceImportState.disabled.value:
-        if work_items_source.import_state == WorkItemsSourceImportState.ready.value:
-            # Initial Import
-            with db.orm_session() as session:
-                session.add(work_items_source)
-                work_items_source.import_state = WorkItemsSourceImportState.importing.value
-        # TODO: Here we are importing project boards which will be used to determine \
-        #  states and state mappings for Gitlab. This is something specific to provider, \
-        #  so can discuss if this code fits here
-        if getattr(work_items_source_provider, 'before_work_item_sync', None):
-            work_items_source_data = work_items_source_provider.before_work_item_sync()
-            api.update_work_items_source_before_work_item_sync(
-                work_items_source_key=work_items_source_key,
-                work_items_source_data=work_items_source_data
-            )
+        update_work_items_source_before_work_item_sync(work_items_source_provider)
         for work_items in work_items_source_provider.fetch_work_items_to_sync():
             yield api.sync_work_items(work_items_source_key, work_items) or []
 
