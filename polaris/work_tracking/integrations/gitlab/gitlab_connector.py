@@ -165,12 +165,7 @@ class GitlabProject(GitlabIssuesWorkItemsSource):
         bug_tags = ['bug', *self.work_items_source.parameters.get('bug_tags', [])]
         labels = issue['labels']
         derived_labels = []
-        # TODO: Compare self.source_states with label. \
-        #  If any label is present in source_states, that should be assigned to source_state. \
-        #  But DISCUSS if gitlab state (open/closed) will be reflected in labels too. \
-        #  If not we may have issues which are closed but not updated as the label does not say so. \
-        #  So we may have to research and use both labels and state values to determine source_state.
-        #  We may also need to update our state->state_type (in analytics service) mapping for gitlab.
+
         for label in labels:
             if type(label) == str:
                 derived_labels.append(label)
