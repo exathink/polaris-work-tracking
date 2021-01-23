@@ -153,14 +153,14 @@ class GitlabProject(GitlabIssuesWorkItemsSource):
 
     def __init__(self, token_provider, work_items_source):
         self.work_items_source = work_items_source
-        self.source_states = self.work_items_source.source_states
+        self.source_states = ['opened', 'closed']
         self.gitlab_connector = connector_factory.get_connector(
             connector_key=self.work_items_source.connector_key
         )
         self.source_project_id = work_items_source.source_id
         self.personal_access_token = self.gitlab_connector.personal_access_token
 
-    def map_issue_to_work_item(self, issue): # TODO: Add a parameter with available states list
+    def map_issue_to_work_item(self, issue):  # TODO: Add a parameter with available states list
         bug_tags = ['bug', *self.work_items_source.parameters.get('bug_tags', [])]
         labels = issue['labels']
         derived_labels = []
@@ -256,14 +256,14 @@ class GitlabProject(GitlabIssuesWorkItemsSource):
         else:
             source_data = dict(boards=project_boards)
 
-        source_states = []
+        intermediate_source_states = []
         for board in project_boards:
             for board_list in board['lists']:
-                source_states.append(board_list['label']['name'])
+                intermediate_source_states.append(board_list['label']['name'])
         # Update class variable for source_states to latest
-        self.source_states = source_states
+        self.source_states = list(set(self.source_states).union(set(intermediate_source_states)))
 
         return dict(
             source_data=source_data,
-            source_states=source_states
+            source_states=self.source_states
         )
