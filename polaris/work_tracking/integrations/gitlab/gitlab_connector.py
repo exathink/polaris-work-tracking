@@ -153,7 +153,8 @@ class GitlabProject(GitlabIssuesWorkItemsSource):
 
     def __init__(self, token_provider, work_items_source):
         self.work_items_source = work_items_source
-        self.source_states = ['opened', 'closed']
+        self.source_states = work_items_source.source_states
+        self.basic_source_states = ['opened', 'closed']
         self.gitlab_connector = connector_factory.get_connector(
             connector_key=self.work_items_source.connector_key
         )
@@ -177,6 +178,15 @@ class GitlabProject(GitlabIssuesWorkItemsSource):
                 new_label = label.get('title')
                 if new_label:
                     derived_labels.append(new_label)
+
+        # Resolve source state from labels / state value
+        source_state = issue['state']
+        for label in labels:
+            # TODO / Note:If before_work_item_sync is called before this method, \
+            #  then self.source_states is updated to latest from gitlab, \
+            #  otherwise it is derived from what we get from db. Make sure to update in other workflows.
+            if label in self.source_states:
+                source_state = label
         work_item = dict(
             name=issue['title'][:255],
             description=issue['description'],
@@ -186,7 +196,7 @@ class GitlabProject(GitlabIssuesWorkItemsSource):
             source_last_updated=issue['updated_at'],
             source_created_at=issue['created_at'],
             source_display_id=issue['iid'],
-            source_state=issue['state'],
+            source_state=source_state,
             is_epic=False,
             url=issue.get('web_url') if issue.get('web_url') else issue.get('url'),
             work_item_type=GitlabWorkItemType.issue.value,
@@ -261,7 +271,7 @@ class GitlabProject(GitlabIssuesWorkItemsSource):
             for board_list in board['lists']:
                 intermediate_source_states.append(board_list['label']['name'])
         # Update class variable for source_states to latest
-        self.source_states = list(set(self.source_states).union(set(intermediate_source_states)))
+        self.source_states = list(set(self.basic_source_states).union(set(intermediate_source_states)))
 
         return dict(
             source_data=source_data,
