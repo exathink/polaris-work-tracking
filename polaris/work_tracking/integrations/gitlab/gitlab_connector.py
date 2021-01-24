@@ -178,9 +178,6 @@ class GitlabProject(GitlabIssuesWorkItemsSource):
         # Resolve source state from labels / state value
         source_state = issue['state']
         for label in labels:
-            # TODO / Note:If before_work_item_sync is called before this method, \
-            #  then self.source_states is updated to latest from gitlab, \
-            #  otherwise it is derived from what we get from db. Make sure to update in other workflows.
             if label in self.source_states:
                 source_state = label
         work_item = dict(
@@ -262,7 +259,6 @@ class GitlabProject(GitlabIssuesWorkItemsSource):
                 intermediate_source_states.append(board_list['label']['name'])
         # Update class variable for source_states to latest
         self.source_states = list(set(self.basic_source_states).union(set(intermediate_source_states)))
-
         return dict(
             source_data=source_data,
             source_states=self.source_states

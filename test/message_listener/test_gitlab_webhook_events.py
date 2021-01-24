@@ -178,17 +178,75 @@ class TestGitlabWebhookEvents:
                 publisher = mock_publisher()
                 channel = mock_channel()
                 with patch('polaris.work_tracking.publish.publish') as publish:
-                    subscriber = WorkItemsTopicSubscriber(channel, publisher=publisher)
-                    subscriber.consumer_context = mock_consumer
-                    message = subscriber.dispatch(channel, gitlab_new_issue_event)
-                    assert message
-                    source_issue_id = str(fixture.new_payload['object_attributes']['id'])
-                    url = str(fixture.new_payload['object_attributes']['url'])
-                    assert db.connection().execute(
-                        f"select count(id) from work_tracking.work_items \
-                        where source_id='{source_issue_id}' and url='{url}'"
-                    ).scalar() == 1
-                    assert_topic_and_message(publish, WorkItemsTopic, WorkItemsCreated)
+                    with patch(
+                            'polaris.work_tracking.integrations.gitlab.GitlabProject.fetch_project_boards') as fetch_project_boards:
+                        fetch_project_boards.return_value = [
+                            [
+                                {
+                                    "id": 2245441,
+                                    "name": "Development",
+                                    "hide_backlog_list": False,
+                                    "hide_closed_list": False,
+                                    "lists": [
+                                        {
+                                            "id": 6786201,
+                                            "label": {
+                                                "id": 17640856,
+                                                "name": "IN-PROGRESS",
+                                                "color": "#5CB85C",
+                                                "description": "Indicates in progress issues",
+                                                "description_html": "Indicates in progress issues",
+                                                "text_color": "#FFFFFF"
+                                            },
+                                            "position": 0
+                                        },
+                                        {
+                                            "id": 6786202,
+                                            "label": {
+                                                "id": 17640857,
+                                                "name": "DEV-DONE",
+                                                "color": "#A295D6",
+                                                "description": None,
+                                                "description_html": "",
+                                                "text_color": "#333333"
+                                            },
+                                            "position": 1
+                                        }
+                                    ]
+                                },
+                                {
+                                    "id": 2282923,
+                                    "name": "Product",
+                                    "hide_backlog_list": False,
+                                    "hide_closed_list": False,
+                                    "lists": [
+                                        {
+                                            "id": 6786204,
+                                            "label": {
+                                                "id": 17640863,
+                                                "name": "DEPLOYED",
+                                                "color": "#428BCA",
+                                                "description": "Story has been deployed",
+                                                "description_html": "Story has been deployed",
+                                                "text_color": "#FFFFFF"
+                                            },
+                                            "position": 0
+                                        }
+                                    ],
+                                }
+                            ]
+                        ]
+                        subscriber = WorkItemsTopicSubscriber(channel, publisher=publisher)
+                        subscriber.consumer_context = mock_consumer
+                        message = subscriber.dispatch(channel, gitlab_new_issue_event)
+                        assert message
+                        source_issue_id = str(fixture.new_payload['object_attributes']['id'])
+                        url = str(fixture.new_payload['object_attributes']['url'])
+                        assert db.connection().execute(
+                            f"select count(id) from work_tracking.work_items \
+                            where source_id='{source_issue_id}' and url='{url}'"
+                        ).scalar() == 1
+                        assert_topic_and_message(publish, WorkItemsTopic, WorkItemsCreated)
 
             class TestUpdateIssueEvent:
                 @pytest.yield_fixture()
@@ -303,17 +361,133 @@ class TestGitlabWebhookEvents:
                     subscriber.consumer_context = mock_consumer
 
                     with patch('polaris.work_tracking.publish.publish') as publish:
-                        subscriber.dispatch(channel, gitlab_new_issue_event)
-                        assert_topic_and_message(publish, WorkItemsTopic, WorkItemsCreated)
+                        with patch(
+                                'polaris.work_tracking.integrations.gitlab.GitlabProject.fetch_project_boards') as fetch_project_boards:
+                            fetch_project_boards.return_value = [
+                                [
+                                    {
+                                        "id": 2245441,
+                                        "name": "Development",
+                                        "hide_backlog_list": False,
+                                        "hide_closed_list": False,
+                                        "lists": [
+                                            {
+                                                "id": 6786201,
+                                                "label": {
+                                                    "id": 17640856,
+                                                    "name": "IN-PROGRESS",
+                                                    "color": "#5CB85C",
+                                                    "description": "Indicates in progress issues",
+                                                    "description_html": "Indicates in progress issues",
+                                                    "text_color": "#FFFFFF"
+                                                },
+                                                "position": 0
+                                            },
+                                            {
+                                                "id": 6786202,
+                                                "label": {
+                                                    "id": 17640857,
+                                                    "name": "DEV-DONE",
+                                                    "color": "#A295D6",
+                                                    "description": None,
+                                                    "description_html": "",
+                                                    "text_color": "#333333"
+                                                },
+                                                "position": 1
+                                            }
+                                        ]
+                                    },
+                                    {
+                                        "id": 2282923,
+                                        "name": "Product",
+                                        "hide_backlog_list": False,
+                                        "hide_closed_list": False,
+                                        "lists": [
+                                            {
+                                                "id": 6786204,
+                                                "label": {
+                                                    "id": 17640863,
+                                                    "name": "DEPLOYED",
+                                                    "color": "#428BCA",
+                                                    "description": "Story has been deployed",
+                                                    "description_html": "Story has been deployed",
+                                                    "text_color": "#FFFFFF"
+                                                },
+                                                "position": 0
+                                            }
+                                        ],
+                                    }
+                                ]
+                            ]
+                            subscriber.dispatch(channel, gitlab_new_issue_event)
+                            assert_topic_and_message(publish, WorkItemsTopic, WorkItemsCreated)
 
                     with patch('polaris.work_tracking.publish.publish') as publish:
-                        message = subscriber.dispatch(channel, gitlab_update_issue_event)
-                        assert message
-                        source_issue_id = str(fixture.new_payload['object_attributes']['id'])
-                        url = str(fixture.new_payload['object_attributes']['url'])
-                        assert db.connection().execute(
-                            f"select count(id) from work_tracking.work_items \
-                                            where source_id='{source_issue_id}' \
-                                            and url='{url}' \
-                                            and source_state='closed'").scalar() == 1
-                        assert_topic_and_message(publish, WorkItemsTopic, WorkItemsUpdated)
+                        with patch(
+                                'polaris.work_tracking.integrations.gitlab.GitlabProject.fetch_project_boards') as fetch_project_boards:
+                            fetch_project_boards.return_value = [
+                                [
+                                    {
+                                        "id": 2245441,
+                                        "name": "Development",
+                                        "hide_backlog_list": False,
+                                        "hide_closed_list": False,
+                                        "lists": [
+                                            {
+                                                "id": 6786201,
+                                                "label": {
+                                                    "id": 17640856,
+                                                    "name": "IN-PROGRESS",
+                                                    "color": "#5CB85C",
+                                                    "description": "Indicates in progress issues",
+                                                    "description_html": "Indicates in progress issues",
+                                                    "text_color": "#FFFFFF"
+                                                },
+                                                "position": 0
+                                            },
+                                            {
+                                                "id": 6786202,
+                                                "label": {
+                                                    "id": 17640857,
+                                                    "name": "DEV-DONE",
+                                                    "color": "#A295D6",
+                                                    "description": None,
+                                                    "description_html": "",
+                                                    "text_color": "#333333"
+                                                },
+                                                "position": 1
+                                            }
+                                        ]
+                                    },
+                                    {
+                                        "id": 2282923,
+                                        "name": "Product",
+                                        "hide_backlog_list": False,
+                                        "hide_closed_list": False,
+                                        "lists": [
+                                            {
+                                                "id": 6786204,
+                                                "label": {
+                                                    "id": 17640863,
+                                                    "name": "DEPLOYED",
+                                                    "color": "#428BCA",
+                                                    "description": "Story has been deployed",
+                                                    "description_html": "Story has been deployed",
+                                                    "text_color": "#FFFFFF"
+                                                },
+                                                "position": 0
+                                            }
+                                        ],
+                                    }
+                                ]
+                            ]
+                            message = subscriber.dispatch(channel, gitlab_update_issue_event)
+                            assert message
+                            source_issue_id = str(fixture.new_payload['object_attributes']['id'])
+                            url = str(fixture.new_payload['object_attributes']['url'])
+                            assert db.connection().execute(
+                                f"select count(id) from work_tracking.work_items \
+                                                where source_id='{source_issue_id}' \
+                                                and url='{url}' \
+                                                and source_state='closed'").scalar() == 1
+                            assert_topic_and_message(publish, WorkItemsTopic, WorkItemsUpdated)

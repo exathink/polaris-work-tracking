@@ -237,7 +237,7 @@ class WorkItemsSource(Base):
         new_source_data = dict(self.source_data)
         for key, value in source_data.items():
             new_source_data[key] = value
-        setattr(self, 'source_data', new_source_data)
+        self.source_data = new_source_data
 
 
 work_items_sources = WorkItemsSource.__table__
