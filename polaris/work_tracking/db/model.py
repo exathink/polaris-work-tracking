@@ -219,7 +219,10 @@ class WorkItemsSource(Base):
         for attribute, value in work_items_source_data.items():
             if attribute in updatable_fields:
                 if getattr(self, attribute) != value:
-                    setattr(self, attribute, value)
+                    if attribute == 'source_data':
+                        self.update_source_data(value)
+                    else:
+                        setattr(self, attribute, value)
                 else:
                     logger.info(f"Attribute value unchanged for attribute: {attribute}")
                 updated.append(True)
@@ -227,6 +230,14 @@ class WorkItemsSource(Base):
                 logger.info(f"Cannot update attribute : {attribute}")
                 updated.append(False)
         return all(updated)
+
+    def update_source_data(self, source_data):
+        # JSON-dict field is by default immutable in sqlalchemy. So updating self.source_data directly does not work. \
+        # We need to copy to new dict and overwrite the whole jsonb dict with the new dict.
+        new_source_data = dict(self.source_data)
+        for key, value in source_data.items():
+            new_source_data[key] = value
+        setattr(self, 'source_data', new_source_data)
 
 
 work_items_sources = WorkItemsSource.__table__

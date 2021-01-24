@@ -254,13 +254,7 @@ class GitlabProject(GitlabIssuesWorkItemsSource):
 
     def before_work_item_sync(self):
         project_boards = [data for data in self.fetch_project_boards()][0]
-        # Copy only value of source data to avoid modifying the work_items_source orm object
-        # In case its modified the setattr in update does not get executed
-        source_data = copy.copy(self.work_items_source.source_data)
-        if source_data is not None:
-            source_data['boards'] = project_boards
-        else:
-            source_data = dict(boards=project_boards)
+        source_data = dict(boards=project_boards)
 
         intermediate_source_states = []
         for board in project_boards:

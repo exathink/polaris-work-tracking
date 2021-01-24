@@ -120,7 +120,7 @@ class TestGitlabSyncWorkItems:
                     assert all(map(lambda item: item['is_new'], result))
 
                     # Check that work_items_source is updated with latest boards metadata and source states
-                    source_states = []
+                    source_states = ['opened', 'closed']
                     for board in fetch_project_boards.return_value[0]:
                         for board_list in board['lists']:
                             source_states.append(board_list['label']['name'])
@@ -206,7 +206,7 @@ class TestGitlabSyncWorkItems:
                     assert all(map(lambda item: not item['is_new'], result))
 
                     # Check that work_items_source is updated with latest boards metadata and source states
-                    source_states = []
+                    source_states = ['opened', 'closed']
                     for board in fetch_project_boards.return_value[0]:
                         for board_list in board['lists']:
                             source_states.append(board_list['label']['name'])
