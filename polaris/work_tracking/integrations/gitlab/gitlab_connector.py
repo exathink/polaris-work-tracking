@@ -153,6 +153,7 @@ class GitlabProject(GitlabIssuesWorkItemsSource):
 
     def __init__(self, token_provider, work_items_source):
         self.work_items_source = work_items_source
+        self.last_updated = work_items_source.latest_work_item_update_timestamp
         self.source_states = work_items_source.source_states
         self.basic_source_states = ['opened', 'closed']
         self.gitlab_connector = connector_factory.get_connector(
@@ -205,7 +206,7 @@ class GitlabProject(GitlabIssuesWorkItemsSource):
             query_params['updated_after'] = (datetime.utcnow() - timedelta(
                 days=int(self.work_items_source.parameters.get('initial_import_days', 90))))
         else:
-            query_params['updated_after'] = self.work_items_source.latest_work_item_update_timestamp.isoformat()
+            query_params['updated_after'] = self.last_updated.isoformat()
         fetch_issues_url = f'{self.gitlab_connector.base_url}/projects/{self.source_project_id}/issues'
         while fetch_issues_url is not None:
             response = requests.get(
