@@ -151,12 +151,12 @@ class GitlabIssuesWorkItemsSource:
 
 class GitlabProject(GitlabIssuesWorkItemsSource):
 
-    def __init__(self, token_provider, work_items_source):
+    def __init__(self, token_provider, work_items_source, connector=None):
         self.work_items_source = work_items_source
         self.last_updated = work_items_source.latest_work_item_update_timestamp
         self.source_states = work_items_source.source_states
         self.basic_source_states = ['opened', 'closed']
-        self.gitlab_connector = connector_factory.get_connector(
+        self.gitlab_connector = connector if connector else connector_factory.get_connector(
             connector_key=self.work_items_source.connector_key
         )
         self.source_project_id = work_items_source.source_id

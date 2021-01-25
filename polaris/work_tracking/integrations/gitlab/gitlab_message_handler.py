@@ -33,11 +33,12 @@ def handle_issue_event(connector_key, payload, channel=None):
                 join_this=session
             )
             if connector:
-                gitlab_project = GitlabProject(token_provider=None, work_items_source=work_items_source)
+                gitlab_project = GitlabProject(token_provider=None, work_items_source=work_items_source, connector=connector)
                 issue_object = event.get('object_attributes')
                 work_items_source_data = gitlab_project.before_work_item_sync()
                 work_items_source.update(work_items_source_data)
                 session.flush()
+
                 issue_data = gitlab_project.map_issue_to_work_item(issue_object)
 
                 synced_issues = api.sync_work_items(work_items_source.key, [issue_data], join_this=session)
