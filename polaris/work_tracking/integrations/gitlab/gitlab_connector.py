@@ -8,6 +8,7 @@
 
 # Author: Pragya Goyal
 
+import copy
 import logging
 import requests
 from enum import Enum
@@ -85,7 +86,7 @@ class GitlabWorkTrackingConnector(GitlabConnector):
 
         # Register new webhook now
         project_webhooks_callback_url = f"{config_provider.get('GITLAB_WEBHOOKS_BASE_URL')}" \
-                                           f"/project/webhooks/{self.key}/"
+                                        f"/project/webhooks/{self.key}/"
 
         add_hook_url = f"{self.base_url}/projects/{project_source_id}/hooks"
 
@@ -152,18 +153,20 @@ class GitlabProject(GitlabIssuesWorkItemsSource):
 
     def __init__(self, token_provider, work_items_source):
         self.work_items_source = work_items_source
+        self.last_updated = work_items_source.latest_work_item_update_timestamp
+        self.source_states = work_items_source.source_states
+        self.basic_source_states = ['opened', 'closed']
         self.gitlab_connector = connector_factory.get_connector(
             connector_key=self.work_items_source.connector_key
         )
         self.source_project_id = work_items_source.source_id
         self.personal_access_token = self.gitlab_connector.personal_access_token
 
-    def map_issue_to_work_item(self, issue):
+    def map_issue_to_work_item(self, issue):  # TODO: Add a parameter with available states list
         bug_tags = ['bug', *self.work_items_source.parameters.get('bug_tags', [])]
         labels = issue['labels']
         derived_labels = []
-        # A quick hack to process the two types of labels seen in issues and webhook events
-        # TODO: To be refined when working on gitlab states
+
         for label in labels:
             if type(label) == str:
                 derived_labels.append(label)
@@ -171,6 +174,12 @@ class GitlabProject(GitlabIssuesWorkItemsSource):
                 new_label = label.get('title')
                 if new_label:
                     derived_labels.append(new_label)
+
+        # Resolve source state from labels / state value
+        source_state = issue['state']
+        for label in labels:
+            if label in self.source_states:
+                source_state = label
         work_item = dict(
             name=issue['title'][:255],
             description=issue['description'],
@@ -180,7 +189,7 @@ class GitlabProject(GitlabIssuesWorkItemsSource):
             source_last_updated=issue['updated_at'],
             source_created_at=issue['created_at'],
             source_display_id=issue['iid'],
-            source_state=issue['state'],
+            source_state=source_state,
             is_epic=False,
             url=issue.get('web_url') if issue.get('web_url') else issue.get('url'),
             work_item_type=GitlabWorkItemType.issue.value,
@@ -194,7 +203,7 @@ class GitlabProject(GitlabIssuesWorkItemsSource):
             query_params['updated_after'] = (datetime.utcnow() - timedelta(
                 days=int(self.work_items_source.parameters.get('initial_import_days', 90))))
         else:
-            query_params['updated_after'] = self.work_items_source.latest_work_item_update_timestamp.isoformat()
+            query_params['updated_after'] = self.last_updated.isoformat()
         fetch_issues_url = f'{self.gitlab_connector.base_url}/projects/{self.source_project_id}/issues'
         while fetch_issues_url is not None:
             response = requests.get(
@@ -219,3 +228,38 @@ class GitlabProject(GitlabIssuesWorkItemsSource):
                 self.map_issue_to_work_item(issue)
                 for issue in issues
             ]
+
+    def fetch_project_boards(self):
+        query_params = dict(limit=100)
+        fetch_boards_url = f'{self.gitlab_connector.base_url}/projects/{self.source_project_id}/boards'
+        while fetch_boards_url is not None:
+            response = requests.get(
+                fetch_boards_url,
+                params=query_params,
+                headers={"Authorization": f"Bearer {self.personal_access_token}"},
+            )
+            if response.ok:
+                yield response.json()
+                if 'next' in response.links:
+                    fetch_boards_url = response.links['next']['url']
+                else:
+                    fetch_boards_url = None
+            else:
+                raise ProcessingException(
+                    f"Fetch project boards from server failed {response.text} status: {response.status_code}\n"
+                )
+
+    def before_work_item_sync(self):
+        project_boards = [data for data in self.fetch_project_boards()][0]
+        source_data = dict(boards=project_boards)
+
+        intermediate_source_states = []
+        for board in project_boards:
+            for board_list in board['lists']:
+                intermediate_source_states.append(board_list['label']['name'])
+        # Update class variable for source_states to latest
+        self.source_states = list(set(self.basic_source_states).union(set(intermediate_source_states)))
+        return dict(
+            source_data=source_data,
+            source_states=self.source_states
+        )

@@ -30,16 +30,23 @@ def success(result):
     return dict(success=True, **result)
 
 
+def update_work_items_source_before_work_item_sync(work_items_source_provider):
+    work_items_source = work_items_source_provider.work_items_source
+    with db.orm_session() as session:
+        session.add(work_items_source)
+        if work_items_source.import_state == WorkItemsSourceImportState.ready.value:
+            # Initial Import
+            work_items_source.import_state = WorkItemsSourceImportState.importing.value
+        if getattr(work_items_source_provider, 'before_work_item_sync', None):
+            work_items_source_data = work_items_source_provider.before_work_item_sync()
+            work_items_source.update(work_items_source_data)
+
+
 def sync_work_items(token_provider, work_items_source_key):
     work_items_source_provider = work_items_source_factory.get_provider_impl(token_provider, work_items_source_key)
     work_items_source = work_items_source_provider.work_items_source
     if work_items_source.import_state != WorkItemsSourceImportState.disabled.value:
-        if work_items_source.import_state == WorkItemsSourceImportState.ready.value:
-            # Initial Import
-            with db.orm_session() as session:
-                session.add(work_items_source)
-                work_items_source.import_state = WorkItemsSourceImportState.importing.value
-
+        update_work_items_source_before_work_item_sync(work_items_source_provider)
         for work_items in work_items_source_provider.fetch_work_items_to_sync():
             yield api.sync_work_items(work_items_source_key, work_items) or []
 
@@ -95,9 +102,10 @@ def register_work_items_source_webhooks(connector_key, work_items_source_key, jo
                     get_hooks_result = api.get_registered_webhooks(work_items_source_key, join_this=session)
                     if get_hooks_result['success']:
                         webhook_info = connector.register_project_webhooks(work_items_source.source_id,
-                                                                              get_hooks_result['registered_webhooks'])
+                                                                           get_hooks_result['registered_webhooks'])
                         if webhook_info['success']:
-                            register_result = api.register_webhooks(work_items_source_key, webhook_info, join_this=session)
+                            register_result = api.register_webhooks(work_items_source_key, webhook_info,
+                                                                    join_this=session)
                             if register_result['success']:
                                 return dict(
                                     success=True,
@@ -123,7 +131,8 @@ def register_work_items_source_webhooks(connector_key, work_items_source_key, jo
 def register_work_items_sources_webhooks(connector_key, work_items_source_keys, join_this=None):
     result = []
     for work_items_source_key in work_items_source_keys:
-        registration_status = register_work_items_source_webhooks(connector_key, work_items_source_key, join_this=join_this)
+        registration_status = register_work_items_source_webhooks(connector_key, work_items_source_key,
+                                                                  join_this=join_this)
         if registration_status['success']:
             result.append(registration_status)
         else:
@@ -157,10 +166,11 @@ def import_projects(import_projects_input):
             projects.append(
                 imported
             )
-            if imported: # FIXME: Convert api result to include a success param
+            if imported:  # FIXME: Convert api result to include a success param
                 for work_items_source in imported.work_items_sources:
                     connector_key = work_items_source.connector_key
-                    register_webhooks_result = register_work_items_source_webhooks(connector_key, work_items_source.key, join_this=session)
+                    register_webhooks_result = register_work_items_source_webhooks(connector_key, work_items_source.key,
+                                                                                   join_this=session)
                     if not register_webhooks_result['success']:
                         logger.error(
                             f"Register webhooks failed while importing projects: {register_webhooks_result.get('exception')}"

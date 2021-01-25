@@ -104,6 +104,8 @@ class WorkItemsSource(Base):
     source_updated_at = Column(DateTime, nullable=True)
     # Stores webhook details or any other info related to source
     source_data = Column(JSONB, nullable=False, default={}, server_default='{}')
+    # List of states available in work items source
+    source_states = Column(JSONB, nullable=True, default=[], server_default='[]')
     # Import: Legal values from WorkItemsSourceImportState enum
     import_state = Column(String, nullable=False, server_default=WorkItemsSourceImportState.disabled.value)
 
@@ -197,6 +199,45 @@ class WorkItemsSource(Base):
 
     def set_synced(self):
         self.last_synced = datetime.utcnow()
+
+    def update(self, work_items_source_data):
+        updatable_fields = [
+            'parameters',
+            'custom_fields',
+            'name',
+            'description',
+            'url',
+            'commit_mapping_scope',
+            'commit_mapping_scope_key',
+            'last_synced',
+            'source_updated_at',
+            'source_data',
+            'source_states',
+            'import_state'
+        ]
+        updated = []
+        for attribute, value in work_items_source_data.items():
+            if attribute in updatable_fields:
+                if getattr(self, attribute) != value:
+                    if attribute == 'source_data':
+                        self.update_source_data(value)
+                    else:
+                        setattr(self, attribute, value)
+                else:
+                    logger.info(f"Attribute value unchanged for attribute: {attribute}")
+                updated.append(True)
+            else:
+                logger.info(f"Cannot update attribute : {attribute}")
+                updated.append(False)
+        return all(updated)
+
+    def update_source_data(self, source_data):
+        # JSON-dict field is by default immutable in sqlalchemy. So updating self.source_data directly does not work. \
+        # We need to copy to new dict and overwrite the whole jsonb dict with the new dict.
+        new_source_data = dict(self.source_data)
+        for key, value in source_data.items():
+            new_source_data[key] = value
+        self.source_data = new_source_data
 
 
 work_items_sources = WorkItemsSource.__table__
