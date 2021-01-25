@@ -151,18 +151,18 @@ class GitlabIssuesWorkItemsSource:
 
 class GitlabProject(GitlabIssuesWorkItemsSource):
 
-    def __init__(self, token_provider, work_items_source):
+    def __init__(self, token_provider, work_items_source, connector=None):
         self.work_items_source = work_items_source
         self.last_updated = work_items_source.latest_work_item_update_timestamp
         self.source_states = work_items_source.source_states
         self.basic_source_states = ['opened', 'closed']
-        self.gitlab_connector = connector_factory.get_connector(
+        self.gitlab_connector = connector if connector else connector_factory.get_connector(
             connector_key=self.work_items_source.connector_key
         )
         self.source_project_id = work_items_source.source_id
         self.personal_access_token = self.gitlab_connector.personal_access_token
 
-    def map_issue_to_work_item(self, issue):  # TODO: Add a parameter with available states list
+    def map_issue_to_work_item(self, issue):
         bug_tags = ['bug', *self.work_items_source.parameters.get('bug_tags', [])]
         labels = issue['labels']
         derived_labels = []
@@ -177,13 +177,13 @@ class GitlabProject(GitlabIssuesWorkItemsSource):
 
         # Resolve source state from labels / state value
         source_state = issue['state']
-        for label in labels:
+        for label in derived_labels:
             if label in self.source_states:
                 source_state = label
         work_item = dict(
             name=issue['title'][:255],
             description=issue['description'],
-            is_bug=find(issue['labels'], lambda label: label in bug_tags) is not None,
+            is_bug=find(derived_labels, lambda label: label in bug_tags) is not None,
             tags=derived_labels,
             source_id=str(issue['id']),
             source_last_updated=issue['updated_at'],

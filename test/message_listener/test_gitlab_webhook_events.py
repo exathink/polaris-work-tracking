@@ -47,7 +47,8 @@ class TestGitlabWebhookEvents:
             yield Fixture(
                 organization_key=polaris_organization_key,
                 connector_key=connector_key,
-                event_type=event_type
+                event_type=event_type,
+                work_items_source=work_items_sources['gitlab']
             )
 
         class TestNewIssueEvent:
@@ -113,7 +114,7 @@ class TestGitlabWebhookEvents:
                         "human_time_estimate": None,
                         "assignee_ids": [],
                         "assignee_id": None,
-                        "labels": [],
+                        "labels": ["IN-PROGRESS"],
                         "state": "opened",
                         "action": "open"
                     },
@@ -244,7 +245,15 @@ class TestGitlabWebhookEvents:
                         url = str(fixture.new_payload['object_attributes']['url'])
                         assert db.connection().execute(
                             f"select count(id) from work_tracking.work_items \
-                            where source_id='{source_issue_id}' and url='{url}'"
+                            where source_id='{source_issue_id}' and url='{url}' \
+                            and source_state='IN-PROGRESS'"
+                        ).scalar() == 1
+                        # Check if source_data and source_states are updated in work_items_source
+                        assert db.connection().execute(
+                            f"select count(id) from work_tracking.work_items_sources \
+                                                                        where key='{fixture.work_items_source.key}' \
+                                                                        and source_data->'boards' is not NULL \
+                                                                        and source_states is not NULL"
                         ).scalar() == 1
                         assert_topic_and_message(publish, WorkItemsTopic, WorkItemsCreated)
 
