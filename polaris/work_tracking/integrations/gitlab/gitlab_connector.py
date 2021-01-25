@@ -177,13 +177,13 @@ class GitlabProject(GitlabIssuesWorkItemsSource):
 
         # Resolve source state from labels / state value
         source_state = issue['state']
-        for label in labels:
+        for label in derived_labels:
             if label in self.source_states:
                 source_state = label
         work_item = dict(
             name=issue['title'][:255],
             description=issue['description'],
-            is_bug=find(issue['labels'], lambda label: label in bug_tags) is not None,
+            is_bug=find(derived_labels, lambda label: label in bug_tags) is not None,
             tags=derived_labels,
             source_id=str(issue['id']),
             source_last_updated=issue['updated_at'],
