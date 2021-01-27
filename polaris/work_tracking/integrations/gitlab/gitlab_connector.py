@@ -177,9 +177,10 @@ class GitlabProject(GitlabIssuesWorkItemsSource):
 
         # Resolve source state from labels / state value
         source_state = issue['state']
-        for label in derived_labels:
-            if label in self.source_states:
-                source_state = label
+        if source_state != 'closed':
+            for label in derived_labels:
+                if label in self.source_states:
+                    source_state = label
         work_item = dict(
             name=issue['title'][:255],
             description=issue['description'],
