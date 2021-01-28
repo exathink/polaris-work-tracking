@@ -56,63 +56,64 @@ class TestGitlabSyncWorkItems:
         gitlab_source = work_items_sources['gitlab']
         with patch(
                 'polaris.work_tracking.integrations.gitlab.GitlabProject.fetch_work_items_to_sync') as fetch_work_items_to_sync:
-            with patch('polaris.work_tracking.integrations.gitlab.GitlabProject.fetch_project_boards') as fetch_project_boards:
+            with patch(
+                    'polaris.work_tracking.integrations.gitlab.GitlabProject.fetch_project_boards') as fetch_project_boards:
                 fetch_work_items_to_sync.return_value = [new_work_items]
                 fetch_project_boards.return_value = [
                     [
-                    {
-                        "id": 2245441,
-                        "name": "Development",
-                        "hide_backlog_list": False,
-                        "hide_closed_list": False,
-                        "lists": [
-                            {
-                                "id": 6786201,
-                                "label": {
-                                    "id": 17640856,
-                                    "name": "IN-PROGRESS",
-                                    "color": "#5CB85C",
-                                    "description": "Indicates in progress issues",
-                                    "description_html": "Indicates in progress issues",
-                                    "text_color": "#FFFFFF"
+                        {
+                            "id": 2245441,
+                            "name": "Development",
+                            "hide_backlog_list": False,
+                            "hide_closed_list": False,
+                            "lists": [
+                                {
+                                    "id": 6786201,
+                                    "label": {
+                                        "id": 17640856,
+                                        "name": "IN-PROGRESS",
+                                        "color": "#5CB85C",
+                                        "description": "Indicates in progress issues",
+                                        "description_html": "Indicates in progress issues",
+                                        "text_color": "#FFFFFF"
+                                    },
+                                    "position": 0
                                 },
-                                "position": 0
-                            },
-                            {
-                                "id": 6786202,
-                                "label": {
-                                    "id": 17640857,
-                                    "name": "DEV-DONE",
-                                    "color": "#A295D6",
-                                    "description": None,
-                                    "description_html": "",
-                                    "text_color": "#333333"
-                                },
-                                "position": 1
-                            }
-                        ]
-                    },
-                    {
-                        "id": 2282923,
-                        "name": "Product",
-                        "hide_backlog_list": False,
-                        "hide_closed_list": False,
-                        "lists": [
-                            {
-                                "id": 6786204,
-                                "label": {
-                                    "id": 17640863,
-                                    "name": "DEPLOYED",
-                                    "color": "#428BCA",
-                                    "description": "Story has been deployed",
-                                    "description_html": "Story has been deployed",
-                                    "text_color": "#FFFFFF"
-                                },
-                                "position": 0
-                            }
-                        ],
-                    }
-                ]
+                                {
+                                    "id": 6786202,
+                                    "label": {
+                                        "id": 17640857,
+                                        "name": "DEV-DONE",
+                                        "color": "#A295D6",
+                                        "description": None,
+                                        "description_html": "",
+                                        "text_color": "#333333"
+                                    },
+                                    "position": 1
+                                }
+                            ]
+                        },
+                        {
+                            "id": 2282923,
+                            "name": "Product",
+                            "hide_backlog_list": False,
+                            "hide_closed_list": False,
+                            "lists": [
+                                {
+                                    "id": 6786204,
+                                    "label": {
+                                        "id": 17640863,
+                                        "name": "DEPLOYED",
+                                        "color": "#428BCA",
+                                        "description": "Story has been deployed",
+                                        "description_html": "Story has been deployed",
+                                        "text_color": "#FFFFFF"
+                                    },
+                                    "position": 0
+                                }
+                            ],
+                        }
+                    ]
                 ]
 
                 for result in commands.sync_work_items(token_provider, gitlab_source.key):
@@ -137,63 +138,64 @@ class TestGitlabSyncWorkItems:
         gitlab_source = work_items_sources['gitlab']
         with patch(
                 'polaris.work_tracking.integrations.gitlab.GitlabProject.fetch_work_items_to_sync') as fetch_work_items_to_sync:
-            with patch('polaris.work_tracking.integrations.gitlab.GitlabProject.fetch_project_boards') as fetch_project_boards:
+            with patch(
+                    'polaris.work_tracking.integrations.gitlab.GitlabProject.fetch_project_boards') as fetch_project_boards:
                 fetch_work_items_to_sync.return_value = [new_work_items]
                 fetch_project_boards.return_value = [
                     [
-                    {
-                        "id": 2245441,
-                        "name": "Development",
-                        "hide_backlog_list": False,
-                        "hide_closed_list": False,
-                        "lists": [
-                            {
-                                "id": 6786201,
-                                "label": {
-                                    "id": 17640856,
-                                    "name": "IN-PROGRESS",
-                                    "color": "#5CB85C",
-                                    "description": "Indicates in progress issues",
-                                    "description_html": "Indicates in progress issues",
-                                    "text_color": "#FFFFFF"
+                        {
+                            "id": 2245441,
+                            "name": "Development",
+                            "hide_backlog_list": False,
+                            "hide_closed_list": False,
+                            "lists": [
+                                {
+                                    "id": 6786201,
+                                    "label": {
+                                        "id": 17640856,
+                                        "name": "IN-PROGRESS",
+                                        "color": "#5CB85C",
+                                        "description": "Indicates in progress issues",
+                                        "description_html": "Indicates in progress issues",
+                                        "text_color": "#FFFFFF"
+                                    },
+                                    "position": 0
                                 },
-                                "position": 0
-                            },
-                            {
-                                "id": 6786202,
-                                "label": {
-                                    "id": 17640857,
-                                    "name": "DEV-DONE",
-                                    "color": "#A295D6",
-                                    "description": None,
-                                    "description_html": "",
-                                    "text_color": "#333333"
-                                },
-                                "position": 1
-                            }
-                        ]
-                    },
-                    {
-                        "id": 2282923,
-                        "name": "Product",
-                        "hide_backlog_list": False,
-                        "hide_closed_list": False,
-                        "lists": [
-                            {
-                                "id": 6786204,
-                                "label": {
-                                    "id": 17640863,
-                                    "name": "DEPLOYED",
-                                    "color": "#428BCA",
-                                    "description": "Story has been deployed",
-                                    "description_html": "Story has been deployed",
-                                    "text_color": "#FFFFFF"
-                                },
-                                "position": 0
-                            }
-                        ],
-                    }
-                ]
+                                {
+                                    "id": 6786202,
+                                    "label": {
+                                        "id": 17640857,
+                                        "name": "DEV-DONE",
+                                        "color": "#A295D6",
+                                        "description": None,
+                                        "description_html": "",
+                                        "text_color": "#333333"
+                                    },
+                                    "position": 1
+                                }
+                            ]
+                        },
+                        {
+                            "id": 2282923,
+                            "name": "Product",
+                            "hide_backlog_list": False,
+                            "hide_closed_list": False,
+                            "lists": [
+                                {
+                                    "id": 6786204,
+                                    "label": {
+                                        "id": 17640863,
+                                        "name": "DEPLOYED",
+                                        "color": "#428BCA",
+                                        "description": "Story has been deployed",
+                                        "description_html": "Story has been deployed",
+                                        "text_color": "#FFFFFF"
+                                    },
+                                    "position": 0
+                                }
+                            ],
+                        }
+                    ]
                 ]
                 fetch_work_items_to_sync.return_value = [new_work_items]
                 # import once and ignore results
