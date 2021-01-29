@@ -162,6 +162,19 @@ class GitlabProject(GitlabIssuesWorkItemsSource):
         self.source_project_id = work_items_source.source_id
         self.personal_access_token = self.gitlab_connector.personal_access_token
 
+    def resolve_work_item_type_for_issue(self, labels):
+        lower_case_labels = [label.lower() for label in labels]
+        for label in lower_case_labels:
+            if label == 'story':
+                return GitlabWorkItemType.story.value
+            if label == 'enhancement':
+                return GitlabWorkItemType.enhancement.value
+            if label == 'incident' or label == 'bug' or label == 'defect':
+                return GitlabWorkItemType.bug.value
+            if label == 'task':
+                return GitlabWorkItemType.task.value
+        return GitlabWorkItemType.default.value
+
     def map_issue_to_work_item(self, issue):
         bug_tags = ['bug', *self.work_items_source.parameters.get('bug_tags', [])]
         labels = issue['labels']
@@ -181,6 +194,9 @@ class GitlabProject(GitlabIssuesWorkItemsSource):
             for label in derived_labels:
                 if label in self.source_states:
                     source_state = label
+
+        work_item_type = self.resolve_work_item_type_for_issue(derived_labels)
+
         work_item = dict(
             name=issue['title'][:255],
             description=issue['description'],
@@ -193,7 +209,7 @@ class GitlabProject(GitlabIssuesWorkItemsSource):
             source_state=source_state,
             is_epic=False,
             url=issue.get('web_url') if issue.get('web_url') else issue.get('url'),
-            work_item_type=GitlabWorkItemType.issue.value,
+            work_item_type=work_item_type,
             api_payload=issue
         )
         return work_item

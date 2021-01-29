@@ -109,7 +109,7 @@ class TestGitlabWorkItemSource:
         assert mapped_data['name']
         assert not mapped_data['description']
         assert not mapped_data['is_bug']
-        assert mapped_data['work_item_type'] == 'issue'
+        assert mapped_data['work_item_type'] == 'enhancement'
         assert len(mapped_data['tags']) == 2
         assert mapped_data['url']
         assert mapped_data['source_id']
