@@ -173,7 +173,7 @@ class GitlabProject(GitlabIssuesWorkItemsSource):
                 return GitlabWorkItemType.bug.value
             if label == 'task':
                 return GitlabWorkItemType.task.value
-        return GitlabWorkItemType.default.value
+        return GitlabWorkItemType.issue.value
 
     def map_issue_to_work_item(self, issue):
         # FIXME: Dont think we need the bug tags now that we are deriving work item type from labels only. Discuss.
