@@ -11,6 +11,7 @@
 import pytest
 from polaris.utils.collections import Fixture
 from polaris.work_tracking.integrations.gitlab.gitlab_connector import *
+from polaris.common.enums import GitlabWorkItemType
 from polaris.common import db
 
 gitlab_api_issue_payload = {
@@ -109,7 +110,7 @@ class TestGitlabWorkItemSource:
         assert mapped_data['name']
         assert not mapped_data['description']
         assert not mapped_data['is_bug']
-        assert mapped_data['work_item_type'] == 'enhancement'
+        assert mapped_data['work_item_type'] == GitlabWorkItemType.enhancement.value
         assert len(mapped_data['tags']) == 2
         assert mapped_data['url']
         assert mapped_data['source_id']
@@ -122,3 +123,102 @@ class TestGitlabWorkItemSource:
         # explicitly assert that these are the only fields mapped. The test should fail
         # and force a change in assertions if we change the mapping
         assert len(mapped_data.keys()) == 13
+
+    def it_maps_correct_work_item_type_for_story(self, setup):
+        fixture = setup
+
+        project = fixture.gitlab_project
+
+        issue = fixture.gitlab_issue
+        issue['labels'] = [
+            "DEV-DONE",
+            "story"
+        ]
+        mapped_data = project.map_issue_to_work_item(issue)
+
+        assert mapped_data
+
+        assert not mapped_data['is_bug']
+        assert mapped_data['work_item_type'] == GitlabWorkItemType.story.value
+
+    def it_maps_correct_work_item_type_for_task(self, setup):
+        fixture = setup
+
+        project = fixture.gitlab_project
+
+        issue = fixture.gitlab_issue
+        issue['labels'] = [
+            "DEV-DONE",
+            "task"
+        ]
+        mapped_data = project.map_issue_to_work_item(issue)
+
+        assert mapped_data
+
+        assert not mapped_data['is_bug']
+        assert mapped_data['work_item_type'] == GitlabWorkItemType.task.value
+
+    def it_maps_correct_work_item_type_for_incident(self, setup):
+        fixture = setup
+
+        project = fixture.gitlab_project
+
+        issue = fixture.gitlab_issue
+        issue['labels'] = [
+            "DEV-DONE",
+            "incident"
+        ]
+        mapped_data = project.map_issue_to_work_item(issue)
+
+        assert mapped_data
+
+        assert mapped_data['is_bug']
+        assert mapped_data['work_item_type'] == GitlabWorkItemType.bug.value
+
+    def it_maps_correct_work_item_type_for_bug(self, setup):
+        fixture = setup
+
+        project = fixture.gitlab_project
+
+        issue = fixture.gitlab_issue
+        issue['labels'] = [
+            "DEV-DONE",
+            "bug"
+        ]
+        mapped_data = project.map_issue_to_work_item(issue)
+
+        assert mapped_data
+
+        assert mapped_data['is_bug']
+        assert mapped_data['work_item_type'] == GitlabWorkItemType.bug.value
+
+    def it_maps_correct_work_item_type_for_defect(self, setup):
+        fixture = setup
+
+        project = fixture.gitlab_project
+
+        issue = fixture.gitlab_issue
+        issue['labels'] = [
+            "DEV-DONE",
+            "defect"
+        ]
+        mapped_data = project.map_issue_to_work_item(issue)
+
+        assert mapped_data
+
+        assert mapped_data['is_bug']
+        assert mapped_data['work_item_type'] == GitlabWorkItemType.bug.value
+
+    def it_maps_issue_work_item_type_for_one_with_no_matching_labels(self, setup):
+        fixture = setup
+
+        project = fixture.gitlab_project
+
+        issue = fixture.gitlab_issue
+        issue['labels'] = []
+        mapped_data = project.map_issue_to_work_item(issue)
+
+        assert mapped_data
+
+        assert not mapped_data['is_bug']
+        assert mapped_data['work_item_type'] == GitlabWorkItemType.issue.value

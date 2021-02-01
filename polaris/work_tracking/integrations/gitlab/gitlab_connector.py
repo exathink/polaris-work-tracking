@@ -176,8 +176,6 @@ class GitlabProject(GitlabIssuesWorkItemsSource):
         return GitlabWorkItemType.issue.value
 
     def map_issue_to_work_item(self, issue):
-        # FIXME: Dont think we need the bug tags now that we are deriving work item type from labels only. Discuss.
-        bug_tags = ['bug', *self.work_items_source.parameters.get('bug_tags', [])]
         labels = issue['labels']
         derived_labels = []
 
