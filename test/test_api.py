@@ -40,6 +40,21 @@ class TestSyncWorkItems:
             f"select count(id) from work_tracking.work_items where work_items_source_id={empty_source.id} and source_state='closed'"
         ).scalar() == len(new_work_items)
 
+    def it_updates_work_item_type_for_an_existing_work_item(self, setup_work_items, new_work_items):
+        _, work_items_sources = setup_work_items
+        empty_source = work_items_sources['empty']
+        # Import once
+        api.sync_work_items(empty_source.key, work_item_list=new_work_items)
+        # Now import updated versions of the same source work items
+        created = api.sync_work_items(empty_source.key, work_item_list=[
+            {**work_item, **dict(work_item_type='enhancement')}
+            for work_item in new_work_items
+        ])
+        assert len(created) == 10
+        assert db.connection().execute(
+            f"select count(id) from work_tracking.work_items where work_items_source_id={empty_source.id} and work_item_type='enhancement' and is_bug=true"
+        ).scalar() == len(new_work_items)
+
     def it_returns_updated_elements_for_those_that_match_existing_items_by_source_id(self, setup_work_items, new_work_items):
         _, work_items_sources = setup_work_items
         empty_source = work_items_sources['empty']

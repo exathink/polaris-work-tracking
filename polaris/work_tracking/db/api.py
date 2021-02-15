@@ -87,6 +87,7 @@ def sync_work_items(work_items_source_key, work_item_list, join_this=None):
                         description=upsert.excluded.description,
                         is_bug=upsert.excluded.is_bug,
                         is_epic=upsert.excluded.is_epic,
+                        work_item_type=upsert.excluded.work_item_type,
                         tags=upsert.excluded.tags,
                         url=upsert.excluded.url,
                         source_last_updated=upsert.excluded.source_last_updated,
