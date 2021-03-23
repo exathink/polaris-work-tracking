@@ -46,7 +46,8 @@ class GitlabWorkTrackingConnector(GitlabConnector):
             url=project["_links"]['issues'],
             description=project['description'],
             custom_fields=[],
-            source_data={}
+            source_data={},
+            source_states=[]
         )
 
     def fetch_gitlab_projects(self):
@@ -199,7 +200,7 @@ class GitlabProject(GitlabIssuesWorkItemsSource):
         work_item = dict(
             name=issue['title'][:255],
             description=issue['description'],
-            is_bug=(work_item_type==GitlabWorkItemType.bug.value),
+            is_bug=(work_item_type == GitlabWorkItemType.bug.value),
             tags=derived_labels,
             source_id=str(issue['id']),
             source_last_updated=issue['updated_at'],
