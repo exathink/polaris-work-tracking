@@ -106,7 +106,9 @@ class JiraConnector(PolarisAtlassianConnector):
             name=project['name'],
             url=project.get('url'),
             description=project.get('description'),
-            custom_fields=custom_fields
+            custom_fields=custom_fields,
+            source_data={},
+            source_states=[]
         )
 
     def fetch_work_items_sources_to_sync(self, batch_size=100):
