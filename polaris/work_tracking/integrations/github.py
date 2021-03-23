@@ -37,7 +37,9 @@ class GithubWorkTrackingConnector(GithubConnector):
             name=repository.name,
             url=f'{repository.html_url}/issues',
             description=repository.description,
-            custom_fields=[]
+            custom_fields=[],
+            source_data={},
+            source_states=[]
         )
 
     def fetch_repositories(self):

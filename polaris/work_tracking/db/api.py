@@ -688,4 +688,3 @@ def register_webhooks(work_items_source_key, webhook_info, join_this=None):
         return db.process_exception("Register Webhook", exc)
     except Exception as e:
         return db.failure_message('Register Webhook', e)
-
