@@ -429,7 +429,9 @@ def sync_work_items_sources(connector, work_items_sources_list, join_this=None):
                     source_id=work_items_source.source_id,
                     url=work_items_source.url,
                     name=work_items_source.name,
-                    description=work_items_source.description
+                    description=work_items_source.description,
+                    commit_mapping_scope=work_items_source.commit_mapping_scope,
+                    work_items_source_type=work_items_source.work_items_source_type
                 )
                 for work_items_source in work_items_sources_before_insert
             ]
