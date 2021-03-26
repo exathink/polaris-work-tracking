@@ -386,7 +386,7 @@ def sync_work_items_sources(connector, work_items_sources_list, join_this=None):
                             connector_key=connector.key,
                             account_key=connector.account_key,
                             import_state=WorkItemsSourceImportState.ready.value,
-                            **WorkItemsSource.populate_required_values(work_items_source)
+                            **WorkItemsSource.populate_required_values(work_item_source=work_items_source)
                         )
                         for work_items_source in work_items_sources_list
                     ]

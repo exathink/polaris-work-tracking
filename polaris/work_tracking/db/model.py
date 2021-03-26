@@ -142,6 +142,18 @@ class WorkItemsSource(Base):
             )
         ).all()
 
+    @classmethod
+    def populate_required_values(self, work_item_source):
+        required_values_with_defaults = dict(
+            commit_mapping_scope='organization',
+            source_data={},
+            source_states=[],  # source states is though nullable, set the default
+        )
+        for key, value in required_values_with_defaults.items():
+            if key not in work_item_source.keys():
+                work_item_source[key] = value
+        return work_item_source
+
     @property
     def latest_work_item_creation_date(self):
         return object_session(self).scalar(
@@ -237,19 +249,6 @@ class WorkItemsSource(Base):
         for key, value in source_data.items():
             new_source_data[key] = value
         self.source_data = new_source_data
-
-    def populate_required_values(self, work_item_source):
-        required_values_with_defaults = dict(
-            connector_key=text('uuid_generate_v4()'),
-            commit_mapping_scope='organization',
-            source_data={},
-            source_states=[],  # source states is though nullable, set the default
-            import_state=WorkItemsSourceImportState.disabled.value
-        )
-        for key, value in required_values_with_defaults:
-            if key not in work_item_source.keys():
-                work_item_source[key] = value
-        return work_item_source
 
 
 work_items_sources = WorkItemsSource.__table__
