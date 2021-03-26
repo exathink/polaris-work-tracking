@@ -54,7 +54,8 @@ class TestConnectorsTopicSubscriber:
             connector_keys = setup_connectors
             gitlab_connector_key = connector_keys['gitlab']
             with patch(
-                    'polaris.work_tracking.integrations.gitlab.gitlab_connector.GitlabWorkTrackingConnector.fetch_work_items_sources_to_sync') as fetch_work_items_sources_to_sync:
+                    'polaris.work_tracking.integrations.gitlab.gitlab_connector.GitlabWorkTrackingConnector.fetch_work_items_sources_to_sync') \
+                    as fetch_work_items_sources_to_sync:
                 fetch_work_items_sources_to_sync.return_value = [[
                     dict(
                         integration_type=WorkTrackingIntegrationType.gitlab.value,
@@ -67,9 +68,7 @@ class TestConnectorsTopicSubscriber:
                         name=project['name'],
                         url=project["_links"]['issues'],
                         description=project['description'],
-                        custom_fields=[],
-                        source_data={},
-                        source_states=[]
+                        custom_fields=[]
                     )]]
 
                 refresh_connector_projects_message = fake_send(
@@ -115,7 +114,8 @@ class TestConnectorsTopicSubscriber:
         subscriber.consumer_context = mock_consumer
 
         with patch(
-                'polaris.work_tracking.integrations.gitlab.gitlab_connector.GitlabWorkTrackingConnector.fetch_work_items_sources_to_sync') as fetch_work_items_sources_to_sync:
+                'polaris.work_tracking.integrations.gitlab.gitlab_connector.GitlabWorkTrackingConnector.fetch_work_items_sources_to_sync') \
+                as fetch_work_items_sources_to_sync:
             fetch_work_items_sources_to_sync.return_value = [[
                 dict(
                     integration_type=WorkTrackingIntegrationType.gitlab.value,
@@ -128,9 +128,7 @@ class TestConnectorsTopicSubscriber:
                     name=project['name'],
                     url=project["_links"]['issues'],
                     description=project['description'],
-                    custom_fields=[],
-                    source_data={},
-                    source_states=[]
+                    custom_fields=[]
                 )]]
 
             refresh_connector_projects_message = fake_send(
@@ -146,8 +144,8 @@ class TestConnectorsTopicSubscriber:
 
         # update
         with patch(
-                'polaris.work_tracking.integrations.gitlab.gitlab_connector.GitlabWorkTrackingConnector.fetch_work_items_sources_to_sync') as fetch_work_items_sources_to_sync:
-
+                'polaris.work_tracking.integrations.gitlab.gitlab_connector.GitlabWorkTrackingConnector.fetch_work_items_sources_to_sync')\
+                as fetch_work_items_sources_to_sync:
             fetch_work_items_sources_to_sync.return_value = [[
                 dict(
                     integration_type=WorkTrackingIntegrationType.gitlab.value,
@@ -160,9 +158,7 @@ class TestConnectorsTopicSubscriber:
                     name=project['name'],
                     url=project["_links"]['issues'],
                     description="Updated description",
-                    custom_fields=[],
-                    source_data={},
-                    source_states=[]
+                    custom_fields=[]
                 )]]
 
             refresh_connector_projects_message = fake_send(
