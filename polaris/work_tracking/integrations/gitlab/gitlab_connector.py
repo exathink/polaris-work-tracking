@@ -45,9 +45,7 @@ class GitlabWorkTrackingConnector(GitlabConnector):
             name=project['name'],
             url=project["_links"]['issues'],
             description=project['description'],
-            custom_fields=[],
-            source_data={},
-            source_states=[]
+            custom_fields=[]
         )
 
     def fetch_gitlab_projects(self):
