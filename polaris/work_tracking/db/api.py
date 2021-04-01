@@ -386,9 +386,7 @@ def sync_work_items_sources(connector, work_items_sources_list, join_this=None):
                             connector_key=connector.key,
                             account_key=connector.account_key,
                             import_state=WorkItemsSourceImportState.ready.value,
-                            source_data={},
-                            source_states=[],
-                            **work_items_source
+                            **WorkItemsSource.populate_required_values(work_item_source=work_items_source)
                         )
                         for work_items_source in work_items_sources_list
                     ]
@@ -431,7 +429,9 @@ def sync_work_items_sources(connector, work_items_sources_list, join_this=None):
                     source_id=work_items_source.source_id,
                     url=work_items_source.url,
                     name=work_items_source.name,
-                    description=work_items_source.description
+                    description=work_items_source.description,
+                    commit_mapping_scope=work_items_source.commit_mapping_scope,
+                    work_items_source_type=work_items_source.work_items_source_type
                 )
                 for work_items_source in work_items_sources_before_insert
             ]
@@ -690,4 +690,3 @@ def register_webhooks(work_items_source_key, webhook_info, join_this=None):
         return db.process_exception("Register Webhook", exc)
     except Exception as e:
         return db.failure_message('Register Webhook', e)
-

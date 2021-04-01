@@ -85,7 +85,6 @@ class PivotalTrackerConnector(PivotalApiClient):
             url=project.get('url'),
             description=project.get('description'),
             custom_fields=[]
-
         )
 
     def fetch_work_items_sources_to_sync(self, batch_size=100):

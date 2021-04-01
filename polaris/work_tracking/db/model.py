@@ -98,7 +98,6 @@ class WorkItemsSource(Base):
     # we expect this to be unique within the given connector id but wont enforce it
     # as a DB constraint until we understand a few more integrations a bit better.
     # we are leaving this nullable until we migrate github.
-    # TODO: Make this non-nullable when we migrate Github.
     source_id = Column(String, nullable=True, index=True)
     source_created_at = Column(DateTime, nullable=True)
     source_updated_at = Column(DateTime, nullable=True)
@@ -142,6 +141,18 @@ class WorkItemsSource(Base):
                 ]
             )
         ).all()
+
+    @classmethod
+    def populate_required_values(self, work_item_source):
+        required_values_with_defaults = dict(
+            commit_mapping_scope='organization',
+            source_data={},
+            source_states=[],  # source states is though nullable, set the default
+        )
+        for key, value in required_values_with_defaults.items():
+            if key not in work_item_source.keys():
+                work_item_source[key] = value
+        return work_item_source
 
     @property
     def latest_work_item_creation_date(self):
