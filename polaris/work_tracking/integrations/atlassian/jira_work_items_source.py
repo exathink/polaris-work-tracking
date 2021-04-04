@@ -128,7 +128,7 @@ class JiraProject(JiraWorkItemsSource):
         jql_base = f"project = {self.project_id} "
 
         if self.work_items_source.last_synced is None or self.last_updated is None:
-            jql = f'{jql_base} AND created >= "-{self.initial_import_days}d"'
+            jql = f'{jql_base} AND updated >= "-{self.initial_import_days}d"'
         else:
             server_timezone_offset = self.get_server_timezone_offset() or timedelta(seconds=0)
             # We need this rigmarole because expects dates in the servers timezone. We add 1 minute because the moronic
