@@ -22,14 +22,11 @@ import polaris.work_tracking
 
 here = path.abspath(path.dirname(__file__))
 
-
 setup(
 
     name='polaris.work_tracking',
 
-
     version=polaris.work_tracking.__version__,
-
 
     packages=[
         'polaris',
@@ -38,6 +35,7 @@ setup(
         'polaris.work_tracking.integrations',
         'polaris.work_tracking.integrations.atlassian',
         'polaris.work_tracking.integrations.gitlab',
+        'polaris.work_tracking.integrations.trello',
         'polaris.work_tracking.service',
         'polaris.work_tracking.messages',
         'polaris.work_tracking.service.graphql',
@@ -46,7 +44,7 @@ setup(
     ],
 
     url='',
-    license = 'Commercial',
+    license='Commercial',
     author='Krishna Kumar',
     author_email='kkumar@exathink.com',
     description='',
