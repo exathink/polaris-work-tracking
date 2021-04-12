@@ -15,6 +15,7 @@ from enum import Enum
 from polaris.integrations.trello import TrelloConnector
 from polaris.utils.config import get_config_provider
 from polaris.utils.exceptions import ProcessingException
+from polaris.work_tracking import connector_factory
 from polaris.common.enums import WorkTrackingIntegrationType
 
 config_provider = get_config_provider()
@@ -69,3 +70,27 @@ class TrelloWorkTrackingConnector(TrelloConnector):
 
 class TrelloWorkItemSourceType(Enum):
     projects = 'boards'
+
+
+class TrelloCardsWorkItemsSource:
+
+    @staticmethod
+    def create(token_provider, work_items_source):
+        if work_items_source.work_items_source_type == TrelloWorkItemSourceType
+            return TrelloBoard(token_provider, work_items_source)
+        else:
+            raise ProcessingException(f"Unknown work items source type {work_items_source.work_items_source_type}")
+
+
+class TrelloBoard(TrelloCardsWorkItemsSource):
+
+    def __init__(self, token_provider, work_items_source, connector=None):
+        self.work_items_source = work_items_source
+        self.last_updated = work_items_source.latest_work_item_update_timestamp
+        self.source_states = work_items_source.source_states
+        self.trello_connector = connector if connector else connector_factory.get_connector(
+            connector_key=self.work_items_source.connector_key
+        )
+        self.source_project_id = work_items_source.source_id
+        self.api_key = self.trello_connector.api_key
+        self.access_token = self.trello_connector.access_token
