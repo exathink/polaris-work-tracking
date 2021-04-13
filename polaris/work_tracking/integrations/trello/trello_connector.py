@@ -76,7 +76,7 @@ class TrelloCardsWorkItemsSource:
 
     @staticmethod
     def create(token_provider, work_items_source):
-        if work_items_source.work_items_source_type == TrelloWorkItemSourceType
+        if work_items_source.work_items_source_type == TrelloWorkItemSourceType:
             return TrelloBoard(token_provider, work_items_source)
         else:
             raise ProcessingException(f"Unknown work items source type {work_items_source.work_items_source_type}")
@@ -94,3 +94,35 @@ class TrelloBoard(TrelloCardsWorkItemsSource):
         self.source_project_id = work_items_source.source_id
         self.api_key = self.trello_connector.api_key
         self.access_token = self.trello_connector.access_token
+
+
+    def map_card_to_work_item(self, card):
+        return dict()
+
+    def fetch_cards(self):
+        query_params = dict(limit=100)
+        fetch_cards_url = f'{self.trello_connector.base_url}/boards/{self.source_project_id}/cards'
+        while fetch_cards_url is not None:
+            response = requests.get(
+                fetch_cards_url,
+                params=query_params,
+                headers={
+                    'Authorization': f'OAuth oauth_consumer_key="{self.api_key}", oauth_token="{self.access_token}"'}
+            )
+            if response.ok:
+                yield response.json()
+                if 'next' in response.links:
+                    fetch_cards_url = response.links['next']['url']
+                else:
+                    fetch_cards_url = None
+            else:
+                raise ProcessingException(
+                    f"Fetch from server failed {response.text} status: {response.status_code}\n"
+                )
+
+    def fetch_work_items_to_sync(self):
+        for cards in self.fetch_cards():
+            yield [
+                self.map_card_to_work_item(card)
+                for card in cards
+            ]
