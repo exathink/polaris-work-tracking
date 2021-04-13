@@ -8,9 +8,12 @@
 
 # Author: Pragya Goyal
 
+
+import pytz
 import logging
 import requests
 from enum import Enum
+from datetime import datetime
 
 from polaris.integrations.trello import TrelloConnector
 from polaris.utils.config import get_config_provider
@@ -76,7 +79,7 @@ class TrelloCardsWorkItemsSource:
 
     @staticmethod
     def create(token_provider, work_items_source):
-        if work_items_source.work_items_source_type == TrelloWorkItemSourceType:
+        if work_items_source.work_items_source_type == TrelloWorkItemSourceType.projects.value:
             return TrelloBoard(token_provider, work_items_source)
         else:
             raise ProcessingException(f"Unknown work items source type {work_items_source.work_items_source_type}")
@@ -95,9 +98,28 @@ class TrelloBoard(TrelloCardsWorkItemsSource):
         self.api_key = self.trello_connector.api_key
         self.access_token = self.trello_connector.access_token
 
-
     def map_card_to_work_item(self, card):
-        return dict()
+        def get_created_date(card_id):
+            id_board = "4d5ea62fd76aa1136000000c"
+            creation_time = datetime.fromtimestamp(int(id_board[0:8], 16))
+            utc_creation_time = pytz.utc.localize(creation_time)
+            return utc_creation_time
+
+        return dict(
+            name=card['name'][:255],
+            description=card['desc'],
+            is_bug=False,
+            tags=card['labels'],
+            source_id=str(card['id']),
+            source_last_updated=card['dateLastActivity'],
+            source_created_at=get_created_date(card['id']),
+            source_display_id=card['shortLink'],
+            source_state='open',
+            is_epic=False,
+            url=card['shortUrl'],
+            work_item_type='issue',
+            api_payload=card
+        )
 
     def fetch_cards(self):
         query_params = dict(limit=100)

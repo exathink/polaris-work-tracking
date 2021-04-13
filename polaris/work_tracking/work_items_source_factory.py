@@ -14,6 +14,7 @@ from polaris.work_tracking.integrations.atlassian.jira_work_items_source import 
 from polaris.work_tracking.integrations.github import GithubIssuesWorkItemsSource
 from polaris.work_tracking.integrations.pivotal_tracker import PivotalTrackerWorkItemsSource
 from polaris.work_tracking.integrations.gitlab import GitlabIssuesWorkItemsSource
+from polaris.work_tracking.integrations.trello import TrelloCardsWorkItemsSource
 from polaris.common import db
 from polaris.work_tracking.db.model import WorkItemsSource
 
@@ -30,6 +31,8 @@ def get_provider_impl(token_provider, work_items_source_key, join_this=None):
                 work_items_source_impl = JiraWorkItemsSource.create(token_provider, work_items_source)
             elif work_items_source.integration_type == WorkTrackingIntegrationType.gitlab.value:
                 work_items_source_impl = GitlabIssuesWorkItemsSource.create(token_provider, work_items_source)
+            elif work_items_source.integration_type == WorkTrackingIntegrationType.trello.value:
+                work_items_source_impl = TrelloCardsWorkItemsSource.create(token_provider, work_items_source)
             else:
                 raise ProcessingException(
                     f'Could not determine work_items_source_implementation for work_items_source_key {work_items_source.key}'
@@ -40,9 +43,3 @@ def get_provider_impl(token_provider, work_items_source_key, join_this=None):
             raise ProcessingException(
                 f'Could not find work_items_source with key {work_items_source_key}'
             )
-
-
-
-
-
-
