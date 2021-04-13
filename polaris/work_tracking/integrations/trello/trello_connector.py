@@ -143,8 +143,39 @@ class TrelloBoard(TrelloCardsWorkItemsSource):
                 )
 
     def fetch_work_items_to_sync(self):
+        self.before_work_items_sync()
         for cards in self.fetch_cards():
             yield [
                 self.map_card_to_work_item(card)
                 for card in cards
             ]
+
+    def fetch_boards_lists(self):
+        fetch_lists_url = f'{self.trello_connector.base_url}/boards/{self.source_project_id}/lists'
+        while fetch_lists_url is not None:
+            response = requests.get(
+                fetch_lists_url,
+                headers={
+                    'Authorization': f'OAuth oauth_consumer_key="{self.api_key}", oauth_token="{self.access_token}"'}
+            )
+            if response.ok:
+                yield response.json()
+                if 'next' in response.links:
+                    fetch_lists_url = response.links['next']['url']
+                else:
+                    fetch_lists_url = None
+            else:
+                raise ProcessingException(
+                    f"Fetch from server failed {response.text} status: {response.status_code}\n"
+                )
+
+    def before_work_items_sync(self):
+        boards_lists = [data for data in self.fetch_boards_lists()][0]
+        source_states = []
+        for board_list in boards_lists:
+            source_states.append(board_list['name'])
+        self.source_states = source_states
+        return dict(
+            source_states=self.source_states
+        )
+
