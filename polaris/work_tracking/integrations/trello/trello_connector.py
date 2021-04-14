@@ -90,6 +90,7 @@ class TrelloBoard(TrelloCardsWorkItemsSource):
     def __init__(self, token_provider, work_items_source, connector=None):
         self.work_items_source = work_items_source
         self.last_updated = work_items_source.latest_work_item_update_timestamp
+        self.board_lists = work_items_source.source_data.get('board_lists') if work_items_source.source_data is not None else None
         self.source_states = work_items_source.source_states
         self.trello_connector = connector if connector else connector_factory.get_connector(
             connector_key=self.work_items_source.connector_key
@@ -99,11 +100,12 @@ class TrelloBoard(TrelloCardsWorkItemsSource):
         self.access_token = self.trello_connector.access_token
 
     def map_card_to_work_item(self, card):
+
         def get_created_date(card_id):
-            id_board = "4d5ea62fd76aa1136000000c"
-            creation_time = datetime.fromtimestamp(int(id_board[0:8], 16))
+            creation_time = datetime.fromtimestamp(int(card_id[0:8], 16))
             utc_creation_time = pytz.utc.localize(creation_time)
             return utc_creation_time
+
 
         return dict(
             name=card['name'][:255],
@@ -150,7 +152,7 @@ class TrelloBoard(TrelloCardsWorkItemsSource):
                 for card in cards
             ]
 
-    def fetch_boards_lists(self):
+    def fetch_board_lists(self):
         fetch_lists_url = f'{self.trello_connector.base_url}/boards/{self.source_project_id}/lists'
         while fetch_lists_url is not None:
             response = requests.get(
@@ -170,12 +172,13 @@ class TrelloBoard(TrelloCardsWorkItemsSource):
                 )
 
     def before_work_item_sync(self):
-        boards_lists = [data for data in self.fetch_boards_lists()][0]
+        self.board_lists = [data for data in self.fetch_board_lists()][0]
+        source_data = dict(board_lists=self.board_lists)
         source_states = []
-        for board_list in boards_lists:
+        for board_list in self.board_lists:
             source_states.append(board_list['name'])
         self.source_states = source_states
         return dict(
+            source_data=source_data,
             source_states=self.source_states
         )
-
