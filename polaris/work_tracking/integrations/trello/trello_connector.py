@@ -143,7 +143,7 @@ class TrelloBoard(TrelloCardsWorkItemsSource):
                 )
 
     def fetch_work_items_to_sync(self):
-        self.before_work_items_sync()
+        self.before_work_item_sync()
         for cards in self.fetch_cards():
             yield [
                 self.map_card_to_work_item(card)
@@ -169,7 +169,7 @@ class TrelloBoard(TrelloCardsWorkItemsSource):
                     f"Fetch from server failed {response.text} status: {response.status_code}\n"
                 )
 
-    def before_work_items_sync(self):
+    def before_work_item_sync(self):
         boards_lists = [data for data in self.fetch_boards_lists()][0]
         source_states = []
         for board_list in boards_lists:
