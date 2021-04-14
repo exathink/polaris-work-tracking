@@ -20,6 +20,7 @@ from polaris.utils.config import get_config_provider
 from polaris.utils.exceptions import ProcessingException
 from polaris.work_tracking import connector_factory
 from polaris.common.enums import WorkTrackingIntegrationType
+from polaris.utils.collections import find
 
 config_provider = get_config_provider()
 
@@ -90,7 +91,8 @@ class TrelloBoard(TrelloCardsWorkItemsSource):
     def __init__(self, token_provider, work_items_source, connector=None):
         self.work_items_source = work_items_source
         self.last_updated = work_items_source.latest_work_item_update_timestamp
-        self.board_lists = work_items_source.source_data.get('board_lists') if work_items_source.source_data is not None else None
+        self.board_lists = work_items_source.source_data.get(
+            'board_lists') if work_items_source.source_data is not None else None
         self.source_states = work_items_source.source_states
         self.trello_connector = connector if connector else connector_factory.get_connector(
             connector_key=self.work_items_source.connector_key
@@ -106,6 +108,8 @@ class TrelloBoard(TrelloCardsWorkItemsSource):
             utc_creation_time = pytz.utc.localize(creation_time)
             return utc_creation_time
 
+        # Use list id from card['idList'] to determine the associated list and its name
+        board_list = find(self.board_lists, lambda board_list: board_list['id'] == card['idList'])
 
         return dict(
             name=card['name'][:255],
@@ -116,7 +120,7 @@ class TrelloBoard(TrelloCardsWorkItemsSource):
             source_last_updated=card['dateLastActivity'],
             source_created_at=get_created_date(card['id']),
             source_display_id=card['shortLink'],
-            source_state='open',
+            source_state=board_list['name'],
             is_epic=False,
             url=card['shortUrl'],
             work_item_type='issue',
