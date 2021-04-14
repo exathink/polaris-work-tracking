@@ -21,6 +21,7 @@ from polaris.utils.exceptions import ProcessingException
 from polaris.work_tracking import connector_factory
 from polaris.common.enums import WorkTrackingIntegrationType
 from polaris.utils.collections import find
+from polaris.common.enums import TrelloWorkItemType
 
 config_provider = get_config_provider()
 
@@ -101,6 +102,17 @@ class TrelloBoard(TrelloCardsWorkItemsSource):
         self.api_key = self.trello_connector.api_key
         self.access_token = self.trello_connector.access_token
 
+    def resolve_work_item_type_for_card(self, labels):
+        lower_case_labels = [label.lower() for label in labels]
+        for label in lower_case_labels:
+            if label == 'story':
+                return TrelloWorkItemType.story.value
+            if label == 'bug' or label == 'defect':
+                return TrelloWorkItemType.bug.value
+            if label == 'task':
+                return TrelloWorkItemType.task.value
+        return TrelloWorkItemType.issue.value
+
     def map_card_to_work_item(self, card):
 
         def get_created_date(card_id):
@@ -108,14 +120,19 @@ class TrelloBoard(TrelloCardsWorkItemsSource):
             utc_creation_time = pytz.utc.localize(creation_time)
             return utc_creation_time
 
-        # Use list id from card['idList'] to determine the associated list and its name
         board_list = find(self.board_lists, lambda board_list: board_list['id'] == card['idList'])
+        card_labels = []
+        for label_id in card['idLabels']:
+            card_label = find(self.board_labels, lambda board_label: board_label['id'] == label_id)
+            if card_label and card_label['name']:
+                card_labels.append(card_label['name'])
+        work_item_type = self.resolve_work_item_type_for_card(card_labels)
 
         return dict(
             name=card['name'][:255],
             description=card['desc'],
             is_bug=False,
-            tags=card['labels'],
+            tags=card_labels,
             source_id=str(card['id']),
             source_last_updated=card['dateLastActivity'],
             source_created_at=get_created_date(card['id']),
@@ -123,7 +140,7 @@ class TrelloBoard(TrelloCardsWorkItemsSource):
             source_state=board_list['name'],
             is_epic=False,
             url=card['shortUrl'],
-            work_item_type='issue',
+            work_item_type=work_item_type,
             api_payload=card
         )
 
@@ -175,9 +192,31 @@ class TrelloBoard(TrelloCardsWorkItemsSource):
                     f"Fetch from server failed {response.text} status: {response.status_code}\n"
                 )
 
+    def fetch_board_labels(self):
+        fetch_labels_url = f'{self.trello_connector.base_url}/boards/{self.source_project_id}/labels'
+        while fetch_labels_url is not None:
+            response = requests.get(
+                fetch_labels_url,
+                headers={
+                    'Authorization': f'OAuth oauth_consumer_key="{self.api_key}", oauth_token="{self.access_token}"'}
+            )
+            if response.ok:
+                yield response.json()
+                if 'next' in response.links:
+                    fetch_labels_url = response.links['next']['url']
+                else:
+                    fetch_labels_url = None
+            else:
+                raise ProcessingException(
+                    f"Fetch from server failed {response.text} status: {response.status_code}\n"
+                )
+
     def before_work_item_sync(self):
+        # Fetch board lists for state of card
         self.board_lists = [data for data in self.fetch_board_lists()][0]
-        source_data = dict(board_lists=self.board_lists)
+        # Fetch board labels for type of card
+        self.board_labels = [data for data in self.fetch_board_labels()][0]
+        source_data = dict(board_lists=self.board_lists, board_labels=self.board_labels)
         source_states = []
         for board_list in self.board_lists:
             source_states.append(board_list['name'])
