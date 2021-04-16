@@ -107,6 +107,10 @@ class TrelloBoard(TrelloCardsWorkItemsSource):
         for label in lower_case_labels:
             if label == 'story':
                 return TrelloWorkItemType.story.value
+            if label == 'feature':
+                return TrelloWorkItemType.feature.value
+            if label == 'enhancement':
+                return TrelloWorkItemType.enhancement.value
             if label == 'bug' or label == 'defect':
                 return TrelloWorkItemType.bug.value
             if label == 'task':
