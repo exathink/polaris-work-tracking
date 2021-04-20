@@ -140,12 +140,13 @@ class TrelloBoard(TrelloCardsWorkItemsSource):
             source_id=str(card['id']),
             source_last_updated=card['dateLastActivity'],
             source_created_at=get_created_date(card['id']),
-            source_display_id=card['shortLink'],
+            source_display_id=card['idShort'],
             source_state=board_list['name'],
             is_epic=False,
             url=card['shortUrl'],
             work_item_type=work_item_type,
-            api_payload=card
+            api_payload=card,
+            commit_identifiers=[card['idShort'], card['shortLink'], card['shortUrl']]
         )
 
     def fetch_cards(self):

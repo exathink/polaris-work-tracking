@@ -94,7 +94,8 @@ def sync_work_items(work_items_source_key, work_item_list, join_this=None):
                         source_display_id=upsert.excluded.source_display_id,
                         source_state=upsert.excluded.source_state,
                         last_sync=upsert.excluded.last_sync,
-                        api_payload=upsert.excluded.api_payload
+                        api_payload=upsert.excluded.api_payload,
+                        commit_identifiers=upsert.excluded.commit_identifiers
                     )
                 )
             )
@@ -115,7 +116,8 @@ def sync_work_items(work_items_source_key, work_item_list, join_this=None):
                     created_at=work_item.source_created_at,
                     updated_at=work_item.source_last_updated,
                     last_sync=work_item.last_sync,
-                    source_id=work_item.source_id
+                    source_id=work_item.source_id,
+                    commit_identifiers=work_item.commit_identifiers
                 )
                 for work_item in work_items_before_insert
             ]
