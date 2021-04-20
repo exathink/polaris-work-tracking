@@ -208,7 +208,8 @@ class GitlabProject(GitlabIssuesWorkItemsSource):
             is_epic=False,
             url=issue.get('web_url') if issue.get('web_url') else issue.get('url'),
             work_item_type=work_item_type,
-            api_payload=issue
+            api_payload=issue,
+            commit_identifiers=[str(issue['iid'])]
         )
         return work_item
 

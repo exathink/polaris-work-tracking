@@ -157,7 +157,8 @@ class PivotalTrackerProject(PivotalTrackerWorkItemsSource):
                         # hard coding this for stories. When we load epics
                         # we can set those explicitly to true.
                         is_epic=False,
-                        api_payload=story
+                        api_payload=story,
+                        commit_identifiers=[str(story.get('id'))]
 
                     )
                     for story in stories
