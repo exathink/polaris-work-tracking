@@ -97,7 +97,7 @@ class JiraProject(JiraWorkItemsSource):
             is_epic=issue_type == 'Epic',
             parent_source_display_id=parent_source_display_id,
             api_payload=issue,
-            commit_identifiers=[issue.get('key')]
+            commit_identifiers=[issue.get('key'), issue.get('key').lower(), issue.get('key').capitalize()]
         )
 
         return mapped_data
