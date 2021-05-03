@@ -146,7 +146,7 @@ class TrelloBoard(TrelloCardsWorkItemsSource):
             url=card['shortUrl'],
             work_item_type=work_item_type,
             api_payload=card,
-            commit_identifiers=[str(card['idShort']), card['shortLink'], card['shortUrl']]
+            commit_identifiers=[str(card['idShort']), card['shortLink'], card['shortUrl'].replace('https://', '')]
         )
 
     def fetch_cards(self):
