@@ -55,7 +55,7 @@ if config_provider.get('DEBUG_SQL') == 'true':
 # Register endpoints
 app.register_blueprint(gql.api, url_prefix='/graphql', schema=graphql.schema)
 app.register_blueprint(gitlab_webhooks.webhook, url_prefix='/gitlab')
-app.register_blueprint(gitlab_webhooks.webhook, url_prefix='/trello')
+app.register_blueprint(trello_webhooks.webhook, url_prefix='/trello')
 
 jira_atlassian_connect.init_connector(app)
 

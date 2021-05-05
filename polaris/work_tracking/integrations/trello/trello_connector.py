@@ -84,6 +84,7 @@ class TrelloWorkTrackingConnector(TrelloConnector):
         # Register new webhook now
         callback_url = f"{config_provider.get('TRELLO_WEBHOOKS_BASE_URL')}" \
                                         f"/project/webhooks/{self.key}/"
+        callback_url = f'https://exathinkdev.ngrok.io/trello/project/webhooks/{self.key}/'
 
         add_hook_url = f"{self.base_url}/webhooks/"
         params = dict(
@@ -108,7 +109,7 @@ class TrelloWorkTrackingConnector(TrelloConnector):
             success=True,
             active_webhook=active_hook_id,
             deleted_webhooks=deleted_hook_ids,
-            registered_events=self.webhook_events,
+            registered_events=[],
         )
 
     def delete_project_webhook(self, project_source_id, inactive_hook_id):

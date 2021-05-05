@@ -17,10 +17,10 @@ logger = logging.getLogger('polaris.work_tracking.integrations.trello.webhook')
 webhook = Blueprint('trello_webhooks', __name__)
 
 
-@webhook.route(f"/project/webhooks/123/", methods=('GET', 'POST'))
+@webhook.route(f"/project/webhooks/<connector_key>/", methods=('GET', 'POST'))
 def project_webhooks(connector_key):
     logger.info('Received webhook event @project/webhooks')
 
     #event_type = request.json['object_kind']
     #publish.gitlab_project_event(event_type, connector_key, request.data)
-    return {'status': 200}
+    return ''
