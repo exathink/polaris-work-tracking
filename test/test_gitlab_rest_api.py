@@ -120,9 +120,10 @@ class TestGitlabWorkItemSource:
         assert mapped_data['source_state']
         assert not mapped_data['is_epic']
         assert mapped_data['api_payload']
+        assert mapped_data['commit_identifiers']
         # explicitly assert that these are the only fields mapped. The test should fail
         # and force a change in assertions if we change the mapping
-        assert len(mapped_data.keys()) == 13
+        assert len(mapped_data.keys()) == 14
 
     def it_maps_correct_work_item_type_for_story(self, setup):
         fixture = setup

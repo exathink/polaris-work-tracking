@@ -98,7 +98,8 @@ class GithubRepositoryIssues(GithubIssuesWorkItemsSource):
             source_display_id=issue.number,
             source_state=issue.state,
             is_epic=False,
-            api_payload=issue.raw_data
+            api_payload=issue.raw_data,
+            commit_identifiers=[str(issue.number)]
         )
         if issue.pull_request is not None:
             return dict(
