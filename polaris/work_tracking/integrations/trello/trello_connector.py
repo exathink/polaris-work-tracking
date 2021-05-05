@@ -72,6 +72,48 @@ class TrelloWorkTrackingConnector(TrelloConnector):
                 for board in boards
             ]
 
+    def register_project_webhooks(self, project_source_id, registered_webhooks):
+        deleted_hook_ids = []
+        for inactive_hook_id in registered_webhooks:
+            if self.delete_project_webhook(project_source_id, inactive_hook_id):
+                logger.info(f"Deleted webhook with id {inactive_hook_id} for repo {project_source_id}")
+                deleted_hook_ids.append(inactive_hook_id)
+            else:
+                logger.info(f"Webhook with id {inactive_hook_id} for project {project_source_id} could not be deleted")
+
+        # Register new webhook now
+        callback_url = f"{config_provider.get('TRELLO_WEBHOOKS_BASE_URL')}" \
+                                        f"/project/webhooks/{self.key}/"
+
+        add_hook_url = f"{self.base_url}/webhooks/"
+        params = dict(
+            key=self.api_key,
+            token=self.access_token,
+            callbackURL=callback_url,
+            idModel=project_source_id
+        )
+
+        response = requests.post(
+            add_hook_url,
+            headers={"Accept": "application/json"},
+            params=params
+        )
+        if response.ok:
+            result = response.json()
+            active_hook_id = result['id']
+        else:
+            raise ProcessingException(
+                f"Webhook registration failed due to status:{response.status_code} message:{response.text}")
+        return dict(
+            success=True,
+            active_webhook=active_hook_id,
+            deleted_webhooks=deleted_hook_ids,
+            registered_events=self.webhook_events,
+        )
+
+    def delete_project_webhook(self, project_source_id, inactive_hook_id):
+        return True
+
 
 class TrelloWorkItemSourceType(Enum):
     projects = 'boards'
