@@ -17,7 +17,7 @@ from polaris.messaging.messages import ImportWorkItems, WorkItemsCreated, WorkIt
     WorkItemsSourceCreated, WorkItemsSourceUpdated, ProjectImported, ConnectorCreated, ConnectorEvent
 
 from polaris.work_tracking.messages import AtlassianConnectWorkItemEvent, RefreshConnectorProjects, \
-    ResolveWorkItemsForEpic, GitlabProjectEvent
+    ResolveWorkItemsForEpic, GitlabProjectEvent, TrelloBoardEvent
 
 from polaris.messaging.topics import WorkItemsTopic, ConnectorsTopic, TopicSubscriber
 from polaris.messaging.utils import raise_message_processing_error
@@ -28,6 +28,7 @@ from polaris.utils.token_provider import get_token_provider
 from polaris.work_tracking import commands
 from polaris.work_tracking.integrations.atlassian import jira_message_handler
 from polaris.work_tracking.integrations.gitlab import gitlab_message_handler
+from polaris.work_tracking.integrations.trello import trello_message_handler
 
 from polaris.common.enums import ConnectorType, ConnectorProductType
 
@@ -118,6 +119,9 @@ class WorkItemsTopicSubscriber(TopicSubscriber):
 
         elif GitlabProjectEvent.message_type == message.message_type:
             return self.process_gitlab_project_event(message)
+
+        elif TrelloBoardEvent.message_type == message.message_type:
+            return self.process_trello_board_event(message)
 
         elif WorkItemsCreated.message_type == message.message_type:
             return self.process_work_items_created(message)
@@ -234,6 +238,23 @@ class WorkItemsTopicSubscriber(TopicSubscriber):
             )
         except Exception as exc:
             raise_message_processing_error(message, 'Failed to process gitlab repository event', str(exc))
+
+    def process_trello_board_event(self, message):
+        connector_key = message['connector_key']
+        event_type = message['event_type']
+        payload = message['payload']
+
+        logger.info(
+            f"Processing  trello board event {message.message_type}: "
+        )
+        try:
+            return trello_message_handler.handle_trello_event(
+                connector_key,
+                event_type,
+                payload
+            )
+        except Exception as exc:
+            raise_message_processing_error(message, 'Failed to process trello board event', str(exc))
 
     def process_work_items_created(self, message):
         response_messages = []
