@@ -84,7 +84,6 @@ class TrelloWorkTrackingConnector(TrelloConnector):
         # Register new webhook now
         callback_url = f"{config_provider.get('TRELLO_WEBHOOKS_BASE_URL')}" \
                                         f"/project/webhooks/{self.key}/"
-        callback_url = f'https://exathinkdev.ngrok.io/trello/project/webhooks/{self.key}/'
 
         add_hook_url = f"{self.base_url}/webhooks/"
         params = dict(
