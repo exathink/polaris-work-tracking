@@ -20,7 +20,7 @@ webhook = Blueprint('trello_webhooks', __name__)
 @webhook.route(f"/project/webhooks/<connector_key>/", methods=('GET', 'POST'))
 def project_webhooks(connector_key):
     logger.info('Received webhook event @project/webhooks')
-    action = request.json['action']
-    event_type = action['type']
+    payload = request.json
+    event_type = payload['action']['type']
     publish.trello_board_event(event_type, connector_key, request.data)
     return ''

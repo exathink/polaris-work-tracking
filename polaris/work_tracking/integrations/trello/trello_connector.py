@@ -179,27 +179,27 @@ class TrelloBoard(TrelloCardsWorkItemsSource):
 
         board_list = find(self.board_lists, lambda board_list: board_list['id'] == card['idList'])
         card_labels = []
-        for label_id in card['idLabels']:
+        for label_id in card.get('idLabels'):
             card_label = find(self.board_labels, lambda board_label: board_label['id'] == label_id)
-            if card_label and card_label['name']:
+            if card_label and card_label.get('name'):
                 card_labels.append(card_label['name'])
         work_item_type = self.resolve_work_item_type_for_card(card_labels)
 
         return dict(
-            name=card['name'][:255],
-            description=card['desc'],
+            name=card.get('name')[:255],
+            description=card.get('desc') or '',
             is_bug=False,
             tags=card_labels,
-            source_id=str(card['id']),
-            source_last_updated=card['dateLastActivity'],
-            source_created_at=get_created_date(card['id']),
-            source_display_id=str(card['idShort']),
-            source_state=board_list['name'],
+            source_id=str(card.get('id')),
+            source_last_updated=card.get('dateLastActivity') or get_created_date(card.get('id')),
+            source_created_at=get_created_date(card.get('id')),
+            source_display_id=str(card.get('idShort')),
+            source_state=board_list.get('name'),
             is_epic=False,
-            url=card['shortUrl'],
+            url=card.get('shortUrl'),
             work_item_type=work_item_type,
             api_payload=card,
-            commit_identifiers=[str(card['idShort']), card['shortLink'], card['shortUrl'].replace('https://', '')]
+            commit_identifiers=[str(card.get('idShort')), card.get('shortLink'), card.get('shortUrl').replace('https://', '')]
         )
 
     def fetch_cards(self):
