@@ -62,6 +62,7 @@ class WorkItemsTopicSubscriber(TopicSubscriber):
                 WorkItemsCreated,
                 WorkItemsUpdated,
                 GitlabProjectEvent,
+                TrelloBoardEvent,
                 # Commands
                 ImportWorkItems,
                 ResolveWorkItemsForEpic
