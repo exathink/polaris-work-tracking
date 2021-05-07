@@ -75,7 +75,7 @@ class TrelloWorkTrackingConnector(TrelloConnector):
     def register_project_webhooks(self, project_source_id, registered_webhooks):
         deleted_hook_ids = []
         for inactive_hook_id in registered_webhooks:
-            if self.delete_project_webhook(project_source_id, inactive_hook_id):
+            if self.delete_project_webhook(inactive_hook_id):
                 logger.info(f"Deleted webhook with id {inactive_hook_id} for repo {project_source_id}")
                 deleted_hook_ids.append(inactive_hook_id)
             else:
@@ -111,8 +111,19 @@ class TrelloWorkTrackingConnector(TrelloConnector):
             registered_events=[],
         )
 
-    def delete_project_webhook(self, project_source_id, inactive_hook_id):
-        return True
+    def delete_project_webhook(self, inactive_hook_id):
+        delete_hook_url = f"{self.base_url}/webhooks/{inactive_hook_id}"
+        params = dict(
+            key=self.api_key,
+            token=self.access_token
+        )
+        response = requests.post(
+            delete_hook_url,
+            headers={"Accept": "application/json"},
+            params=params
+        )
+        if response.ok:
+            return True
 
 
 class TrelloWorkItemSourceType(Enum):
