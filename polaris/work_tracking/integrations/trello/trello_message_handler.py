@@ -18,7 +18,7 @@ from polaris.work_tracking.integrations.trello import TrelloBoard
 from polaris.work_tracking.db.model import WorkItemsSource
 
 
-def handle_create_card_event(connector_key, payload, channel=None):
+def handle_card_event(connector_key, payload, channel=None):
     event = json.loads(payload)
     board_source_id = str(event['model']['id'])
     with db.orm_session() as session:
@@ -33,10 +33,10 @@ def handle_create_card_event(connector_key, payload, channel=None):
                 join_this=session
             )
             if connector:
-                trello_board = TrelloBoard(token_provider=None, work_items_source=work_items_source, connector=connector)
+                trello_board = TrelloBoard(token_provider=None, work_items_source=work_items_source,
+                                           connector=connector)
                 card_data = event['action']['data']['card']
                 list_data = event['action']['data']['list']
-                board_data = event['action']['data']['board']
                 card_object = dict(
                     id=card_data.get('id'),
                     name=card_data.get('name'),
@@ -54,16 +54,22 @@ def handle_create_card_event(connector_key, payload, channel=None):
                 issue_data = trello_board.map_card_to_work_item(card_object)
 
                 synced_issues = api.sync_work_items(work_items_source.key, [issue_data], join_this=session)
-
-
-def handle_update_card_event(connector_key, payload, channel=None):
-    pass
+                if len(synced_issues) > 0:
+                    if synced_issues[0]['is_new']:
+                        publish.work_item_created_event(
+                            organization_key=work_items_source.organization_key,
+                            work_items_source_key=work_items_source.key,
+                            new_work_items=synced_issues
+                        )
+                    else:
+                        publish.work_item_updated_event(
+                            organization_key=work_items_source.organization_key,
+                            work_items_source_key=work_items_source.key,
+                            updated_work_items=synced_issues
+                        )
+                return synced_issues
 
 
 def handle_trello_event(connector_key, event_type, payload, channel=None):
-    if event_type == 'createCard':
-        return handle_create_card_event(connector_key, payload, channel)
-    if event_type == 'updateCard':
-        return handle_update_card_event(connector_key, payload, channel)
-
-
+    if event_type in ['createCard', 'updateCard']:
+        return handle_card_event(connector_key, payload, channel)
