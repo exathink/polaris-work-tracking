@@ -146,7 +146,9 @@ class TrelloBoard(TrelloCardsWorkItemsSource):
         self.work_items_source = work_items_source
         self.last_updated = work_items_source.latest_work_item_update_timestamp
         self.board_lists = work_items_source.source_data.get(
-            'board_lists') if work_items_source.source_data is not None else None
+            'board_lists') if work_items_source.source_data.get('board_lists') is not None else []
+        self.board_labels = work_items_source.source_data.get(
+            'board_labels') if work_items_source.source_data.get('board_labels') is not None else []
         self.source_states = work_items_source.source_states
         self.trello_connector = connector if connector else connector_factory.get_connector(
             connector_key=self.work_items_source.connector_key
@@ -188,7 +190,7 @@ class TrelloBoard(TrelloCardsWorkItemsSource):
         return dict(
             name=card.get('name')[:255],
             description=card.get('desc') or '',
-            is_bug=False,
+            is_bug=work_item_type == TrelloWorkItemType.bug.value,
             tags=card_labels,
             source_id=str(card.get('id')),
             source_last_updated=card.get('dateLastActivity') or get_created_date(card.get('id')),

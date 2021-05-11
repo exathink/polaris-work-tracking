@@ -142,20 +142,6 @@ def setup_work_item_sources(setup_schema, setup_connectors):
             organization_key=polaris_organization_key,
             commit_mapping_scope='organization',
             commit_mapping_scope_key=polaris_organization_key,
-            import_state=WorkItemsSourceImportState.ready.value
-        )
-        work_items_sources['pivotal'] = model.WorkItemsSource(
-            key=polaris_work_items_source_key,
-            connector_key=connector_keys['pivotal'],
-            integration_type='pivotal_tracker',
-            work_items_source_type='project',
-            source_id=pivotal_work_items_source_id,
-            parameters=dict(id="1934657", name="polaris-web"),
-            name='polaris-web',
-            account_key=exathink_account_key,
-            organization_key=polaris_organization_key,
-            commit_mapping_scope='organization',
-            commit_mapping_scope_key=polaris_organization_key,
             import_state=WorkItemsSourceImportState.ready.value,
             source_data=dict(
                 board_lists=[
@@ -171,18 +157,28 @@ def setup_work_item_sources(setup_schema, setup_connectors):
                 ],
                 board_labels=[
                     {
-                        "id": "6076b83434be6c110a6e8566",
-                        "name": "Bug",
-                        "color": "red",
-                        "idBoard": "5e17ac9e8eae873e81247bc9"
+                        "id": "1",
+                        "name": "Bug"
                     },
                     {
-                        "id": "6076b875c108d08d4234ca98",
-                        "name": "Story",
-                        "color": "pink",
-                        "idBoard": "5e17ac9e8eae873e81247bc9"
+                        "id": "2",
+                        "name": "Story"
                     },
                 ])
+        )
+        work_items_sources['pivotal'] = model.WorkItemsSource(
+            key=polaris_work_items_source_key,
+            connector_key=connector_keys['pivotal'],
+            integration_type='pivotal_tracker',
+            work_items_source_type='project',
+            source_id=pivotal_work_items_source_id,
+            parameters=dict(id="1934657", name="polaris-web"),
+            name='polaris-web',
+            account_key=exathink_account_key,
+            organization_key=polaris_organization_key,
+            commit_mapping_scope='organization',
+            commit_mapping_scope_key=polaris_organization_key,
+            import_state=WorkItemsSourceImportState.ready.value,
         )
         # This will have no work_items set up initially
         work_items_sources['empty'] = model.WorkItemsSource(
