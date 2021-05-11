@@ -83,7 +83,7 @@ class TrelloWorkTrackingConnector(TrelloConnector):
 
         # Register new webhook now
         callback_url = f"{config_provider.get('TRELLO_WEBHOOKS_BASE_URL')}" \
-                                        f"/project/webhooks/{self.key}/"
+                       f"/project/webhooks/{self.key}/"
 
         add_hook_url = f"{self.base_url}/webhooks/"
         params = dict(
@@ -199,8 +199,23 @@ class TrelloBoard(TrelloCardsWorkItemsSource):
             url=card.get('shortUrl'),
             work_item_type=work_item_type,
             api_payload=card,
-            commit_identifiers=[str(card.get('idShort')), card.get('shortLink'), card.get('shortUrl').replace('https://', '')]
+            commit_identifiers=[str(card.get('idShort')), card.get('shortLink'),
+                                card.get('shortUrl').replace('https://', '')]
         )
+
+    def fetch_card(self, card_id):
+        fetch_card_url = f'{self.trello_connector.base_url}/cards/{card_id}'
+        response = requests.get(
+            fetch_card_url,
+            headers={
+                'Authorization': f'OAuth oauth_consumer_key="{self.api_key}", oauth_token="{self.access_token}"'}
+        )
+        if response.ok:
+            yield response.json()
+        else:
+            raise ProcessingException(
+                f"Fetch from server failed {response.text} status: {response.status_code}\n"
+            )
 
     def fetch_cards(self):
         query_params = dict(limit=100)

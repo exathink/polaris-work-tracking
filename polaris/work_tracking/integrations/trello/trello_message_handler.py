@@ -18,7 +18,7 @@ from polaris.work_tracking.integrations.trello import TrelloBoard
 from polaris.work_tracking.db.model import WorkItemsSource
 
 
-def handle_card_event(connector_key, payload, channel=None):
+def handle_card_event(connector_key, payload, type, channel=None):
     event = json.loads(payload)
     board_source_id = str(event['model']['id'])
     with db.orm_session() as session:
@@ -35,21 +35,25 @@ def handle_card_event(connector_key, payload, channel=None):
             if connector:
                 trello_board = TrelloBoard(token_provider=None, work_items_source=work_items_source,
                                            connector=connector)
-                card_data = event['action']['data']['card']
-                list_data = event['action']['data']['list']
-                card_object = dict(
-                    id=card_data.get('id'),
-                    name=card_data.get('name'),
-                    desc=card_data.get('desc') or '',
-                    idShort=card_data.get('idShort'),
-                    shortLink=card_data.get('shortLink'),
-                    idList=list_data.get('id'),
-                    idLabels=card_data.get('idLabels') or [],
-                    shortUrl=card_data.get('shortUrl') or f'https://trello.com/c/{card_data.get("idShort")}'
-                )
                 work_items_source_data = trello_board.before_work_item_sync()
                 work_items_source.update(work_items_source_data)
                 session.flush()
+                if type in ['removeLabelFromCard', 'addLabelToCard']:
+                    # Fetch the card details using API, as the given data does not contains all labels, but only the changed one.
+                    card_object = [card for card in trello_board.fetch_card(event['action']['data']['card']['id'])][0]
+                else:
+                    card_data = event['action']['data']['card']
+                    list_data = event['action']['data']['list']
+                    card_object = dict(
+                        id=card_data.get('id'),
+                        name=card_data.get('name'),
+                        desc=card_data.get('desc') or '',
+                        idShort=card_data.get('idShort'),
+                        shortLink=card_data.get('shortLink'),
+                        idList=list_data.get('id'),
+                        idLabels=card_data.get('idLabels') or [],
+                        shortUrl=card_data.get('shortUrl') or f'https://trello.com/c/{card_data.get("idShort")}'
+                    )
 
                 issue_data = trello_board.map_card_to_work_item(card_object)
 
@@ -71,5 +75,5 @@ def handle_card_event(connector_key, payload, channel=None):
 
 
 def handle_trello_event(connector_key, event_type, payload, channel=None):
-    if event_type in ['createCard', 'updateCard']:
-        return handle_card_event(connector_key, payload, channel)
+    if event_type in ['createCard', 'updateCard', 'addLabelToCard', 'removeLabelFromCard']:
+        return handle_card_event(connector_key, payload, event_type, channel)
