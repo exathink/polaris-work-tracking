@@ -42,8 +42,10 @@ def handle_card_event(connector_key, payload, type, channel=None):
                     # Fetch the card details using API, as the given data does not contains all labels, but only the changed one.
                     card_object = [card for card in trello_board.fetch_card(event['action']['data']['card']['id'])][0]
                 else:
-                    card_data = event['action']['data']['card']
-                    list_data = event['action']['data']['list']
+                    changed_data = event['action']['data']
+                    card_data = changed_data.get('card')
+                    # In case list changes we get 'listAfter' and 'listBefore', in case it doesn't we get 'list' only
+                    list_data = changed_data.get('listAfter') or changed_data.get('list')
                     card_object = dict(
                         id=card_data.get('id'),
                         name=card_data.get('name'),
