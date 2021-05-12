@@ -13,12 +13,15 @@ from .atlassian_connect_work_item_event import AtlassianConnectWorkItemEvent
 from .refresh_connector_projects import RefreshConnectorProjects
 from .resolve_work_items_for_epic import ResolveWorkItemsForEpic
 from .gitlab_project_event import GitlabProjectEvent
+from .trello_board_event import TrelloBoardEvent
+
 
 # Add this to the global message factory so that the messages can be deserialized on receipt.
 register_messages([
     AtlassianConnectWorkItemEvent,
     RefreshConnectorProjects,
     ResolveWorkItemsForEpic,
-    GitlabProjectEvent
+    GitlabProjectEvent,
+    TrelloBoardEvent
 ])
 

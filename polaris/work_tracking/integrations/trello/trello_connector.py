@@ -72,6 +72,59 @@ class TrelloWorkTrackingConnector(TrelloConnector):
                 for board in boards
             ]
 
+    def register_project_webhooks(self, project_source_id, registered_webhooks):
+        deleted_hook_ids = []
+        for inactive_hook_id in registered_webhooks:
+            if self.delete_project_webhook(inactive_hook_id):
+                logger.info(f"Deleted webhook with id {inactive_hook_id} for repo {project_source_id}")
+                deleted_hook_ids.append(inactive_hook_id)
+            else:
+                logger.info(f"Webhook with id {inactive_hook_id} for project {project_source_id} could not be deleted")
+
+        # Register new webhook now
+        callback_url = f"{config_provider.get('TRELLO_WEBHOOKS_BASE_URL')}" \
+                       f"/project/webhooks/{self.key}/"
+
+        add_hook_url = f"{self.base_url}/webhooks/"
+        params = dict(
+            key=self.api_key,
+            token=self.access_token,
+            callbackURL=callback_url,
+            idModel=project_source_id
+        )
+
+        response = requests.post(
+            add_hook_url,
+            headers={"Accept": "application/json"},
+            params=params
+        )
+        if response.ok:
+            result = response.json()
+            active_hook_id = result['id']
+        else:
+            raise ProcessingException(
+                f"Webhook registration failed due to status:{response.status_code} message:{response.text}")
+        return dict(
+            success=True,
+            active_webhook=active_hook_id,
+            deleted_webhooks=deleted_hook_ids,
+            registered_events=[],
+        )
+
+    def delete_project_webhook(self, inactive_hook_id):
+        delete_hook_url = f"{self.base_url}/webhooks/{inactive_hook_id}"
+        params = dict(
+            key=self.api_key,
+            token=self.access_token
+        )
+        response = requests.delete(
+            delete_hook_url,
+            headers={"Accept": "application/json"},
+            params=params
+        )
+        if response.ok:
+            return True
+
 
 class TrelloWorkItemSourceType(Enum):
     projects = 'boards'
@@ -93,7 +146,9 @@ class TrelloBoard(TrelloCardsWorkItemsSource):
         self.work_items_source = work_items_source
         self.last_updated = work_items_source.latest_work_item_update_timestamp
         self.board_lists = work_items_source.source_data.get(
-            'board_lists') if work_items_source.source_data is not None else None
+            'board_lists') if work_items_source.source_data.get('board_lists') is not None else []
+        self.board_labels = work_items_source.source_data.get(
+            'board_labels') if work_items_source.source_data.get('board_labels') is not None else []
         self.source_states = work_items_source.source_states
         self.trello_connector = connector if connector else connector_factory.get_connector(
             connector_key=self.work_items_source.connector_key
@@ -126,28 +181,43 @@ class TrelloBoard(TrelloCardsWorkItemsSource):
 
         board_list = find(self.board_lists, lambda board_list: board_list['id'] == card['idList'])
         card_labels = []
-        for label_id in card['idLabels']:
+        for label_id in card.get('idLabels'):
             card_label = find(self.board_labels, lambda board_label: board_label['id'] == label_id)
-            if card_label and card_label['name']:
+            if card_label and card_label.get('name'):
                 card_labels.append(card_label['name'])
         work_item_type = self.resolve_work_item_type_for_card(card_labels)
 
         return dict(
-            name=card['name'][:255],
-            description=card['desc'],
-            is_bug=False,
+            name=card.get('name')[:255],
+            description=card.get('desc') or '',
+            is_bug=work_item_type == TrelloWorkItemType.bug.value,
             tags=card_labels,
-            source_id=str(card['id']),
-            source_last_updated=card['dateLastActivity'],
-            source_created_at=get_created_date(card['id']),
-            source_display_id=str(card['idShort']),
-            source_state=board_list['name'],
+            source_id=str(card.get('id')),
+            source_last_updated=card.get('dateLastActivity') or get_created_date(card.get('id')),
+            source_created_at=get_created_date(card.get('id')),
+            source_display_id=str(card.get('idShort')),
+            source_state=board_list.get('name'),
             is_epic=False,
-            url=card['shortUrl'],
+            url=card.get('shortUrl'),
             work_item_type=work_item_type,
             api_payload=card,
-            commit_identifiers=[str(card['idShort']), card['shortLink'], card['shortUrl'].replace('https://', '')]
+            commit_identifiers=[str(card.get('idShort')), card.get('shortLink'),
+                                card.get('shortUrl').replace('https://', '')]
         )
+
+    def fetch_card(self, card_id):
+        fetch_card_url = f'{self.trello_connector.base_url}/cards/{card_id}'
+        response = requests.get(
+            fetch_card_url,
+            headers={
+                'Authorization': f'OAuth oauth_consumer_key="{self.api_key}", oauth_token="{self.access_token}"'}
+        )
+        if response.ok:
+            yield response.json()
+        else:
+            raise ProcessingException(
+                f"Fetch from server failed {response.text} status: {response.status_code}\n"
+            )
 
     def fetch_cards(self):
         query_params = dict(limit=100)

@@ -14,7 +14,7 @@ from polaris.messaging.messages import WorkItemsSourceCreated, ProjectImported, 
 from polaris.messaging.topics import WorkItemsTopic, ConnectorsTopic
 from polaris.messaging.utils import publish
 from polaris.work_tracking.messages import AtlassianConnectWorkItemEvent, RefreshConnectorProjects, \
-    ResolveWorkItemsForEpic, GitlabProjectEvent
+    ResolveWorkItemsForEpic, GitlabProjectEvent, TrelloBoardEvent
 
 from polaris.integrations.publish import connector_event
 
@@ -121,6 +121,22 @@ def resolve_work_items_for_epic(organization_key, work_items_source_key, epic, c
 
 def gitlab_project_event(event_type, connector_key, payload, channel=None):
     message = GitlabProjectEvent(
+        send=dict(
+            event_type=event_type,
+            connector_key=connector_key,
+            payload=payload
+        )
+    )
+    publish(
+        WorkItemsTopic,
+        message,
+        channel=channel
+    )
+    return message
+
+
+def trello_board_event(event_type, connector_key, payload, channel=None):
+    message = TrelloBoardEvent(
         send=dict(
             event_type=event_type,
             connector_key=connector_key,

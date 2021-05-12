@@ -17,7 +17,8 @@ from polaris.work_tracking.db import model
 from polaris.integrations.db import model as integrations_model
 from polaris.common import db
 from test.constants import *
-from polaris.common.enums import PivotalTrackerWorkItemType, GithubWorkItemType, WorkItemsSourceImportState, ConnectorProductType
+from polaris.common.enums import PivotalTrackerWorkItemType, GithubWorkItemType, WorkItemsSourceImportState, \
+    ConnectorProductType
 
 pytest_addoption = dbtest_addoption
 
@@ -38,6 +39,7 @@ def setup_connectors(setup_schema):
     pivotal_connector_key = uuid.uuid4()
     github_connector_key = uuid.uuid4()
     gitlab_connector_key = uuid.uuid4()
+    trello_connector_key = uuid.uuid4()
 
     with db.orm_session() as session:
         session.expire_on_commit = False
@@ -74,12 +76,24 @@ def setup_connectors(setup_schema):
                 state='enabled'
             )
         )
-
+        session.add(
+            integrations_model.Trello(
+                key=trello_connector_key,
+                name='test-trello-connector',
+                base_url='https://api.trello.com',
+                account_key=exathink_account_key,
+                api_key='trelloapikey',
+                access_token='trelloaccesstoken',
+                product_type=ConnectorProductType.trello.value,
+                state='enabled'
+            )
+        )
 
     yield dict(
         pivotal=pivotal_connector_key,
         github=github_connector_key,
-        gitlab=gitlab_connector_key
+        gitlab=gitlab_connector_key,
+        trello=trello_connector_key
     )
 
 
@@ -116,6 +130,42 @@ def setup_work_item_sources(setup_schema, setup_connectors):
             commit_mapping_scope_key=pypy_organization_key,
             import_state=WorkItemsSourceImportState.ready.value
         )
+        work_items_sources['trello'] = model.WorkItemsSource(
+            key=trello_work_items_source_key,
+            connector_key=connector_keys['trello'],
+            integration_type='trello',
+            work_items_source_type='projects',
+            source_id=trello_work_items_source_id,
+            parameters=dict(repository='polaris', organization='polaris'),
+            name='pypy repository issues',
+            account_key=exathink_account_key,
+            organization_key=polaris_organization_key,
+            commit_mapping_scope='organization',
+            commit_mapping_scope_key=polaris_organization_key,
+            import_state=WorkItemsSourceImportState.ready.value,
+            source_data=dict(
+                board_lists=[
+                    {
+                        "id": "5e17acac71b24608074cfa79",
+                        "pos": 65535,
+                        "name": "TO DO",
+                        "closed": False,
+                        "idBoard": "5e17ac9e8eae873e81247bc9",
+                        "softLimit": None,
+                        "subscribed": False
+                    }
+                ],
+                board_labels=[
+                    {
+                        "id": "1",
+                        "name": "Bug"
+                    },
+                    {
+                        "id": "2",
+                        "name": "Story"
+                    },
+                ])
+        )
         work_items_sources['pivotal'] = model.WorkItemsSource(
             key=polaris_work_items_source_key,
             connector_key=connector_keys['pivotal'],
@@ -128,7 +178,7 @@ def setup_work_item_sources(setup_schema, setup_connectors):
             organization_key=polaris_organization_key,
             commit_mapping_scope='organization',
             commit_mapping_scope_key=polaris_organization_key,
-            import_state=WorkItemsSourceImportState.ready.value
+            import_state=WorkItemsSourceImportState.ready.value,
         )
         # This will have no work_items set up initially
         work_items_sources['empty'] = model.WorkItemsSource(
