@@ -38,45 +38,33 @@ def handle_card_event(connector_key, payload, type, channel=None):
                 work_items_source_data = trello_board.before_work_item_sync()
                 work_items_source.update(work_items_source_data)
                 session.flush()
-                if type in ['removeLabelFromCard', 'addLabelToCard']:
-                    # Fetch the card details using API, as the given data does not contain all labels, but only the changed one.
-                    card_object = [card for card in trello_board.fetch_card(event['action']['data']['card']['id'])][0]
-                elif type in ['createCard', 'updateCard']:
-                    changed_data = event['action']['data']
-                    card_data = changed_data.get('card')
-                    # In case list changes we get 'listAfter' and 'listBefore', in case it doesn't we get 'list' only
-                    list_data = changed_data.get('listAfter') or changed_data.get('list')
-                    card_object = dict(
-                        id=card_data.get('id'),
-                        name=card_data.get('name'),
-                        desc=card_data.get('desc') or '',
-                        idShort=card_data.get('idShort'),
-                        shortLink=card_data.get('shortLink'),
-                        idList=list_data.get('id'),
-                        idLabels=card_data.get('idLabels') or [],
-                        shortUrl=card_data.get('shortUrl') or f'https://trello.com/c/{card_data.get("idShort")}'
-                    )
-                else:
+                if type in ['createLabel', 'updateLabel', 'deleteLabel']:
                     # In case it is only a label event, we have already updated the labels list in work_items_source
                     return []
+                else:
+                    # Fetch the card details using API.
+                    # This seems simpler and more reliable rather than trying to find deltas from webhook event data.
+                    # The data is quite differently structured for each event,
+                    # and in case of label add or remove events we do not get the complete list
+                    card_object = [card for card in trello_board.fetch_card(event['action']['data']['card']['id'])][0]
 
-                issue_data = trello_board.map_card_to_work_item(card_object)
+                    issue_data = trello_board.map_card_to_work_item(card_object)
 
-                synced_issues = api.sync_work_items(work_items_source.key, [issue_data], join_this=session)
-                if len(synced_issues) > 0:
-                    if synced_issues[0]['is_new']:
-                        publish.work_item_created_event(
-                            organization_key=work_items_source.organization_key,
-                            work_items_source_key=work_items_source.key,
-                            new_work_items=synced_issues
-                        )
-                    else:
-                        publish.work_item_updated_event(
-                            organization_key=work_items_source.organization_key,
-                            work_items_source_key=work_items_source.key,
-                            updated_work_items=synced_issues
-                        )
-                return synced_issues
+                    synced_issues = api.sync_work_items(work_items_source.key, [issue_data], join_this=session)
+                    if len(synced_issues) > 0:
+                        if synced_issues[0]['is_new']:
+                            publish.work_item_created_event(
+                                organization_key=work_items_source.organization_key,
+                                work_items_source_key=work_items_source.key,
+                                new_work_items=synced_issues
+                            )
+                        else:
+                            publish.work_item_updated_event(
+                                organization_key=work_items_source.organization_key,
+                                work_items_source_key=work_items_source.key,
+                                updated_work_items=synced_issues
+                            )
+                    return synced_issues
 
 
 def handle_trello_event(connector_key, event_type, payload, channel=None):
