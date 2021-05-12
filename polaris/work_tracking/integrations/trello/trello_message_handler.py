@@ -39,9 +39,9 @@ def handle_card_event(connector_key, payload, type, channel=None):
                 work_items_source.update(work_items_source_data)
                 session.flush()
                 if type in ['removeLabelFromCard', 'addLabelToCard']:
-                    # Fetch the card details using API, as the given data does not contains all labels, but only the changed one.
+                    # Fetch the card details using API, as the given data does not contain all labels, but only the changed one.
                     card_object = [card for card in trello_board.fetch_card(event['action']['data']['card']['id'])][0]
-                else:
+                elif type in ['createCard', 'updateCard']:
                     changed_data = event['action']['data']
                     card_data = changed_data.get('card')
                     # In case list changes we get 'listAfter' and 'listBefore', in case it doesn't we get 'list' only
@@ -56,6 +56,9 @@ def handle_card_event(connector_key, payload, type, channel=None):
                         idLabels=card_data.get('idLabels') or [],
                         shortUrl=card_data.get('shortUrl') or f'https://trello.com/c/{card_data.get("idShort")}'
                     )
+                else:
+                    # In case it is only a label event, we have already updated the labels list in work_items_source
+                    return []
 
                 issue_data = trello_board.map_card_to_work_item(card_object)
 
@@ -77,5 +80,14 @@ def handle_card_event(connector_key, payload, type, channel=None):
 
 
 def handle_trello_event(connector_key, event_type, payload, channel=None):
-    if event_type in ['createCard', 'updateCard', 'addLabelToCard', 'removeLabelFromCard']:
+    events_handled = [
+        'createCard',
+        'updateCard',
+        'addLabelToCard',
+        'removeLabelFromCard',
+        'updateLabel',
+        'deleteLabel',
+        'createLabel'
+    ]
+    if event_type in events_handled:
         return handle_card_event(connector_key, payload, event_type, channel)
