@@ -117,7 +117,7 @@ class TrelloWorkTrackingConnector(TrelloConnector):
             key=self.api_key,
             token=self.access_token
         )
-        response = requests.post(
+        response = requests.delete(
             delete_hook_url,
             headers={"Accept": "application/json"},
             params=params
