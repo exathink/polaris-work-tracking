@@ -48,7 +48,8 @@ class JiraProject(JiraWorkItemsSource):
             'Bug': JiraWorkItemType.bug.value,
             'Epic': JiraWorkItemType.epic.value,
             'Task': JiraWorkItemType.task.value,
-            'Sub-task': JiraWorkItemType.sub_task.value
+            'Sub-task': JiraWorkItemType.sub_task.value,
+            'Subtask': JiraWorkItemType.sub_task.value
         }
 
     @staticmethod
