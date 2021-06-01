@@ -29,7 +29,7 @@ class JiraConnectorContext:
     addon_key = config_provider.get('JIRA_CONNECTOR_APP_KEY', 'localdev.exathink.polaris.jira')
     addon_description = config_provider.get('JIRA_CONNECTOR_DESCRIPTION', "Jira Connector for Polaris Flow")
     addon_scopes = ["READ", "WRITE"]
-    addon_version = 1.1
+    addon_version = 1.0
     api_migrations = {
             "context-qsh": "true"
     }
