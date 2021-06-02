@@ -31,7 +31,7 @@ class JiraConnectorContext:
     addon_scopes = ["READ", "WRITE"]
     addon_version = 1.0
     api_migrations = {
-            "context-qsh": "true"
+            "context-qsh": True
     }
 
 
