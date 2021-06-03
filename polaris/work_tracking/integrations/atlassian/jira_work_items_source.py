@@ -109,8 +109,8 @@ class JiraProject(JiraWorkItemsSource):
         # Since they dont allow specifying timezones in the JQL, we have to
         # guess what timezone they want. /serverinfo is supposed to give us
         # a reference timestamp, but it does not recognize JWT authentication which we
-        # use, so what we are doing here is to fetch the issue that was was last updated
-        # from our perspective and get the update_at date on that issue to see what the
+        # use, so what we are doing here is to fetch the issue that was last updated
+        # from our perspective and get the updated_at date on that issue to see what the
         # timezone of that date is. It is a truly awful solution, but POS products like Jira force
         # us to do awful things.
         if self.last_updated_issue_source_id is not None:
@@ -142,7 +142,7 @@ class JiraProject(JiraWorkItemsSource):
             jql = f'{jql_base} AND updated > "{self.jira_time_string(self.last_updated + server_timezone_offset + timedelta(minutes=1))}"'
 
         query_params = dict(
-            fields="*all,-comment",  # "summary,created,updated, description,labels,issuetype,status,parent",
+            fields="*all,-comment",
             jql=jql,
             maxResults=100
         )
