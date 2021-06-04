@@ -213,11 +213,11 @@ class JiraProject(JiraWorkItemsSource):
                 )
                 body = response.json()
 
-    def fetch_issue(self, source_issue_id):
+    def fetch_work_item(self, source_id):
         jql_base = f"project = {self.project_id} "
         get_issue_query = dict(
             fields="*all, -comment",
-            jql=f'{jql_base} AND key={source_issue_id}'
+            jql=f'{jql_base} AND key={source_id}'
         )
         response = self.jira_connector.get(
             '/search',
