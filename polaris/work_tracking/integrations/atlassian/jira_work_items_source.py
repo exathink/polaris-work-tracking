@@ -128,12 +128,9 @@ class JiraProject(JiraWorkItemsSource):
     def fetch_work_items_to_sync(self):
 
         jql_base = f"project = {self.project_id} "
-        fetch_linked_epics = False
 
         if self.work_items_source.last_synced is None or self.last_updated is None:
             jql = f'{jql_base} AND updated >= "-{self.initial_import_days}d"'
-            fetch_linked_epics = True
-            epic_source_ids = set()
         else:
             server_timezone_offset = self.get_server_timezone_offset() or timedelta(seconds=0)
             # We need this rigmarole because expects dates in the servers timezone. We add 1 minute because the moronic
@@ -163,8 +160,6 @@ class JiraProject(JiraWorkItemsSource):
                 work_items = []
                 for issue in issues:
                     work_item_data = self.map_issue_to_work_item_data(issue)
-                    if fetch_linked_epics and work_item_data['parent_source_display_id'] is not None:
-                        epic_source_ids.add(work_item_data['parent_source_display_id'])
                     if work_item_data:
                         work_items.append(work_item_data)
 
@@ -177,26 +172,6 @@ class JiraProject(JiraWorkItemsSource):
                     params=query_params
                 )
                 body = response.json()
-        if fetch_linked_epics:
-            # fetch each epic one by one
-            for epic_source_id in epic_source_ids:
-                get_issue_query = dict(
-                    fields="summary,created,updated, description,labels,issuetype,status",
-                    jql=f'{jql_base} AND key={epic_source_id}',
-                    maxResults=100
-                )
-                response = self.jira_connector.get(
-                    '/search',
-                    headers={"Accept": "application/json"},
-                    params=get_issue_query
-                )
-                if response.ok:
-                    body = response.json()
-                    issues = body.get('issues', [])
-                    if len(issues) == 0:
-                        break
-                    work_item_data = self.map_issue_to_work_item_data(issues[0])
-                    yield [work_item_data]
 
     def fetch_work_items_for_epic(self, epic):
         epic_source_id = epic['source_id']
@@ -237,3 +212,21 @@ class JiraProject(JiraWorkItemsSource):
                     params=query_params
                 )
                 body = response.json()
+
+    def fetch_issue(self, source_issue_id):
+        jql_base = f"project = {self.project_id} "
+        get_issue_query = dict(
+            fields="*all, -comment",
+            jql=f'{jql_base} AND key={source_issue_id}'
+        )
+        response = self.jira_connector.get(
+            '/search',
+            headers={"Accept": "application/json"},
+            params=get_issue_query
+        )
+        if response.ok:
+            body = response.json()
+            issues = body.get('issues', [])
+            if len(issues) > 0:
+                work_item_data = self.map_issue_to_work_item_data(issues[0])
+                yield [work_item_data]
