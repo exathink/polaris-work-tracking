@@ -16,8 +16,8 @@ depends_on = None
 
 
 def upgrade():
-    op.add_column('work_items', sa.Column('source_parent_display_id', sa.String(), nullable=True), schema='work_tracking')
+    op.add_column('work_items', sa.Column('parent_source_display_id', sa.String(), nullable=True), schema='work_tracking')
 
 
 def downgrade():
-    op.drop_column('work_items', 'source_parent_display_id', schema='work_tracking')
+    op.drop_column('work_items', 'parent_source_display_id', schema='work_tracking')
