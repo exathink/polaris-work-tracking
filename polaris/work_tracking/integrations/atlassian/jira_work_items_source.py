@@ -179,7 +179,7 @@ class JiraProject(JiraWorkItemsSource):
         jql = f'{jql_base} AND parent={epic_source_id} OR \"Epic Link\" = {epic_source_id}'
 
         query_params = dict(
-            fields="summary,created,updated, description,labels,issuetype,status",
+            fields="*all,-comment",
             jql=jql,
             maxResults=100
         )
