@@ -139,7 +139,7 @@ class JiraProject(JiraWorkItemsSource):
             jql = f'{jql_base} AND updated > "{self.jira_time_string(self.last_updated + server_timezone_offset + timedelta(minutes=1))}"'
 
         query_params = dict(
-            fields="summary,created,updated, description,labels,issuetype,status",
+            fields="*all,-comment",
             jql=jql,
             maxResults=100
         )
