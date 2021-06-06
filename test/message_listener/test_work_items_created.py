@@ -50,6 +50,7 @@ def new_work_items_summary():
             name=f'Issue {i}',
             source_id=str(i),
             display_id=str(i),
+            parent_source_display_id=None,
             url=f'http://foo.com/{i}',
             **work_item_summary
         )
