@@ -47,7 +47,9 @@ app = PolarisWorkTrackingService(
     public_paths=[
         '/atlassian_connect'
     ],
-    strict_security=bool(config_provider.get('STRICT_SECURITY', None))
+    strict_security=bool(config_provider.get('STRICT_SECURITY', None)),
+    force_https=bool(config_provider.get('FORCE_HTTPS', None))
+
 )
 
 if config_provider.get('DEBUG_SQL') == 'true':
