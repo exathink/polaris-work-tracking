@@ -229,4 +229,4 @@ class JiraProject(JiraWorkItemsSource):
             issues = body.get('issues', [])
             if len(issues) > 0:
                 work_item_data = self.map_issue_to_work_item_data(issues[0])
-                yield [work_item_data]
+                yield work_item_data

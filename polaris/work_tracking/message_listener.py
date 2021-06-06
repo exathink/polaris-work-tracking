@@ -13,7 +13,7 @@ import logging
 
 from polaris.common import db
 from polaris.messaging.message_consumer import MessageConsumer
-from polaris.messaging.messages import ImportWorkItems, WorkItemsCreated, WorkItemsUpdated, \
+from polaris.messaging.messages import ImportWorkItems, ImportWorkItem, WorkItemsCreated, WorkItemsUpdated, \
     WorkItemsSourceCreated, WorkItemsSourceUpdated, ProjectImported, ConnectorCreated, ConnectorEvent
 
 from polaris.work_tracking.messages import AtlassianConnectWorkItemEvent, RefreshConnectorProjects, \
@@ -64,6 +64,7 @@ class WorkItemsTopicSubscriber(TopicSubscriber):
                 GitlabProjectEvent,
                 TrelloBoardEvent,
                 # Commands
+                ImportWorkItem,
                 ImportWorkItems,
                 ResolveWorkItemsForEpic
             ],
@@ -85,6 +86,25 @@ class WorkItemsTopicSubscriber(TopicSubscriber):
                 import_messages.append(import_work_items)
 
             return import_messages
+
+        elif ImportWorkItem.message_type == message.message_type:
+            work_item = self.process_import_work_item(message)[0]
+            if work_item.get('is_new') == True:
+                created_message = WorkItemsCreated(send=dict(
+                    organization_key=message['organization_key'],
+                    work_items_source_key=message['work_items_source_key'],
+                    new_work_items=[work_item]
+                ))
+                self.publish(WorkItemsTopic, created_message, channel=channel)
+                return [created_message]
+            else:
+                updated_message = WorkItemsUpdated(send=dict(
+                    organization_key=message['organization_key'],
+                    work_items_source_key=message['work_items_source_key'],
+                    updated_work_items=[work_item]
+                ))
+                self.publish(WorkItemsTopic, updated_message, channel=channel)
+                return [updated_message]
 
         elif ImportWorkItems.message_type == message.message_type:
             total = 0
@@ -158,6 +178,16 @@ class WorkItemsTopicSubscriber(TopicSubscriber):
 
             logger.info(f'{total} work items processed')
             return messages
+
+    def process_import_work_item(self, message):
+        work_items_source_key = message['work_items_source_key']
+        logger.info(f"Processing  {message.message_type}: "
+                    f" Work Items Source Key : {work_items_source_key}")
+        try:
+            work_item = [wi for wi in commands.sync_work_item(self.consumer_context.token_provider, work_items_source_key, message['source_id'])]
+            return work_item
+        except Exception as exc:
+            raise_message_processing_error(message, 'Failed to sync work item', str(exc))
 
     def process_import_work_items(self, message):
         work_items_source_key = message['work_items_source_key']
@@ -259,8 +289,11 @@ class WorkItemsTopicSubscriber(TopicSubscriber):
 
     def process_work_items_created(self, message):
         response_messages = []
+        epics_imported = set()
+        work_items_to_import = set()
         for work_item in message['new_work_items']:
             if work_item['is_epic']:
+                #epics_imported.add(work_item.get('display_id'))
                 response_message = ResolveWorkItemsForEpic(
                     send=dict(
                         organization_key=message['organization_key'],
@@ -269,6 +302,18 @@ class WorkItemsTopicSubscriber(TopicSubscriber):
                     ))
                 self.publish(WorkItemsTopic, response_message)
                 response_messages.append(response_message)
+            if work_item['parent_source_display_id'] is not None and work_item['parent_key'] is None:
+                work_items_to_import.add(work_item['parent_source_display_id'])
+        for work_item_id in work_items_to_import-epics_imported:
+            response_message = ImportWorkItem(
+                send=dict(
+                    organization_key=message['organization_key'],
+                    work_items_source_key=message['work_items_source_key'],
+                    source_id=work_item_id
+                )
+            )
+            self.publish(WorkItemsTopic, response_message)
+            response_messages.append(response_message)
         return response_messages
 
     def process_work_items_updated(self, message):
