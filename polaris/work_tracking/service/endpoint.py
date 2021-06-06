@@ -46,7 +46,8 @@ app = PolarisWorkTrackingService(
     db_url=config_provider.get('POLARIS_DB_URL'),
     public_paths=[
         '/atlassian_connect'
-    ]
+    ],
+    strict_security=bool(config_provider.get('STRICT_SECURITY', None))
 )
 
 if config_provider.get('DEBUG_SQL') == 'true':
