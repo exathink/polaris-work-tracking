@@ -57,3 +57,20 @@ class TestSyncWorkItemForJira:
                 assert result['display_id'] == new_work_item['source_display_id']
                 assert result['is_new'] == True
                 assert result['key'] is not None
+
+    def it_updates_work_item_that_already_exists(self, jira_work_item_source_fixture, cleanup):
+        work_items_source, jira_project_id, connector_key = jira_work_item_source_fixture
+        new_work_item = new_work_items()[0]
+        with patch(
+                'polaris.work_tracking.integrations.atlassian.jira_work_items_source.JiraProject.fetch_work_item') as fetch_work_item:
+            fetch_work_item.return_value = [new_work_item]
+            # import once
+            for result in commands.sync_work_item(token_provider, work_items_source.key,
+                                                  new_work_item['source_display_id']):
+                pass
+
+            # import again
+            for result in commands.sync_work_item(token_provider, work_items_source.key,
+                                                  new_work_item['source_display_id']):
+                assert result['display_id'] == new_work_item['source_display_id']
+                assert result['is_updated'] == True
