@@ -293,7 +293,7 @@ class WorkItemsTopicSubscriber(TopicSubscriber):
         work_items_to_import = set()
         for work_item in message['new_work_items']:
             if work_item['is_epic']:
-                #epics_imported.add(work_item.get('display_id'))
+                epics_imported.add(work_item.get('display_id'))
                 response_message = ResolveWorkItemsForEpic(
                     send=dict(
                         organization_key=message['organization_key'],
