@@ -333,18 +333,18 @@ class WorkItemsTopicSubscriber(TopicSubscriber):
                     ))
                 self.publish(WorkItemsTopic, response_message)
                 response_messages.append(response_message)
-                if work_item['parent_source_display_id'] is not None and work_item['parent_key'] is None:
-                    epics_to_import.add(work_item['parent_source_display_id'])
-            for work_item_id in epics_to_import - epics_imported:
-                response_message = ImportWorkItem(
-                    send=dict(
-                        organization_key=message['organization_key'],
-                        work_items_source_key=message['work_items_source_key'],
-                        source_id=work_item_id
-                    )
+            if work_item['parent_source_display_id'] is not None and work_item['parent_key'] is None:
+                epics_to_import.add(work_item['parent_source_display_id'])
+        for work_item_id in epics_to_import - epics_imported:
+            response_message = ImportWorkItem(
+                send=dict(
+                    organization_key=message['organization_key'],
+                    work_items_source_key=message['work_items_source_key'],
+                    source_id=work_item_id
                 )
-                self.publish(WorkItemsTopic, response_message)
-                response_messages.append(response_message)
+            )
+            self.publish(WorkItemsTopic, response_message)
+            response_messages.append(response_message)
         return response_messages
 
     def process_resolve_work_items_for_epic(self, message):
