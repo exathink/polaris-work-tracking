@@ -14,7 +14,7 @@ from unittest.mock import MagicMock
 from pika.channel import Channel
 
 from polaris.messaging.message_consumer import MessageConsumer
-from polaris.messaging.messages import WorkItemsCreated, WorkItemsUpdated
+from polaris.messaging.messages import WorkItemsCreated, WorkItemsUpdated, ImportWorkItem
 from polaris.work_tracking.messages import ResolveWorkItemsForEpic
 from polaris.messaging.test_utils import mock_publisher, mock_channel, fake_send
 from polaris.utils.token_provider import get_token_provider
@@ -110,3 +110,28 @@ class TestJiraWorkItemsCreated:
 
         result = WorkItemsTopicSubscriber(channel, publisher=publisher).dispatch(channel, message)
         assert len(result) == 0
+
+    def it_publishes_import_work_item_message_when_a_missing_parent_needs_to_be_imported(self, new_work_items_summary,
+                                                                                         cleanup):
+        work_items = new_work_items_summary
+        message = fake_send(
+            WorkItemsCreated(
+                send=dict(
+                    organization_key=exathink_organization_key,
+                    work_items_source_key=jira_work_items_source_key,
+                    new_work_items=[
+                        dict_merge(
+                            dict_drop(work_item, ['parent_id']),
+                            dict(parent_source_display_id='Epic-123', is_epic=False, parent_key=None)
+                        )
+                        for work_item in work_items
+                    ]
+                )
+            )
+        )
+        publisher = mock_publisher()
+        channel = mock_channel()
+
+        result = WorkItemsTopicSubscriber(channel, publisher=publisher).dispatch(channel, message)
+        assert len(result) == 1
+        publisher.assert_topic_called_with_message(WorkItemsTopic, ImportWorkItem)
