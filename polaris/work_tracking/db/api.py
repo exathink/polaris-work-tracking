@@ -44,10 +44,7 @@ def sync_work_items(work_items_source_key, work_item_list, join_this=None):
                             key=uuid.uuid4(),
                             work_items_source_id=work_items_source.id,
                             last_sync=last_sync,
-                            # Dropping parent_source_display_id if it is passed, \
-                            # as its handled in the sync_work_items_for_epic workflow. \
-                            # Handling it here will make things complicated
-                            **dict_drop(work_item, ['parent_source_display_id'])
+                            **work_item
                         )
                         for work_item in work_item_list
                     ]
@@ -93,6 +90,7 @@ def sync_work_items(work_items_source_key, work_item_list, join_this=None):
                         source_last_updated=upsert.excluded.source_last_updated,
                         source_display_id=upsert.excluded.source_display_id,
                         source_state=upsert.excluded.source_state,
+                        parent_source_display_id=upsert.excluded.parent_source_display_id,
                         last_sync=upsert.excluded.last_sync,
                         api_payload=upsert.excluded.api_payload,
                         commit_identifiers=upsert.excluded.commit_identifiers
@@ -110,6 +108,7 @@ def sync_work_items(work_items_source_key, work_item_list, join_this=None):
                     description=work_item.description,
                     is_bug=work_item.is_bug,
                     is_epic=work_item.is_epic,
+                    parent_source_display_id=work_item.parent_source_display_id,
                     parent_key=work_item.parent_key,
                     tags=work_item.tags,
                     state=work_item.source_state,
@@ -233,7 +232,7 @@ def sync_work_item(work_items_source_key, work_item_data, join_this=None):
     with db.orm_session(join_this) as session:
         work_item_key = None
         work_items_source = WorkItemsSource.find_by_key(session, work_items_source_key)
-        parent_source_display_id = work_item_data.pop('parent_source_display_id', None)
+        parent_source_display_id = work_item_data.get('parent_source_display_id')
         if work_items_source:
             sync_result = dict()
             work_item = WorkItem.find_by_source_display_id(
@@ -314,6 +313,7 @@ def sync_work_item(work_items_source_key, work_item_data, join_this=None):
                     description=work_item.description,
                     is_bug=work_item.is_bug,
                     is_epic=work_item.is_epic,
+                    parent_source_display_id=work_item.parent_source_display_id,
                     parent_key=parent_key,
                     tags=work_item.tags,
                     state=work_item.source_state,
