@@ -30,6 +30,9 @@ class JiraConnectorContext:
     addon_description = config_provider.get('JIRA_CONNECTOR_DESCRIPTION', "Jira Connector for Polaris Flow")
     addon_scopes = ["READ", "WRITE"]
     addon_version = 1
+    api_migrations = {
+            "context-qsh": True
+    }
 
 
 def init_connector(app):

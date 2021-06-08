@@ -36,6 +36,8 @@ class JiraProject(JiraWorkItemsSource):
         self.work_items_source = work_items_source
         self.project_id = work_items_source.source_id
         self.initial_import_days = int(self.work_items_source.parameters.get('initial_import_days', 90))
+        self.sync_import_days = int(self.work_items_source.parameters.get('sync_import_days', 5))
+
         self.last_updated = work_items_source.latest_work_item_update_timestamp
         self.last_updated_issue_source_id = work_items_source.most_recently_updated_work_item_source_id
 
@@ -132,11 +134,7 @@ class JiraProject(JiraWorkItemsSource):
         if self.work_items_source.last_synced is None or self.last_updated is None:
             jql = f'{jql_base} AND updated >= "-{self.initial_import_days}d"'
         else:
-            server_timezone_offset = self.get_server_timezone_offset() or timedelta(seconds=0)
-            # We need this rigmarole because expects dates in the servers timezone. We add 1 minute because the moronic
-            # JIRA api does not allow seconds precision in specifying dates so we have to round it up to the next minute
-            # so we dont get back the last item that was updated.
-            jql = f'{jql_base} AND updated > "{self.jira_time_string(self.last_updated + server_timezone_offset + timedelta(minutes=1))}"'
+            jql = f'{jql_base} AND updated >= "-{self.sync_import_days}d"'
 
         query_params = dict(
             fields="*all,-comment",

@@ -26,6 +26,7 @@ Flask-Principal==0.4.0
 Flask-RESTful==0.3.6
 Flask-Security==3.0.0
 Flask-SQLAlchemy==2.3.2
+flask-talisman==0.7.0
 Flask-WTF==0.14.2
 graphene==2.1.2
 graphene-sqlalchemy==2.0.0
