@@ -232,7 +232,7 @@ def sync_work_item(work_items_source_key, work_item_data, join_this=None):
     with db.orm_session(join_this) as session:
         work_item_key = None
         work_items_source = WorkItemsSource.find_by_key(session, work_items_source_key)
-        parent_source_display_id = work_item_data.pop('parent_source_display_id', None)
+        parent_source_display_id = work_item_data.get('parent_source_display_id')
         if work_items_source:
             sync_result = dict()
             work_item = WorkItem.find_by_source_display_id(
@@ -313,6 +313,7 @@ def sync_work_item(work_items_source_key, work_item_data, join_this=None):
                     description=work_item.description,
                     is_bug=work_item.is_bug,
                     is_epic=work_item.is_epic,
+                    parent_source_display_id=work_item.parent_source_display_id,
                     parent_key=parent_key,
                     tags=work_item.tags,
                     state=work_item.source_state,
