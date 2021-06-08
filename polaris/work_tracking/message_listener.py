@@ -304,8 +304,9 @@ class WorkItemsTopicSubscriber(TopicSubscriber):
                     ))
                 self.publish(WorkItemsTopic, response_message)
                 response_messages.append(response_message)
-            if work_item['parent_source_display_id'] is not None and work_item['parent_key'] is None:
-                epics_to_import.add(work_item['parent_source_display_id'])
+            if work_item.get('parent_source_display_id') is not None and work_item.get('parent_key') is None:
+                epics_to_import.add(work_item.get('parent_source_display_id'))
+
         for work_item_id in epics_to_import - epics_imported:
             response_message = ImportWorkItem(
                 send=dict(
@@ -333,8 +334,9 @@ class WorkItemsTopicSubscriber(TopicSubscriber):
                     ))
                 self.publish(WorkItemsTopic, response_message)
                 response_messages.append(response_message)
-            if work_item['parent_source_display_id'] is not None and work_item['parent_key'] is None:
-                epics_to_import.add(work_item['parent_source_display_id'])
+            if work_item.get('parent_source_display_id') is not None and work_item.get('parent_key') is None:
+                epics_to_import.add(work_item.get('parent_source_display_id'))
+
         for work_item_id in epics_to_import - epics_imported:
             response_message = ImportWorkItem(
                 send=dict(
