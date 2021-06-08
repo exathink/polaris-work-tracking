@@ -120,6 +120,7 @@ class ProjectImport(graphene.InputObjectType):
     work_items_sources = graphene.List(WorkItemsSourceImport)
 
 
+
 class ImportProjectsInput(graphene.InputObjectType):
     account_key = graphene.String(required=True)
     organization_key = graphene.String(required=True)
@@ -160,6 +161,30 @@ class UpdateWorkItemsSourceCustomFields(graphene.Mutation):
             result = commands.update_work_items_source_custom_fields(update_work_items_source_custom_fields_input,
                                                                      join_this=session)
             return UpdateWorkItemsSourceCustomFields(success=result['success'], error_message=result.get('message'))
+
+
+class SyncWorkItemsSourceInput(graphene.InputObjectType):
+    organization_key = graphene.String(required=True)
+    work_items_source_key = graphene.String(required=True)
+
+
+class SyncWorkItemsSource(graphene.Mutation):
+    class Arguments:
+        sync_work_items_source_input = SyncWorkItemsSourceInput(required=True)
+
+    success = graphene.Boolean()
+
+    def mutate(self, info, sync_work_items_source_input):
+        logger.info('SyncWorkItemsSource called')
+
+        publish.sync_work_items_source_command(
+            organization_key=sync_work_items_source_input.organization_key,
+            work_items_source_key=sync_work_items_source_input.work_items_source_key
+        )
+
+        return SyncWorkItemsSource(
+            success=True
+        )
 
 
 class ResolveWorkItemsForProjectEpicsInput(graphene.InputObjectType):

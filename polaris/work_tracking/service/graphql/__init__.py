@@ -20,7 +20,8 @@ from .mutations import \
     RefreshConnectorProjects, DeleteWorkTrackingConnector, \
     CreateWorkTrackingConnector, TestWorkTrackingConnector, EditWorkTrackingConnector, \
     UpdateWorkItemsSourceCustomFields, ResolveWorkItemsForProjectEpics, \
-    RegisterWorkItemsSourcesConnectorWebhooks
+    RegisterWorkItemsSourcesConnectorWebhooks, \
+    SyncWorkItemsSource
 
 
 class Query(
@@ -43,6 +44,8 @@ class Mutations(
     graphene.ObjectType
 ):
     create_work_items_source = CreateWorkItemsSource.Field()
+    sync_work_items_source = SyncWorkItemsSource.Field()
+
     import_projects = ImportProjects.Field()
     update_work_items_source_custom_fields = UpdateWorkItemsSourceCustomFields.Field()
     resolve_work_items_for_project_epics = ResolveWorkItemsForProjectEpics.Field()
