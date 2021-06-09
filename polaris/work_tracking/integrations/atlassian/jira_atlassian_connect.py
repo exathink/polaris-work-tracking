@@ -22,7 +22,8 @@ config_provider = get_config_provider()
 
 class JiraConnectorContext:
     base_url = config_provider.get('JIRA_CONNECTOR_BASE_URL')
-    mount_path = config_provider.get('MOUNT_PATH')
+    # Dont use mount path based baseurl. Pass in the complete base url in the config param.
+    mount_path = None
 
     app_name = "Polaris Flow for Jira"
     addon_name = "Polaris Flow for Jira"
