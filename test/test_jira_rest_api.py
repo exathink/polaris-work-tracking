@@ -292,3 +292,115 @@ class TestJiraWorkItemSource:
         # explicitly assert that these are the only fields mapped. The test should fail
         # and force a change in assertions if we change the mapping
         assert len(mapped_data.keys()) == 15
+
+
+class TestCustomTypeMapping:
+
+    @pytest.yield_fixture()
+    def setup(self, jira_work_item_source_fixture, cleanup):
+        work_items_source, _, _ = jira_work_item_source_fixture
+
+        with db.orm_session() as session:
+            session.add(work_items_source)
+            work_items_source.parameters = dict(
+                custom_type_map=dict(
+                    default='Bug',
+                    funky_type=JiraWorkItemType.sub_task.value
+                )
+            )
+            jira_project = JiraProject(work_items_source)
+
+        yield Fixture(
+            jira_project=jira_project,
+            # cloning fixture here since tests mutate the issue
+            jira_issue=dict(**jira_api_issue_payload),
+            work_items_source=work_items_source
+        )
+
+
+    def it_maps_a_custom_type_using_map(self, setup):
+        fixture = setup
+
+        project = fixture.jira_project
+
+        fixture.jira_issue['fields']['issuetype']['name'] = 'funky_type'
+        mapped_data = project.map_issue_to_work_item_data(fixture.jira_issue)
+
+        assert mapped_data['work_item_type'] == JiraWorkItemType.sub_task.value
+        assert 'custom_type:funky_type' in mapped_data['tags']
+
+    def it_uses_a_default_mapping_if_it_is_provided(self, setup):
+        fixture = setup
+
+        project = fixture.jira_project
+
+        fixture.jira_issue['fields']['issuetype']['name'] = 'unmapped_type'
+        mapped_data = project.map_issue_to_work_item_data(fixture.jira_issue)
+
+        assert mapped_data['work_item_type'] == JiraWorkItemType.bug.value
+        assert 'custom_type:unmapped_type' in mapped_data['tags']
+
+    def if_the_mapped_type_is_a_bug_it_sets_is_bug_flag(self, setup):
+        fixture = setup
+
+        project = fixture.jira_project
+
+        fixture.jira_issue['fields']['issuetype']['name'] = 'unmapped_type'
+        mapped_data = project.map_issue_to_work_item_data(fixture.jira_issue)
+
+        assert mapped_data['work_item_type'] == JiraWorkItemType.bug.value
+        assert mapped_data['is_bug']
+
+    def it_maps_non_custom_types_normally(self, setup):
+        fixture = setup
+
+        project = fixture.jira_project
+
+        fixture.jira_issue['fields']['issuetype']['name'] = 'Task'
+        mapped_data = project.map_issue_to_work_item_data(fixture.jira_issue)
+
+        assert mapped_data['work_item_type'] == JiraWorkItemType.task.value
+
+
+class TestCustomTypeMappingWithoutDefault:
+
+    @pytest.yield_fixture()
+    def setup(self, jira_work_item_source_fixture, cleanup):
+        work_items_source, _, _ = jira_work_item_source_fixture
+
+        with db.orm_session() as session:
+            session.add(work_items_source)
+            work_items_source.parameters = dict(
+                custom_type_map=dict(
+                    funky_type=JiraWorkItemType.sub_task.value
+                )
+            )
+            jira_project = JiraProject(work_items_source)
+
+        yield Fixture(
+            jira_project=jira_project,
+            jira_issue=dict(**jira_api_issue_payload),
+            work_items_source=work_items_source
+        )
+
+    def it_maps_a_custom_type_using_map(self, setup):
+        fixture = setup
+
+        project = fixture.jira_project
+
+        fixture.jira_issue['fields']['issuetype']['name'] = 'funky_type'
+        mapped_data = project.map_issue_to_work_item_data(fixture.jira_issue)
+
+        assert mapped_data['work_item_type'] == JiraWorkItemType.sub_task.value
+        assert 'custom_type:funky_type' in mapped_data['tags']
+
+    def it_uses_the_system_default_if_a_mapping_is_not_provided(self, setup):
+        fixture = setup
+
+        project = fixture.jira_project
+
+        fixture.jira_issue['fields']['issuetype']['name'] = 'unmapped_type'
+        mapped_data = project.map_issue_to_work_item_data(fixture.jira_issue)
+
+        assert mapped_data['work_item_type'] == JiraWorkItemType.story.value
+        assert 'custom_type:unmapped_type' in mapped_data['tags']

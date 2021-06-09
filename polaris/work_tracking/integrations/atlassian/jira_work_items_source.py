@@ -45,6 +45,7 @@ class JiraProject(JiraWorkItemsSource):
             connector_key=self.work_items_source.connector_key
         )
         # map standard JIRA issue types to JiraWorkItemType enum values.
+        self.custom_type_map = self.work_items_source.parameters.get('custom_type_map', {})
         self.work_item_type_map = {
             'Story': JiraWorkItemType.story.value,
             'Bug': JiraWorkItemType.bug.value,
@@ -53,6 +54,25 @@ class JiraProject(JiraWorkItemsSource):
             'Sub-task': JiraWorkItemType.sub_task.value,
             'Subtask': JiraWorkItemType.sub_task.value
         }
+
+    def map_work_item_type(self, issue_type):
+        work_item_type = self.work_item_type_map.get(issue_type)
+        if work_item_type is None:
+            if issue_type in self.custom_type_map:
+                work_item_type = self.custom_type_map[issue_type]
+            else:
+                if 'default' in self.custom_type_map:
+                    work_item_type = self.work_item_type_map.get(
+                        self.custom_type_map['default'],
+                        JiraWorkItemType.story.value
+                    )
+                else:
+                    work_item_type = JiraWorkItemType.story.value
+
+        return work_item_type
+
+    def is_custom_type(self, issue_type):
+        return issue_type not in self.work_item_type_map
 
     @staticmethod
     def jira_time_to_utc_time_string(jira_time_string):
@@ -85,11 +105,17 @@ class JiraProject(JiraWorkItemsSource):
                 parent_link_custom_field) if parent_link_custom_field else None
         else:
             parent_source_display_id = parent_link.get('key')
+        tags = fields.get('labels', [])
+        if self.is_custom_type(issue_type):
+            tags.append(f'custom_type:{issue_type}')
+
+        mapped_type = self.map_work_item_type(issue_type)
         mapped_data = dict(
             name=fields.get('summary'),
             description=fields.get('description'),
-            is_bug=issue_type == 'Bug',
-            work_item_type=self.work_item_type_map.get(issue_type, JiraWorkItemType.story.value),
+            work_item_type=mapped_type,
+            is_bug=mapped_type == JiraWorkItemType.bug.value,
+
             tags=fields.get('labels', []),
             url=issue.get('self'),
             source_id=str(issue.get('id')),
