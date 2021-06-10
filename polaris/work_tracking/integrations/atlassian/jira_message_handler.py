@@ -19,6 +19,52 @@ from polaris.work_tracking.integrations.atlassian.jira_work_items_source import 
 from polaris.common.enums import WorkItemsSourceImportState
 
 
+def handle_issue_moved_event(jira_connector_key, jira_event_type, jira_event):
+    issue = jira_event.get('issue')
+    if issue:
+        changelog = jira_event.get('changelog')
+        for item in changelog.get('items'):
+            if item['field'] == 'project':
+                source_project_id = item['from']
+                target_project_id = item['to']
+        with db.orm_session() as session:
+            work_item_deleted, work_item_created = None
+            source_work_items_source = WorkItemsSource.find_by_connector_key_and_source_id(
+                session,
+                connector_key=jira_connector_key,
+                source_id=source_project_id
+            )
+            target_work_items_source = WorkItemsSource.find_by_connector_key_and_source_id(
+                session,
+                connector_key=jira_connector_key,
+                source_id=target_project_id
+            )
+            if source_work_items_source and source_work_items_source.import_state == WorkItemsSourceImportState.auto_update.value:
+                if target_work_items_source:
+                    if target_work_items_source.import_state == WorkItemsSourceImportState.auto_update.value:
+                        target_jira_project_source = JiraProject(target_work_items_source)
+                        new_work_item_data = target_jira_project_source.map_issue_to_work_item_data(issue)
+                        work_item_created = api.insert_work_item(target_work_items_source.key, new_work_item_data,
+                                                                 join_this=session)
+                        work_item_created['organization_key'] = target_work_items_source.organization_key
+                        work_item_created['work_items_source_key'] = target_work_items_source.key
+                    else:
+                        raise ProcessingException(f"Could not import to target work items source {jira_event}. ")
+                else:
+                    raise ProcessingException(f"Could not find target work items source in Polaris {jira_event}. ")
+                source_jira_project_source = JiraProject(source_work_items_source)
+                deleted_work_item_data = source_jira_project_source.map_issue_to_work_item_data(issue)
+                work_item_deleted = api.delete_work_item(target_work_items_source.key, deleted_work_item_data,
+                                                         join_this=session)
+                work_item_deleted['organization_key'] = target_work_items_source.organization_key
+                work_item_deleted['work_items_source_key'] = target_work_items_source.key
+                return work_item_created, work_item_deleted
+            else:
+                raise ProcessingException(f"Could not find active source work items source {jira_event}. ")
+    else:
+        raise ProcessingException(f"Could not find issue field on jira issue event {jira_event}. ")
+
+
 def handle_issue_events(jira_connector_key, jira_event_type, jira_event):
     issue = jira_event.get('issue')
     if issue:
@@ -48,8 +94,6 @@ def handle_issue_events(jira_connector_key, jira_event_type, jira_event):
                     work_item['organization_key'] = work_items_source.organization_key
                     work_item['work_items_source_key'] = work_items_source.key
                     return work_item
-
-
     else:
         raise ProcessingException(f"Could not find issue field on jira issue event {jira_event}. ")
 
