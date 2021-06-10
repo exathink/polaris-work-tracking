@@ -28,7 +28,6 @@ def handle_issue_moved_event(jira_connector_key, jira_event_type, jira_event):
                 source_project_id = item['from']
                 target_project_id = item['to']
         with db.orm_session() as session:
-            work_item_deleted, work_item_created = None
             source_work_items_source = WorkItemsSource.find_by_connector_key_and_source_id(
                 session,
                 connector_key=jira_connector_key,
@@ -39,28 +38,46 @@ def handle_issue_moved_event(jira_connector_key, jira_event_type, jira_event):
                 connector_key=jira_connector_key,
                 source_id=target_project_id
             )
-            if source_work_items_source and source_work_items_source.import_state == WorkItemsSourceImportState.auto_update.value:
+            if source_work_items_source:
+                if target_work_items_source:
+                    if target_work_items_source.import_state == WorkItemsSourceImportState.auto_update.value:
+                        target_jira_project_source = JiraProject(target_work_items_source)
+                        moved_work_item_data = target_jira_project_source.map_issue_to_work_item_data(issue)
+                        moved_work_item = api.move_work_item(source_work_items_source.key, target_work_items_source.key, moved_work_item_data,
+                                                                 join_this=session)
+                        moved_work_item['organization_key'] = target_work_items_source.organization_key
+                        moved_work_item['work_items_source_key'] = target_work_items_source.key
+                        return dict(is_moved=True, is_new=False, work_item_data=moved_work_item)
+                    else:
+                        # Target work items source is present but not yet active.
+                        # So we can possibly link the work item to this work items source,
+                        # but it stays suppressed unless the work items source import state auto_update is set to True.
+                        # This case can possibly be handled within api.move_work_item
+                        pass
+                else:
+                    # Target work items source is not present.
+                    # So we can update the work item state as moved to this work items source / project.
+                    # This case can possibly be handled within api.move_work_item
+                    pass
+            else:
                 if target_work_items_source:
                     if target_work_items_source.import_state == WorkItemsSourceImportState.auto_update.value:
                         target_jira_project_source = JiraProject(target_work_items_source)
                         new_work_item_data = target_jira_project_source.map_issue_to_work_item_data(issue)
-                        work_item_created = api.insert_work_item(target_work_items_source.key, new_work_item_data,
-                                                                 join_this=session)
-                        work_item_created['organization_key'] = target_work_items_source.organization_key
-                        work_item_created['work_items_source_key'] = target_work_items_source.key
+                        new_work_item = api.import_work_item(target_work_items_source.key, new_work_item_data,
+                                                             join_this=session)
+                        new_work_item['organization_key'] = target_work_items_source.organization_key
+                        new_work_item['work_items_source_key'] = target_work_items_source.key
+                        return dict(is_new=True, is_moved=True, work_item_data=new_work_item)
                     else:
-                        raise ProcessingException(f"Could not import to target work items source {jira_event}. ")
+                        # Target work items source is present but not yet active.
+                        # So we can update the work item state as moved to this work items source / project
+                        # Need to do some separate handling for this case, may be by importing the work item as new,
+                        # but it stays suppressed unless the work items source import state auto_update is set to True
+                        pass
                 else:
-                    raise ProcessingException(f"Could not find target work items source in Polaris {jira_event}. ")
-                source_jira_project_source = JiraProject(source_work_items_source)
-                deleted_work_item_data = source_jira_project_source.map_issue_to_work_item_data(issue)
-                work_item_deleted = api.delete_work_item(target_work_items_source.key, deleted_work_item_data,
-                                                         join_this=session)
-                work_item_deleted['organization_key'] = target_work_items_source.organization_key
-                work_item_deleted['work_items_source_key'] = target_work_items_source.key
-                return work_item_created, work_item_deleted
-            else:
-                raise ProcessingException(f"Could not find active source work items source {jira_event}. ")
+                    # Target and source not present, we do nothing
+                    pass
     else:
         raise ProcessingException(f"Could not find issue field on jira issue event {jira_event}. ")
 

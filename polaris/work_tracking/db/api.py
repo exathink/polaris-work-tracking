@@ -340,6 +340,10 @@ def update_work_item(work_items_source_key, work_item_data, join_this=None):
     return sync_work_item(work_items_source_key, work_item_data, join_this)
 
 
+def move_work_item(source_work_items_source_key, target_work_items_source_key, work_item_date, join_this=None):
+    pass
+
+
 def delete_work_item(work_items_source_key, work_item_data, join_this=None):
     with db.orm_session(join_this) as session:
         session.expire_on_commit = False

@@ -241,7 +241,13 @@ class WorkItemsTopicSubscriber(TopicSubscriber):
                     return response_message
 
             elif jira_event_type in ['issue_moved']:
-                work_item_deleted, work_item_created = jira_message_handler.handle_issue_moved_event(jira_connector_key, jira_event_type, jira_event)
+                work_item_moved = jira_message_handler.handle_issue_moved_event(jira_connector_key, jira_event_type, jira_event)
+                if work_item_moved.get('is_new'):
+                    # publish work items created message for target work items source
+                    pass
+                else:
+                    # publish work item moved message
+                    pass
 
             elif jira_event_type in ['project_created', 'project_updated']:
                 work_items_source = jira_message_handler.handle_project_events(jira_connector_key, jira_event_type,
