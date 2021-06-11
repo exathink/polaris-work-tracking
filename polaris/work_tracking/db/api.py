@@ -340,8 +340,45 @@ def update_work_item(work_items_source_key, work_item_data, join_this=None):
     return sync_work_item(work_items_source_key, work_item_data, join_this)
 
 
-def move_work_item(source_work_items_source_key, target_work_items_source_key, work_item_date, join_this=None):
-    pass
+def move_work_item(source_work_items_source_key, target_work_items_source_key, work_item_data, join_this=None):
+    with db.orm_session(join_this) as session:
+        source_work_items_source = WorkItemsSource.find_by_key(session, source_work_items_source_key)
+        target_work_items_source = WorkItemsSource.find_by_key(session, target_work_items_source_key)
+        work_item = WorkItem.find_by_work_item_source_id_source_id(
+            session,
+            str(source_work_items_source.id),
+            work_item_data.get('source_id')
+        )
+        move_result = dict()
+        if work_item:
+            work_item_data['work_item_source_id'] = target_work_items_source.id
+            move_result['is_moved'] = work_item.update(work_item_data)
+            if work_item.parent_id is not None:
+                parent_key = WorkItem.find_by_key(session, key=work_item.key).parent.key
+            else:
+                parent_key = None
+            return dict(
+                **move_result,
+                **dict(
+                    key=work_item.key,
+                    work_item_type=work_item.work_item_type,
+                    display_id=work_item.source_display_id,
+                    url=work_item.url,
+                    name=work_item.name,
+                    description=work_item.description,
+                    is_bug=work_item.is_bug,
+                    is_epic=work_item.is_epic,
+                    parent_source_display_id=work_item.parent_source_display_id,
+                    parent_key=parent_key,
+                    tags=work_item.tags,
+                    state=work_item.source_state,
+                    created_at=work_item.source_created_at,
+                    updated_at=work_item.source_last_updated,
+                    last_sync=work_item.last_sync,
+                    source_id=work_item.source_id,
+                    commit_identifiers=work_item.commit_identifiers
+                )
+            )
 
 
 def delete_work_item(work_items_source_key, work_item_data, join_this=None):

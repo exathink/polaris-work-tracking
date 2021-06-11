@@ -322,6 +322,15 @@ class WorkItem(Base):
             )
         ).first()
 
+    @classmethod
+    def find_by_work_item_source_id_source_id(cls, session, work_items_source_id, source_id):
+        return session.query(cls).filter(
+            and_(
+                cls.work_items_source_id == work_items_source_id,
+                cls.source_id == source_id
+            )
+        ).first()
+
     # This method will return true only if the specified attributes have changed.
     # remaining attributes may be updated, but they are "internal" updates and the changes
     # are not material to the rest of the app. So the result value should be used
@@ -329,7 +338,7 @@ class WorkItem(Base):
     def update(self, work_item_data):
         updated = False
         for attribute in ['name', 'description', 'is_bug', 'work_item_type', 'is_epic', 'tags', 'url', 'source_state',
-                          'source_display_id', 'parent_id', 'api_payload']:
+                          'source_display_id', 'parent_id', 'api_payload', 'work_items_source_id']:
             if getattr(self, attribute) != work_item_data.get(attribute):
                 setattr(self, attribute, work_item_data.get(attribute))
                 updated = True
