@@ -217,37 +217,39 @@ class WorkItemsTopicSubscriber(TopicSubscriber):
 
         try:
             if jira_event_type in ['issue_created', 'issue_updated', 'issue_deleted']:
-                work_item = jira_message_handler.handle_issue_events(jira_connector_key, jira_event_type, jira_event)
-                if work_item:
-                    response_message = None
-                    if work_item.get('is_new'):
-                        logger.info(f'new work_item created')
-                        response_message = WorkItemsCreated(send=dict(
-                            organization_key=work_item['organization_key'],
-                            work_items_source_key=work_item['work_items_source_key'],
-                            new_work_items=[work_item]
-                        ))
-                        self.publish(WorkItemsTopic, response_message)
-                    elif work_item.get('is_updated') or work_item.get('is_delete'):
-                        logger.info(f'new work_item updated')
-                        response_message = WorkItemsUpdated(send=dict(
-                            organization_key=work_item['organization_key'],
-                            work_items_source_key=work_item['work_items_source_key'],
-                            is_delete=work_item.get('is_delete') is not None,
-                            updated_work_items=[work_item]
-                        ))
-                        self.publish(WorkItemsTopic, response_message)
-
-                    return response_message
-
-            elif jira_event_type in ['issue_moved']:
-                work_item_moved = jira_message_handler.handle_issue_moved_event(jira_connector_key, jira_event_type, jira_event)
-                if work_item_moved.get('is_new'):
-                    # publish work items created message for target work items source
-                    pass
+                if jira_event.get('issue_event_type_name') == 'issue_moved':
+                    work_item_moved = jira_message_handler.handle_issue_moved_event(jira_connector_key, jira_event_type,
+                                                                                    jira_event)
+                    if work_item_moved.get('is_new'):
+                        # publish work items created message for target work items source
+                        pass
+                    else:
+                        # publish work item moved message
+                        pass
                 else:
-                    # publish work item moved message
-                    pass
+                    work_item = jira_message_handler.handle_issue_events(jira_connector_key, jira_event_type,
+                                                                         jira_event)
+                    if work_item:
+                        response_message = None
+                        if work_item.get('is_new'):
+                            logger.info(f'new work_item created')
+                            response_message = WorkItemsCreated(send=dict(
+                                organization_key=work_item['organization_key'],
+                                work_items_source_key=work_item['work_items_source_key'],
+                                new_work_items=[work_item]
+                            ))
+                            self.publish(WorkItemsTopic, response_message)
+                        elif work_item.get('is_updated') or work_item.get('is_delete'):
+                            logger.info(f'new work_item updated')
+                            response_message = WorkItemsUpdated(send=dict(
+                                organization_key=work_item['organization_key'],
+                                work_items_source_key=work_item['work_items_source_key'],
+                                is_delete=work_item.get('is_delete') is not None,
+                                updated_work_items=[work_item]
+                            ))
+                            self.publish(WorkItemsTopic, response_message)
+
+                        return response_message
 
             elif jira_event_type in ['project_created', 'project_updated']:
                 work_items_source = jira_message_handler.handle_project_events(jira_connector_key, jira_event_type,
