@@ -329,6 +329,17 @@ class TestCustomTypeMapping:
         assert mapped_data['work_item_type'] == JiraWorkItemType.sub_task.value
         assert 'custom_type:funky_type' in mapped_data['tags']
 
+    def it_maps_a_custom_type_using_case_insensitive_lookup(self, setup):
+        fixture = setup
+
+        project = fixture.jira_project
+
+        fixture.jira_issue['fields']['issuetype']['name'] = 'Funky_type'
+        mapped_data = project.map_issue_to_work_item_data(fixture.jira_issue)
+
+        assert mapped_data['work_item_type'] == JiraWorkItemType.sub_task.value
+        assert 'custom_type:Funky_type' in mapped_data['tags']
+
     def it_uses_a_default_mapping_if_it_is_provided(self, setup):
         fixture = setup
 

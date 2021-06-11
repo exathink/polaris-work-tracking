@@ -58,8 +58,8 @@ class JiraProject(JiraWorkItemsSource):
     def map_work_item_type(self, issue_type):
         work_item_type = self.work_item_type_map.get(issue_type)
         if work_item_type is None:
-            if issue_type in self.custom_type_map:
-                work_item_type = self.custom_type_map[issue_type]
+            if issue_type.lower() in self.custom_type_map:
+                work_item_type = self.custom_type_map[issue_type.lower()]
             else:
                 if 'default' in self.custom_type_map:
                     work_item_type = self.work_item_type_map.get(
