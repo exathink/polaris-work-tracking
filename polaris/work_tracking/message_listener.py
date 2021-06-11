@@ -220,12 +220,13 @@ class WorkItemsTopicSubscriber(TopicSubscriber):
                 if jira_event.get('issue_event_type_name') == 'issue_moved':
                     work_item_moved = jira_message_handler.handle_issue_moved_event(jira_connector_key, jira_event_type,
                                                                                     jira_event)
-                    if work_item_moved.get('is_new'):
-                        # publish work items created message for target work items source
-                        pass
-                    else:
-                        # publish work item moved message
-                        pass
+                    if work_item_moved:
+                        if work_item_moved.get('is_new'):
+                            # publish work items created message for target work items source
+                            pass
+                        elif work_item_moved.get('is_moved'):
+                            # Publish a work item moved message
+                            pass
                 else:
                     work_item = jira_message_handler.handle_issue_events(jira_connector_key, jira_event_type,
                                                                          jira_event)
