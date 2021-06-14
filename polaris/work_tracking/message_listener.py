@@ -14,7 +14,7 @@ import logging
 from polaris.common import db
 from polaris.messaging.message_consumer import MessageConsumer
 from polaris.messaging.messages import ImportWorkItems, ImportWorkItem, WorkItemsCreated, WorkItemsUpdated, \
-    WorkItemsSourceCreated, WorkItemsSourceUpdated, ProjectImported, ConnectorCreated, ConnectorEvent
+    WorkItemsSourceCreated, WorkItemsSourceUpdated, ProjectImported, ConnectorCreated, ConnectorEvent, WorkItemMoved
 
 from polaris.work_tracking.messages import AtlassianConnectWorkItemEvent, RefreshConnectorProjects, \
     ResolveWorkItemsForEpic, GitlabProjectEvent, TrelloBoardEvent
@@ -218,15 +218,24 @@ class WorkItemsTopicSubscriber(TopicSubscriber):
         try:
             if jira_event_type in ['issue_created', 'issue_updated', 'issue_deleted']:
                 if jira_event.get('issue_event_type_name') == 'issue_moved':
-                    work_item_moved = jira_message_handler.handle_issue_moved_event(jira_connector_key, jira_event_type,
-                                                                                    jira_event)
-                    if work_item_moved:
-                        if work_item_moved.get('is_new'):
+                    work_item = jira_message_handler.handle_issue_moved_event(jira_connector_key, jira_event_type,
+                                                                              jira_event)
+                    if work_item:
+                        if work_item.get('is_new'):
                             # publish work items created message for target work items source
                             pass
-                        elif work_item_moved.get('is_moved'):
+                        elif work_item.get('is_moved'):
                             # Publish a work item moved message
-                            pass
+                            response_message = WorkItemMoved(send=dict(
+                                organization_key=work_item['work_item_data']['organization_key'],
+                                source_work_items_source_key=work_item['work_item_data'][
+                                    'source_work_items_source_key'],
+                                target_work_items_source_key=work_item['work_item_data'][
+                                    'target_work_items_source_key'],
+                                moved_work_item=work_item['work_item_data']
+                            ))
+                            self.publish(WorkItemsTopic, response_message)
+                            return response_message
                 else:
                     work_item = jira_message_handler.handle_issue_events(jira_connector_key, jira_event_type,
                                                                          jira_event)

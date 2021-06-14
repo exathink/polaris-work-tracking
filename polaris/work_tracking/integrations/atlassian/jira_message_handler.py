@@ -46,7 +46,8 @@ def handle_issue_moved_event(jira_connector_key, jira_event_type, jira_event):
                         moved_work_item = api.move_work_item(source_work_items_source.key, target_work_items_source.key, moved_work_item_data,
                                                                  join_this=session)
                         moved_work_item['organization_key'] = target_work_items_source.organization_key
-                        moved_work_item['work_items_source_key'] = target_work_items_source.key
+                        moved_work_item['source_work_items_source_key'] = source_work_items_source.key
+                        moved_work_item['target_work_items_source_key'] = target_work_items_source.key
                         return dict(is_moved=True, is_new=False, work_item_data=moved_work_item)
                     else:
                         # Target work items source is present but not yet active.
