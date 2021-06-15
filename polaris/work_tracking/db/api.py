@@ -265,6 +265,8 @@ def sync_work_item(work_items_source_key, work_item_data, join_this=None):
 
             else:
                 work_item_key = work_item.key
+                # work_item_data should have work_items_source_id field too
+                work_item_data['work_items_source_id'] = work_items_source.id
                 sync_result['is_updated'] = work_item.update(work_item_data)
 
         # The reason we do this flush and refetch from the database below as follows:
