@@ -10,7 +10,7 @@
 
 
 from polaris.messaging.messages import WorkItemsSourceCreated, ProjectImported, \
-    WorkItemsCreated, WorkItemsUpdated, ImportWorkItems
+    WorkItemsCreated, WorkItemsUpdated, ImportWorkItems, ImportWorkItem
 from polaris.messaging.topics import WorkItemsTopic, ConnectorsTopic
 from polaris.messaging.utils import publish
 from polaris.work_tracking.messages import AtlassianConnectWorkItemEvent, RefreshConnectorProjects, \
@@ -185,6 +185,19 @@ def sync_work_items_source_command(organization_key, work_items_source_key, chan
     message = ImportWorkItems(send=dict(
         organization_key=organization_key,
         work_items_source_key=work_items_source_key
+    ))
+    publish(
+        WorkItemsTopic,
+        message,
+        channel=channel
+    )
+
+
+def import_work_item_command(organization_key, work_items_source_key, source_id, channel=None):
+    message = ImportWorkItem(send=dict(
+        organization_key=organization_key,
+        work_items_source_key=work_items_source_key,
+        source_id=source_id
     ))
     publish(
         WorkItemsTopic,

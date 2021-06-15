@@ -187,6 +187,32 @@ class SyncWorkItemsSource(graphene.Mutation):
         )
 
 
+class ImportWorkItemsInput(graphene.InputObjectType):
+    organization_key = graphene.String(required=True)
+    work_items_source_key = graphene.String(required=True)
+    source_ids = graphene.List(graphene.String)
+
+
+class ImportWorkItems(graphene.Mutation):
+    class Arguments:
+        import_work_items_input = ImportWorkItemsInput(required=True)
+
+    success = graphene.Boolean()
+    error_message = graphene.String()
+
+    def mutate(self, info, import_work_items_input):
+        logger.info("Import work items called")
+
+        for source_id in import_work_items_input.source_ids:
+            publish.import_work_item_command(
+                import_work_items_input.organization_key,
+                import_work_items_input.work_items_source_key,
+                source_id
+            )
+
+        return ImportWorkItems(success=True)
+
+
 class ResolveWorkItemsForProjectEpicsInput(graphene.InputObjectType):
     project_key = graphene.String(required=True)
 
