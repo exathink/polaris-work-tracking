@@ -47,15 +47,16 @@ class JiraProject(JiraWorkItemsSource):
         # map standard JIRA issue types to JiraWorkItemType enum values.
         self.custom_type_map = self.work_items_source.parameters.get('custom_type_map', {})
         self.work_item_type_map = {
-            'Story': JiraWorkItemType.story.value,
-            'Bug': JiraWorkItemType.bug.value,
-            'Epic': JiraWorkItemType.epic.value,
-            'Task': JiraWorkItemType.task.value,
-            'Sub-task': JiraWorkItemType.sub_task.value,
-            'Subtask': JiraWorkItemType.sub_task.value
+            'story': JiraWorkItemType.story.value,
+            'bug': JiraWorkItemType.bug.value,
+            'epic': JiraWorkItemType.epic.value,
+            'task': JiraWorkItemType.task.value,
+            'sub-task': JiraWorkItemType.sub_task.value,
+            'subtask': JiraWorkItemType.sub_task.value
         }
 
-    def map_work_item_type(self, issue_type):
+    def map_work_item_type(self, issue_type_to_map):
+        issue_type = issue_type_to_map.lower()
         work_item_type = self.work_item_type_map.get(issue_type)
         if work_item_type is None:
             if issue_type in self.custom_type_map:
@@ -63,7 +64,7 @@ class JiraProject(JiraWorkItemsSource):
             else:
                 if 'default' in self.custom_type_map:
                     work_item_type = self.work_item_type_map.get(
-                        self.custom_type_map['default'],
+                        self.custom_type_map['default'].lower(),
                         JiraWorkItemType.story.value
                     )
                 else:
@@ -72,7 +73,7 @@ class JiraProject(JiraWorkItemsSource):
         return work_item_type
 
     def is_custom_type(self, issue_type):
-        return issue_type not in self.work_item_type_map
+        return issue_type.lower() not in self.work_item_type_map
 
     @staticmethod
     def jira_time_to_utc_time_string(jira_time_string):
