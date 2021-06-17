@@ -11,7 +11,7 @@
 from polaris.common import db
 from polaris.work_tracking.db import api
 from .fixtures.jira_fixtures import *
-from polaris.utils.collections import object_to_dict
+from polaris.utils.collections import object_to_dict, Fixture
 
 
 class TestSyncWorkItems:
@@ -55,7 +55,8 @@ class TestSyncWorkItems:
             f"select count(id) from work_tracking.work_items where work_items_source_id={empty_source.id} and work_item_type='enhancement' and is_bug=true"
         ).scalar() == len(new_work_items)
 
-    def it_returns_updated_elements_for_those_that_match_existing_items_by_source_id(self, setup_work_items, new_work_items):
+    def it_returns_updated_elements_for_those_that_match_existing_items_by_source_id(self, setup_work_items,
+                                                                                     new_work_items):
         _, work_items_sources = setup_work_items
         empty_source = work_items_sources['empty']
         # Import once
@@ -70,7 +71,8 @@ class TestSyncWorkItems:
 
 class TestSyncWorkItemsForJiraEpic:
 
-    def it_creates_and_adds_epic_id_for_a_new_work_item_mapped_to_an_epic(self, jira_work_items_fixture, new_work_items, cleanup):
+    def it_creates_and_adds_epic_id_for_a_new_work_item_mapped_to_an_epic(self, jira_work_items_fixture, new_work_items,
+                                                                          cleanup):
         work_items, work_items_source, _, _ = jira_work_items_fixture
         work_items_list = new_work_items
         epic_issue = [issue for issue in work_items if issue.is_epic][0]
@@ -99,7 +101,8 @@ class TestSyncWorkItemsForJiraEpic:
                 'parent_id': 'parent_key'}
         )
         created = api.sync_work_items_for_epic(work_items_source.key, epic, work_items_list)
-        parent_id = db.connection().execute(f"select id from work_tracking.work_items where key='{epic['key']}'").scalar()
+        parent_id = db.connection().execute(
+            f"select id from work_tracking.work_items where key='{epic['key']}'").scalar()
         assert len(created) == len(new_work_items)
         assert db.connection().execute(
             f"select count(id) from work_tracking.work_items where work_items_source_id={work_items_source.id} and parent_id={parent_id} "
@@ -152,7 +155,8 @@ class TestSyncWorkItemsForJiraEpic:
                 'parent_id': 'parent_key'}
         )
         updated = api.sync_work_items_for_epic(work_items_source.key, epic, work_items_list)
-        parent_id = db.connection().execute(f"select id from work_tracking.work_items where key='{epic['key']}'").scalar()
+        parent_id = db.connection().execute(
+            f"select id from work_tracking.work_items where key='{epic['key']}'").scalar()
         assert len(updated) == len(work_items_list)
         assert db.connection().execute(
             f"select count(id) from work_tracking.work_items where work_items_source_id={work_items_source.id} and parent_id={parent_id} "
@@ -187,7 +191,8 @@ class TestSyncWorkItemsForJiraEpic:
                 'parent_id': 'parent_key'}
         )
         updated = api.sync_work_items_for_epic(work_items_source.key, epic, work_items_list)
-        parent_id = db.connection().execute(f"select id from work_tracking.work_items where key='{epic['key']}'").scalar()
+        parent_id = db.connection().execute(
+            f"select id from work_tracking.work_items where key='{epic['key']}'").scalar()
         assert not updated
         assert db.connection().execute(
             f"select count(id) from work_tracking.work_items where work_items_source_id={work_items_source.id} and parent_id={parent_id} "
@@ -242,12 +247,14 @@ class TestSyncWorkItemsForJiraEpic:
         api.sync_work_items_for_epic(work_items_source.key, epic, work_items_list)
         # remove a work item from work_items_list which are part of epic
         updated = api.sync_work_items_for_epic(work_items_source.key, epic, work_items_list[:2])
-        parent_id = db.connection().execute(f"select id from work_tracking.work_items where key='{epic['key']}'").scalar()
+        parent_id = db.connection().execute(
+            f"select id from work_tracking.work_items where key='{epic['key']}'").scalar()
         assert len(updated) == len(work_items_list)
         assert db.connection().execute(
             f"select count(id) from work_tracking.work_items where work_items_source_id={work_items_source.id} and parent_id={parent_id} "
         ).scalar() == 2
-        assert db.connection().execute(f"select count(id) from work_tracking.work_items where parent_id is NULL and is_epic=FALSE ").scalar() == 8
+        assert db.connection().execute(
+            f"select count(id) from work_tracking.work_items where parent_id is NULL and is_epic=FALSE ").scalar() == 8
 
 
 class TestSyncWorkItem:
@@ -305,13 +312,53 @@ class TestSyncWorkItem:
 
 
 class TestMoveWorkItem:
-
-
     class TestWhenSourceAndTargetWorkItemsSourcesArePresent:
-        def it_updates_work_items_source_when_and_target_is_active(self):
-            pass
 
-        def it_updates_work_items_source_when_target_is_inactive(self):
+        @pytest.yield_fixture()
+        def setup(self, jira_work_items_fixture, cleanup):
+            work_items, work_items_source, jira_project_id, connector_key = jira_work_items_fixture
+            # create a new work items source
+            with db.orm_session() as session:
+                session.expire_on_commit = False
+                target_work_items_source = work_tracking.WorkItemsSource(
+                    key=uuid.uuid4(),
+                    connector_key=str(connector_key),
+                    integration_type='jira',
+                    work_items_source_type=JiraWorkItemSourceType.project.value,
+                    name='Test Project 2',
+                    source_id='10002',
+                    parameters=dict(),
+                    account_key=account_key,
+                    organization_key=organization_key,
+                    commit_mapping_scope='organization',
+                    import_state=WorkItemsSourceImportState.auto_update.value,
+                    custom_fields=[{"id": "customfield_10014", "key": "customfield_10014", "name": "Epic Link"}]
+                )
+                session.add(target_work_items_source)
+                session.flush()
+
+            yield Fixture(
+                work_items=work_items,
+                source_work_items_source=work_items_source,
+                target_work_items_source=target_work_items_source
+            )
+
+        def it_updates_work_item_work_items_source_when_target_is_active(self, setup):
+            fixture = setup
+            work_item = [wi for wi in fixture.work_items if not wi.is_epic][0]
+            work_item['source_display_id'] = 'TP2-1'
+            result = api.move_work_item(fixture.source_work_items_source.key, fixture.target_work_items_source.key,
+                                        work_item)
+            assert result
+            assert result['is_moved']
+            assert db.connection().execute(
+                f"select count(id) from work_tracking.work_items where work_items_source_id={fixture.source_work_items_source.id} and source_id={work_item['source_id']}"
+            ).scalar() == 0
+            assert db.connection().execute(
+                f"select count(id) from work_tracking.work_items where work_items_source_id={fixture.target_work_items_source.id} and source_id={work_item['source_id']} and source_display_id='TP2-1'"
+            ).scalar() == 0
+
+        def it_updates_work_item_work_items_source_when_target_is_inactive(self):
             pass
 
         def it_does_not_change_parent_when_work_item_is_moved_to_different_source(self):
