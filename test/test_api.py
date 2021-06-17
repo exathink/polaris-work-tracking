@@ -303,3 +303,26 @@ class TestSyncWorkItem:
             f"select count(id) from work_tracking.work_items where work_items_source_id={empty_source.id} and key='{result['key']}' and parent_id is NULL"
         ).scalar() == 1
 
+
+class TestMoveWorkItem:
+
+
+    class TestWhenSourceAndTargetWorkItemsSourcesArePresent:
+        def it_updates_work_items_source_when_and_target_is_active(self):
+            pass
+
+        def it_updates_work_items_source_when_target_is_inactive(self):
+            pass
+
+        def it_does_not_change_parent_when_work_item_is_moved_to_different_source(self):
+            pass
+
+    class TestWhenSourceExistsTargetDoesNot:
+
+        def it_updates_work_item_to_a_moved_state(self):
+            pass
+
+    class TestWhenTargetExistsSourceDoesNot:
+
+        def it_creates_new_work_item(self):
+            pass
