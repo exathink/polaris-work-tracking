@@ -354,11 +354,18 @@ def move_work_item(source_work_items_source_key, target_work_items_source_key, w
         move_result = dict()
         if work_item:
             work_item_data['work_items_source_id'] = target_work_items_source.id
-            move_result['is_moved'] = work_item.update(work_item_data)
+            # Preserve the parent key if the parent_source_display_id is same
             if work_item.parent_id is not None:
-                parent_key = WorkItem.find_by_key(session, key=work_item.key).parent.key
+                parent_work_item = WorkItem.find_by_id(session, id=work_item.parent_id)
+                if parent_work_item and work_item_data.get(
+                        'parent_source_display_id') == parent_work_item.source_display_id:
+                    work_item_data['parent_id'] = parent_work_item.id
+                    parent_key = parent_work_item.key
+                else:
+                    parent_key = None
             else:
                 parent_key = None
+            move_result['is_moved'] = work_item.update(work_item_data)
             session.flush()
             work_item = session.connection().execute(
                 select([work_items]).where(

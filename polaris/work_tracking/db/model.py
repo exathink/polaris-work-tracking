@@ -301,6 +301,12 @@ class WorkItem(Base):
     api_payload = Column(JSONB, nullable=True, default={}, server_default='{}')
 
     @classmethod
+    def find_by_id(cls, session, id):
+        return session.query(cls).filter(
+            cls.id == id
+        ).first()
+
+    @classmethod
     def find_by_key(cls, session, key):
         return session.query(cls).filter(
             cls.key == key
