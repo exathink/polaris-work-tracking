@@ -346,17 +346,40 @@ class TestMoveWorkItem:
         def it_updates_work_item_work_items_source_when_target_is_active(self, setup):
             fixture = setup
             work_item = [wi for wi in fixture.work_items if not wi.is_epic][0]
-            work_item['source_display_id'] = 'TP2-1'
+            updated_work_item = object_to_dict(
+                work_item,
+                ['name',
+                 'description',
+                 'work_item_type',
+                 'is_bug',
+                 'is_epic',
+                 'tags',
+                 'source_id',
+                 'source_display_id',
+                 'source_state',
+                 'url',
+                 'source_created_at',
+                 'source_last_updated',
+                 'parent_id',
+                 'api_payload',
+                 'commit_identifiers'
+                 ],
+                {
+                    'parent_id': 'parent_source_display_id'
+                }
+            )
+            updated_work_item['source_display_id'] = 'TP2-1'
+            updated_work_item['commit_identifiers'] = ["TP2-1", "Tp2-1", "tp2-1"]
             result = api.move_work_item(fixture.source_work_items_source.key, fixture.target_work_items_source.key,
-                                        work_item)
+                                        updated_work_item)
             assert result
             assert result['is_moved']
             assert db.connection().execute(
-                f"select count(id) from work_tracking.work_items where work_items_source_id={fixture.source_work_items_source.id} and source_id={work_item['source_id']}"
+                f"select count(id) from work_tracking.work_items where work_items_source_id={fixture.source_work_items_source.id} and source_id='{updated_work_item['source_id']}'"
             ).scalar() == 0
             assert db.connection().execute(
-                f"select count(id) from work_tracking.work_items where work_items_source_id={fixture.target_work_items_source.id} and source_id={work_item['source_id']} and source_display_id='TP2-1'"
-            ).scalar() == 0
+                f"select count(id) from work_tracking.work_items where work_items_source_id={fixture.target_work_items_source.id} and source_id='{updated_work_item['source_id']}'"
+                f" and source_display_id='TP2-1' and commit_identifiers='[\"TP2-1\", \"Tp2-1\", \"tp2-1\"]'").scalar() == 1
 
         def it_updates_work_item_work_items_source_when_target_is_inactive(self):
             pass
