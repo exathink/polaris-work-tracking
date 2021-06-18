@@ -84,38 +84,44 @@ def handle_issue_moved_event(jira_connector_key, jira_event):
         raise ProcessingException(f"Could not find issue field on jira issue event {jira_event}. ")
 
 
+def handle_issue_events_for_same_source_project(jira_connector_key, jira_event_type, jira_event):
+    issue = jira_event.get('issue')
+    if issue:
+        project_id = issue['fields']['project']['id']
+        with db.orm_session() as session:
+            work_items_source = WorkItemsSource.find_by_connector_key_and_source_id(
+                session,
+                connector_key=jira_connector_key,
+                source_id=project_id
+            )
+            if work_items_source and work_items_source.import_state == WorkItemsSourceImportState.auto_update.value:
+                # if the work_items source is not enabled for updates nothing is propagated
+                # This ensures that even though the connector is active, it wont import issues etc until
+                # the work_items_source is associated with a project and an initial import is done.
+                jira_project_source = JiraProject(work_items_source)
+                work_item_data = jira_project_source.map_issue_to_work_item_data(issue)
+                if work_item_data:
+                    work_item = {}
+                    if jira_event_type == 'issue_created':
+                        work_item = api.insert_work_item(work_items_source.key, work_item_data, join_this=session)
+                    elif jira_event_type == 'issue_updated':
+                        work_item = api.update_work_item(work_items_source.key, work_item_data, join_this=session)
+                    elif jira_event_type == 'issue_deleted':
+                        work_item_data['deleted_at'] = datetime.utcnow()
+                        work_item = api.delete_work_item(work_items_source.key, work_item_data, join_this=session)
+
+                    work_item['organization_key'] = work_items_source.organization_key
+                    work_item['work_items_source_key'] = work_items_source.key
+                    return work_item
+
+
 def handle_issue_events(jira_connector_key, jira_event_type, jira_event):
     issue = jira_event.get('issue')
     if issue:
         if jira_event.get('issue_event_type_name') == 'issue_moved':
             return handle_issue_moved_event(jira_connector_key, jira_event)
         else:
-            project_id = issue['fields']['project']['id']
-            with db.orm_session() as session:
-                work_items_source = WorkItemsSource.find_by_connector_key_and_source_id(
-                    session,
-                    connector_key=jira_connector_key,
-                    source_id=project_id
-                )
-                if work_items_source and work_items_source.import_state == WorkItemsSourceImportState.auto_update.value:
-                    # if the work_items source is not enabled for updates nothing is propagated
-                    # This ensures that even though the connector is active, it wont import issues etc until
-                    # the work_items_source is associated with a project and an initial import is done.
-                    jira_project_source = JiraProject(work_items_source)
-                    work_item_data = jira_project_source.map_issue_to_work_item_data(issue)
-                    if work_item_data:
-                        work_item = {}
-                        if jira_event_type == 'issue_created':
-                            work_item = api.insert_work_item(work_items_source.key, work_item_data, join_this=session)
-                        elif jira_event_type == 'issue_updated':
-                            work_item = api.update_work_item(work_items_source.key, work_item_data, join_this=session)
-                        elif jira_event_type == 'issue_deleted':
-                            work_item_data['deleted_at'] = datetime.utcnow()
-                            work_item = api.delete_work_item(work_items_source.key, work_item_data, join_this=session)
-
-                        work_item['organization_key'] = work_items_source.organization_key
-                        work_item['work_items_source_key'] = work_items_source.key
-                        return work_item
+            return handle_issue_events_for_same_source_project(jira_connector_key, jira_event_type, jira_event)
     else:
         raise ProcessingException(f"Could not find issue field on jira issue event {jira_event}. ")
 
