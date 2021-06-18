@@ -526,4 +526,83 @@ class TestAtlassianConnectEvent:
         assert message
         publisher.assert_topic_called_with_message(WorkItemsTopic, WorkItemMoved)
 
+    def it_handles_issue_updated_issue_moved_event_when_issue_is_moved_between_existing_work_items_sources_target_inactive(self, jira_work_item_source_fixture, cleanup):
+        work_items_source, jira_project_id, connector_key = jira_work_item_source_fixture
+        issue_id = "10001"
+        issue_key = f"PRJ-{issue_id}"
+
+        issue = create_issue(jira_project_id, issue_key, issue_id)
+
+        issue_event = dict(
+            timestamp=jira_test_time_stamp(),
+            event='issue_created',
+            issue=issue
+        )
+
+        # First create the issue with a message
+        jira_issue_created_message = fake_send(
+            AtlassianConnectWorkItemEvent(send=dict(
+                atlassian_connector_key=connector_key,
+                atlassian_event_type='issue_created',
+                atlassian_event=json.dumps(issue_event)
+            ))
+        )
+        publisher = mock_publisher()
+        subscriber = WorkItemsTopicSubscriber(mock_channel(), publisher=publisher)
+        subscriber.consumer_context = mock_consumer
+        subscriber.dispatch(mock_channel, jira_issue_created_message)
+
+        # create a new work items source
+        with db.orm_session() as session:
+            session.expire_on_commit = False
+            work_items_source = work_tracking.WorkItemsSource(
+                key=uuid.uuid4(),
+                connector_key=str(connector_key),
+                integration_type='jira',
+                work_items_source_type=JiraWorkItemSourceType.project.value,
+                name='Test Project 2',
+                source_id='10002',
+                parameters=dict(),
+                account_key=account_key,
+                organization_key=organization_key,
+                commit_mapping_scope='organization',
+                import_state=WorkItemsSourceImportState.ready.value,
+                custom_fields=[{"id": "customfield_10014", "key": "customfield_10014", "name": "Epic Link"}]
+            )
+            session.add(work_items_source)
+            session.flush()
+
+        issue_event['changelog'] = dict(
+            items=[
+                {
+                    "field": "project",
+                    "fieldtype": "jira",
+                    "fieldId": "project",
+                    "from": "10001",
+                    "fromString": "test",
+                    "to": "10002",
+                    "toString": "Test Project 2"
+                }
+            ]
+        )
+        issue_event['issue']['key'] = f"PRI-{issue_id}"
+        issue_event['issue']['fields']['project']['id'] = '10002'
+        issue_event['webhookEvent'] = "jira:issue_updated"
+        issue_event['issue_event_type_name'] = "issue_moved"
+        jira_issue_updated_message = fake_send(
+            AtlassianConnectWorkItemEvent(send=dict(
+                atlassian_connector_key=connector_key,
+                atlassian_event_type='issue_updated',
+                atlassian_event=json.dumps(issue_event)
+            ))
+        )
+
+        publisher = mock_publisher()
+        subscriber = WorkItemsTopicSubscriber(mock_channel(), publisher=publisher)
+        subscriber.consumer_context = mock_consumer
+
+        message = subscriber.dispatch(mock_channel, jira_issue_updated_message)
+        assert message
+        publisher.assert_topic_called_with_message(WorkItemsTopic, WorkItemMoved)
+
 

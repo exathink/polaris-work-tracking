@@ -346,6 +346,8 @@ def move_work_item(source_work_items_source_key, target_work_items_source_key, w
     with db.orm_session(join_this) as session:
         source_work_items_source = WorkItemsSource.find_by_key(session, source_work_items_source_key)
         target_work_items_source = WorkItemsSource.find_by_key(session, target_work_items_source_key)
+        # TODO: We may want to check the state of target work items source (ready or auto_update).
+        #  As of now we are simple moving the item if source exists.
         work_item = WorkItem.find_by_work_item_source_id_source_id(
             session,
             str(source_work_items_source.id),
