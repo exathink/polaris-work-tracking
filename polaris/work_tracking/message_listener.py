@@ -249,12 +249,12 @@ class WorkItemsTopicSubscriber(TopicSubscriber):
                     elif work_item.get('is_moved'):
                         logger.info(f'work_item moved')
                         response_message = WorkItemMoved(send=dict(
-                            organization_key=work_item['work_item_data']['organization_key'],
-                            source_work_items_source_key=work_item['work_item_data'][
+                            organization_key=work_item['organization_key'],
+                            source_work_items_source_key=work_item[
                                 'source_work_items_source_key'],
-                            target_work_items_source_key=work_item['work_item_data'][
+                            target_work_items_source_key=work_item[
                                 'target_work_items_source_key'],
-                            moved_work_item=work_item['work_item_data']
+                            moved_work_item=work_item
                         ))
                         self.publish(WorkItemsTopic, response_message)
 

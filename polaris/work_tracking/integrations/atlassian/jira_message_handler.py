@@ -49,18 +49,18 @@ def handle_issue_moved_event(jira_connector_key, jira_event):
                         moved_work_item['organization_key'] = target_work_items_source.organization_key
                         moved_work_item['source_work_items_source_key'] = source_work_items_source.key
                         moved_work_item['target_work_items_source_key'] = target_work_items_source.key
-                        return dict(is_moved=True, is_new=False, work_item_data=moved_work_item)
+                        return moved_work_item
                     else:
                         # Target work items source is present but not yet active.
                         # So we can possibly link the work item to this work items source,
                         # but it stays suppressed unless the work items source import state auto_update is set to True.
                         # This case can possibly be handled within api.move_work_item
-                        return dict(is_moved=False)
+                        return None
                 else:
                     # Target work items source is not present.
                     # So we can update the work item state as moved to this work items source / project.
                     # This case can possibly be handled within api.move_work_item
-                    return dict(is_moved=False)
+                    return None
             else:
                 if target_work_items_source:
                     if target_work_items_source.import_state == WorkItemsSourceImportState.auto_update.value:
@@ -70,16 +70,16 @@ def handle_issue_moved_event(jira_connector_key, jira_event):
                                                              join_this=session)
                         new_work_item['organization_key'] = target_work_items_source.organization_key
                         new_work_item['work_items_source_key'] = target_work_items_source.key
-                        return dict(is_new=True, is_moved=True, work_item_data=new_work_item)
+                        return new_work_item
                     else:
                         # Target work items source is present but not yet active.
                         # So we can update the work item state as moved to this work items source / project
                         # Need to do some separate handling for this case, may be by importing the work item as new,
                         # but it stays suppressed unless the work items source import state auto_update is set to True
-                        return dict(is_moved=False)
+                        return None
                 else:
                     # Target and source not present, we do nothing
-                    return dict(is_moved=False)
+                    return None
     else:
         raise ProcessingException(f"Could not find issue field on jira issue event {jira_event}. ")
 
