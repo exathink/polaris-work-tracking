@@ -40,8 +40,7 @@ def handle_issue_moved_event(jira_connector_key, jira_event):
             )
             if source_work_items_source:
                 if target_work_items_source:
-                    if target_work_items_source.import_state == WorkItemsSourceImportState.auto_update.value or \
-                            target_work_items_source.import_state == WorkItemsSourceImportState.ready.value:
+                    if target_work_items_source.import_state == WorkItemsSourceImportState.auto_update.value:
                         target_jira_project_source = JiraProject(target_work_items_source)
                         moved_work_item_data = target_jira_project_source.map_issue_to_work_item_data(issue)
                         moved_work_item = api.move_work_item(source_work_items_source.key, target_work_items_source.key,
@@ -64,8 +63,7 @@ def handle_issue_moved_event(jira_connector_key, jira_event):
                     return None
             else:
                 if target_work_items_source:
-                    if target_work_items_source.import_state == WorkItemsSourceImportState.auto_update.value or \
-                            target_work_items_source.import_state == WorkItemsSourceImportState.ready.value:
+                    if target_work_items_source.import_state == WorkItemsSourceImportState.auto_update.value:
                         target_jira_project_source = JiraProject(target_work_items_source)
                         new_work_item_data = target_jira_project_source.map_issue_to_work_item_data(issue)
                         new_work_item = api.import_work_item(target_work_items_source.key, new_work_item_data,

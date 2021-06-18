@@ -602,7 +602,6 @@ class TestAtlassianConnectEvent:
         subscriber.consumer_context = mock_consumer
 
         message = subscriber.dispatch(mock_channel, jira_issue_updated_message)
-        assert message
-        publisher.assert_topic_called_with_message(WorkItemsTopic, WorkItemMoved)
+        assert message is None
 
 
