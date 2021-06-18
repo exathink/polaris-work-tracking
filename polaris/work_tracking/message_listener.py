@@ -225,49 +225,40 @@ class WorkItemsTopicSubscriber(TopicSubscriber):
 
         try:
             if jira_event_type in ['issue_created', 'issue_updated', 'issue_deleted']:
-                if jira_event.get('issue_event_type_name') == 'issue_moved':
-                    work_item = jira_message_handler.handle_issue_moved_event(jira_connector_key, jira_event_type,
-                                                                              jira_event)
-                    if work_item:
-                        if work_item.get('is_new'):
-                            # publish work items created message for target work items source
-                            pass
-                        elif work_item.get('is_moved'):
-                            # Publish a work item moved message
-                            response_message = WorkItemMoved(send=dict(
-                                organization_key=work_item['work_item_data']['organization_key'],
-                                source_work_items_source_key=work_item['work_item_data'][
-                                    'source_work_items_source_key'],
-                                target_work_items_source_key=work_item['work_item_data'][
-                                    'target_work_items_source_key'],
-                                moved_work_item=work_item['work_item_data']
-                            ))
-                            self.publish(WorkItemsTopic, response_message)
-                            return response_message
-                else:
-                    work_item = jira_message_handler.handle_issue_events(jira_connector_key, jira_event_type,
-                                                                         jira_event)
-                    if work_item:
-                        response_message = None
-                        if work_item.get('is_new'):
-                            logger.info(f'new work_item created')
-                            response_message = WorkItemsCreated(send=dict(
-                                organization_key=work_item['organization_key'],
-                                work_items_source_key=work_item['work_items_source_key'],
-                                new_work_items=[work_item]
-                            ))
-                            self.publish(WorkItemsTopic, response_message)
-                        elif work_item.get('is_updated') or work_item.get('is_delete'):
-                            logger.info(f'new work_item updated')
-                            response_message = WorkItemsUpdated(send=dict(
-                                organization_key=work_item['organization_key'],
-                                work_items_source_key=work_item['work_items_source_key'],
-                                is_delete=work_item.get('is_delete') is not None,
-                                updated_work_items=[work_item]
-                            ))
-                            self.publish(WorkItemsTopic, response_message)
+                work_item = jira_message_handler.handle_issue_events(jira_connector_key, jira_event_type,
+                                                                     jira_event)
+                if work_item:
+                    response_message = None
+                    if work_item.get('is_new'):
+                        logger.info(f'new work_item created')
+                        response_message = WorkItemsCreated(send=dict(
+                            organization_key=work_item['organization_key'],
+                            work_items_source_key=work_item['work_items_source_key'],
+                            new_work_items=[work_item]
+                        ))
+                        self.publish(WorkItemsTopic, response_message)
+                    elif work_item.get('is_updated') or work_item.get('is_delete'):
+                        logger.info(f'new work_item updated')
+                        response_message = WorkItemsUpdated(send=dict(
+                            organization_key=work_item['organization_key'],
+                            work_items_source_key=work_item['work_items_source_key'],
+                            is_delete=work_item.get('is_delete') is not None,
+                            updated_work_items=[work_item]
+                        ))
+                        self.publish(WorkItemsTopic, response_message)
+                    elif work_item.get('is_moved'):
+                        logger.info(f'work_item moved')
+                        response_message = WorkItemMoved(send=dict(
+                            organization_key=work_item['work_item_data']['organization_key'],
+                            source_work_items_source_key=work_item['work_item_data'][
+                                'source_work_items_source_key'],
+                            target_work_items_source_key=work_item['work_item_data'][
+                                'target_work_items_source_key'],
+                            moved_work_item=work_item['work_item_data']
+                        ))
+                        self.publish(WorkItemsTopic, response_message)
 
-                        return response_message
+                    return response_message
 
             elif jira_event_type in ['project_created', 'project_updated']:
                 work_items_source = jira_message_handler.handle_project_events(jira_connector_key, jira_event_type,
