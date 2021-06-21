@@ -39,47 +39,40 @@ def handle_issue_moved_event(jira_connector_key, jira_event):
                 source_id=target_project_id
             )
             if source_work_items_source:
-                if target_work_items_source:
-                    if target_work_items_source.import_state == WorkItemsSourceImportState.auto_update.value:
-                        target_jira_project_source = JiraProject(target_work_items_source)
-                        moved_work_item_data = target_jira_project_source.map_issue_to_work_item_data(issue)
-                        moved_work_item = api.move_work_item(source_work_items_source.key, target_work_items_source.key,
-                                                             moved_work_item_data,
-                                                             join_this=session)
-                        moved_work_item['organization_key'] = target_work_items_source.organization_key
-                        moved_work_item['source_work_items_source_key'] = source_work_items_source.key
-                        moved_work_item['target_work_items_source_key'] = target_work_items_source.key
-                        return moved_work_item
+                if source_work_items_source.import_state == WorkItemsSourceImportState.auto_update.value:
+                    if target_work_items_source:
+                        if target_work_items_source.import_state == WorkItemsSourceImportState.auto_update.value:
+                            target_jira_project_source = JiraProject(target_work_items_source)
+                            moved_work_item_data = target_jira_project_source.map_issue_to_work_item_data(issue)
+                            moved_work_item = api.move_work_item(source_work_items_source.key, target_work_items_source.key,
+                                                                 moved_work_item_data,
+                                                                 join_this=session)
+                            moved_work_item['organization_key'] = target_work_items_source.organization_key
+                            moved_work_item['source_work_items_source_key'] = source_work_items_source.key
+                            moved_work_item['target_work_items_source_key'] = target_work_items_source.key
+                            return moved_work_item
+                        else:
+                            # mark item as moved
+                            return None
                     else:
-                        # Target work items source is present but not yet active.
-                        # So we can possibly link the work item to this work items source,
-                        # but it stays suppressed unless the work items source import state auto_update is set to True.
-                        # This case can possibly be handled within api.move_work_item
+                        # mark item as moved
                         return None
                 else:
-                    # Target work items source is not present.
-                    # So we can update the work item state as moved to this work items source / project.
-                    # This case can possibly be handled within api.move_work_item
-                    return None
+                    if target_work_items_source:
+                        if target_work_items_source.import_state == WorkItemsSourceImportState.auto_update.value:
+                            target_jira_project_source = JiraProject(target_work_items_source)
+                            new_work_item_data = target_jira_project_source.map_issue_to_work_item_data(issue)
+                            new_work_item = api.sync_work_item(target_work_items_source.key, new_work_item_data,
+                                                                 join_this=session)
+                            new_work_item['organization_key'] = target_work_items_source.organization_key
+                            new_work_item['work_items_source_key'] = target_work_items_source.key
+                            return new_work_item
+                        else:
+                            # both target and source are inactive. Work item should be present. Do nothing.
+                            return None
             else:
-                if target_work_items_source:
-                    if target_work_items_source.import_state == WorkItemsSourceImportState.auto_update.value:
-                        target_jira_project_source = JiraProject(target_work_items_source)
-                        new_work_item_data = target_jira_project_source.map_issue_to_work_item_data(issue)
-                        new_work_item = api.import_work_item(target_work_items_source.key, new_work_item_data,
-                                                             join_this=session)
-                        new_work_item['organization_key'] = target_work_items_source.organization_key
-                        new_work_item['work_items_source_key'] = target_work_items_source.key
-                        return new_work_item
-                    else:
-                        # Target work items source is present but not yet active.
-                        # So we can update the work item state as moved to this work items source / project
-                        # Need to do some separate handling for this case, may be by importing the work item as new,
-                        # but it stays suppressed unless the work items source import state auto_update is set to True
-                        return None
-                else:
-                    # Target and source not present, we do nothing
-                    return None
+                # Target and source not present, we do nothing
+                return None
     else:
         raise ProcessingException(f"Could not find issue field on jira issue event {jira_event}. ")
 
