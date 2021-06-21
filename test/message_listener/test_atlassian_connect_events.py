@@ -671,3 +671,49 @@ class TestAtlassianConnectEvent:
         message = subscriber.dispatch(mock_channel, jira_issue_updated_message)
         assert message
         publisher.assert_topic_called_with_message(WorkItemsTopic, WorkItemsCreated)
+
+    def it_handles_issue_updated_issue_moved_event_when_issue_is_moved_from_non_existing_to_active_target_work_items_source(
+            self, jira_work_item_source_fixture, cleanup):
+        target_work_items_source, jira_project_id, connector_key = jira_work_item_source_fixture
+
+        issue_id = "10001"
+        issue_key = f"PRJ-{issue_id}"
+
+        issue = create_issue(target_work_items_source.source_id, issue_key, issue_id)
+
+        issue_event = dict(
+            timestamp=jira_test_time_stamp(),
+            event='issue_updated',
+            issue=issue
+        )
+
+        issue_event['changelog'] = dict(
+            items=[
+                {
+                    "field": "project",
+                    "fieldtype": "jira",
+                    "fieldId": "project",
+                    "from": '10002',
+                    "fromString": "Test Project 2",
+                    "to": target_work_items_source.source_id,
+                    "toString": "test"
+                }
+            ]
+        )
+        issue_event['webhookEvent'] = "jira:issue_updated"
+        issue_event['issue_event_type_name'] = "issue_moved"
+        jira_issue_updated_message = fake_send(
+            AtlassianConnectWorkItemEvent(send=dict(
+                atlassian_connector_key=connector_key,
+                atlassian_event_type='issue_updated',
+                atlassian_event=json.dumps(issue_event)
+            ))
+        )
+
+        publisher = mock_publisher()
+        subscriber = WorkItemsTopicSubscriber(mock_channel(), publisher=publisher)
+        subscriber.consumer_context = mock_consumer
+
+        message = subscriber.dispatch(mock_channel, jira_issue_updated_message)
+        assert message
+        publisher.assert_topic_called_with_message(WorkItemsTopic, WorkItemsCreated)
