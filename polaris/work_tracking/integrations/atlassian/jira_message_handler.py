@@ -44,7 +44,8 @@ def handle_issue_moved_event(jira_connector_key, jira_event):
                         if target_work_items_source.import_state == WorkItemsSourceImportState.auto_update.value:
                             target_jira_project_source = JiraProject(target_work_items_source)
                             moved_work_item_data = target_jira_project_source.map_issue_to_work_item_data(issue)
-                            moved_work_item = api.move_work_item(source_work_items_source.key, target_work_items_source.key,
+                            moved_work_item = api.move_work_item(source_work_items_source.key,
+                                                                 target_work_items_source.key,
                                                                  moved_work_item_data,
                                                                  join_this=session)
                             moved_work_item['organization_key'] = target_work_items_source.organization_key
@@ -63,7 +64,7 @@ def handle_issue_moved_event(jira_connector_key, jira_event):
                             target_jira_project_source = JiraProject(target_work_items_source)
                             new_work_item_data = target_jira_project_source.map_issue_to_work_item_data(issue)
                             new_work_item = api.sync_work_item(target_work_items_source.key, new_work_item_data,
-                                                                 join_this=session)
+                                                               join_this=session)
                             new_work_item['organization_key'] = target_work_items_source.organization_key
                             new_work_item['work_items_source_key'] = target_work_items_source.key
                             return new_work_item
@@ -71,8 +72,21 @@ def handle_issue_moved_event(jira_connector_key, jira_event):
                             # both target and source are inactive. Work item should be present. Do nothing.
                             return None
             else:
-                # Target and source not present, we do nothing
-                return None
+                if target_work_items_source:
+                    if target_work_items_source.import_state == WorkItemsSourceImportState.auto_update.value:
+                        target_jira_project_source = JiraProject(target_work_items_source)
+                        new_work_item_data = target_jira_project_source.map_issue_to_work_item_data(issue)
+                        new_work_item = api.sync_work_item(target_work_items_source.key, new_work_item_data,
+                                                           join_this=session)
+                        new_work_item['organization_key'] = target_work_items_source.organization_key
+                        new_work_item['work_items_source_key'] = target_work_items_source.key
+                        return new_work_item
+                    else:
+                        # both target and source are inactive. Work item should be present. Do nothing.
+                        return None
+                else:
+                    # Do nothing
+                    return None
     else:
         raise ProcessingException(f"Could not find issue field on jira issue event {jira_event}. ")
 
