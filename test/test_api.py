@@ -466,10 +466,84 @@ class TestMoveWorkItem:
 
     class TestWhenSourceExistsTargetDoesNot:
 
-        def it_updates_work_item_to_a_moved_state(self):
-            pass
+        @pytest.yield_fixture()
+        def setup(self, jira_work_items_fixture, cleanup):
+            work_items, work_items_source, jira_project_id, connector_key = jira_work_items_fixture
+
+            yield Fixture(
+                work_items=work_items,
+                source_work_items_source=work_items_source
+            )
+
+        def it_updates_work_item_to_a_moved_state(self, setup):
+            fixture = setup
+            work_item = [wi for wi in fixture.work_items if not wi.is_epic][0]
+            updated_work_item = object_to_dict(
+                work_item,
+                ['name',
+                 'description',
+                 'work_item_type',
+                 'is_bug',
+                 'is_epic',
+                 'tags',
+                 'source_id',
+                 'source_display_id',
+                 'source_state',
+                 'url',
+                 'source_created_at',
+                 'source_last_updated',
+                 'parent_id',
+                 'api_payload',
+                 'commit_identifiers'
+                 ],
+                {
+                    'parent_id': 'parent_source_display_id'
+                }
+            )
+            updated_work_item['source_display_id'] = 'TP2-1'
+            updated_work_item['is_moved'] = True
+            updated_work_item['commit_identifiers'] = ["TP2-1", "Tp2-1", "tp2-1"]
+            result = api.sync_work_item(fixture.source_work_items_source.key,
+                                        updated_work_item)
+            assert result
+            assert result['is_updated']
+            assert result['is_moved']
+            assert result['display_id'] == 'TP2-1'
 
     class TestWhenTargetExistsSourceDoesNot:
 
-        def it_creates_new_work_item(self):
-            pass
+        @pytest.yield_fixture()
+        def setup(self, jira_work_items_fixture, cleanup):
+            work_items, work_items_source, jira_project_id, connector_key = jira_work_items_fixture
+
+            yield Fixture(
+                work_items=work_items,
+                target_work_items_source=work_items_source
+            )
+
+        def it_creates_new_work_item(self, setup):
+            fixture = setup
+            source_id = '10001'
+            moved_work_item = dict(
+                name=f'Issue 1',
+                source_id=source_id,
+                source_display_id=f'PRJ-{source_id}',
+                url=f'http://foo.com/{source_id}',
+                work_item_type=JiraWorkItemType.task.value,
+                description='Foo',
+                is_bug=False,
+                is_epic=False,
+                tags=['acre'],
+                source_last_updated=datetime.utcnow(),
+                source_created_at=datetime.utcnow(),
+                source_state='open'
+            )
+
+            moved_work_item['source_display_id'] = 'TP2-1'
+            moved_work_item['commit_identifiers'] = ["TP2-1", "Tp2-1", "tp2-1"]
+            result = api.sync_work_item(fixture.target_work_items_source.key,
+                                        moved_work_item)
+            assert result
+            assert result['is_new']
+            assert not result['is_moved']
+            assert result['display_id'] == 'TP2-1'
