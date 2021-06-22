@@ -33,9 +33,10 @@ def mark_work_item_as_moved(work_items_source, issue, join_this=None):
     source_jira_project_source = JiraProject(work_items_source)
     moved_work_item_data = source_jira_project_source.map_issue_to_work_item_data(issue)
     moved_work_item_data['is_moved'] = True
-    moved_work_item = api.sync_work_item(work_items_source.key, moved_work_item_data, join_this=join_this)
+    moved_work_item = api.move_work_item(work_items_source.key, None, moved_work_item_data, join_this=join_this)
     moved_work_item['organization_key'] = work_items_source.organization_key
-    moved_work_item['work_items_source_key'] = work_items_source.key
+    moved_work_item['source_work_items_source_key'] = work_items_source.key
+    moved_work_item['target_work_items_source_key'] = None
     return moved_work_item
 
 

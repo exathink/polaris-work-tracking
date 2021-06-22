@@ -605,7 +605,7 @@ class TestAtlassianConnectEvent:
 
         message = subscriber.dispatch(mock_channel, jira_issue_updated_message)
         assert message
-        publisher.assert_topic_called_with_message(WorkItemsTopic, WorkItemsUpdated)
+        publisher.assert_topic_called_with_message(WorkItemsTopic, WorkItemMoved)
 
     def it_handles_issue_updated_issue_moved_event_when_issue_is_moved_between_existing_work_items_sources_source_inactive(
             self, jira_work_item_source_fixture, cleanup):
@@ -777,4 +777,4 @@ class TestAtlassianConnectEvent:
 
         message = subscriber.dispatch(mock_channel, jira_issue_updated_message)
         assert message
-        publisher.assert_topic_called_with_message(WorkItemsTopic, WorkItemsUpdated)
+        publisher.assert_topic_called_with_message(WorkItemsTopic, WorkItemMoved)

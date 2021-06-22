@@ -381,7 +381,7 @@ class TestMoveWorkItem:
                 f"select count(id) from work_tracking.work_items where work_items_source_id={fixture.target_work_items_source.id} and source_id='{updated_work_item['source_id']}'"
                 f" and source_display_id='TP2-1' and commit_identifiers='[\"TP2-1\", \"Tp2-1\", \"tp2-1\"]'").scalar() == 1
 
-        def it_updates_work_item_work_items_source_when_target_is_in_ready_state(self, setup):
+        def it_updates_work_item_is_moved_to_true_when_target_is_in_ready_state(self, setup):
             fixture = setup
             with db.orm_session() as session:
                 target_work_items_source = fixture.target_work_items_source
@@ -413,12 +413,10 @@ class TestMoveWorkItem:
             updated_work_item['source_display_id'] = 'TP2-1'
             updated_work_item['is_moved'] = True
             updated_work_item['commit_identifiers'] = ["TP2-1", "Tp2-1", "tp2-1"]
-            result = api.sync_work_item(fixture.source_work_items_source.key,
+            result = api.move_work_item(fixture.source_work_items_source.key, None,
                                         updated_work_item)
             assert result
-            assert result['is_updated']
             assert result['is_moved']
-            assert result['display_id'] == 'TP2-1'
 
         def it_does_not_change_parent_when_work_item_is_moved_to_different_source(self, setup):
             fixture = setup
@@ -503,12 +501,10 @@ class TestMoveWorkItem:
             updated_work_item['source_display_id'] = 'TP2-1'
             updated_work_item['is_moved'] = True
             updated_work_item['commit_identifiers'] = ["TP2-1", "Tp2-1", "tp2-1"]
-            result = api.sync_work_item(fixture.source_work_items_source.key,
+            result = api.move_work_item(fixture.source_work_items_source.key, None,
                                         updated_work_item)
             assert result
-            assert result['is_updated']
             assert result['is_moved']
-            assert result['display_id'] == 'TP2-1'
 
     class TestWhenTargetExistsSourceDoesNot:
 
@@ -545,5 +541,3 @@ class TestMoveWorkItem:
                                         moved_work_item)
             assert result
             assert result['is_new']
-            assert not result['is_moved']
-            assert result['display_id'] == 'TP2-1'
