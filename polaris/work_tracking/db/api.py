@@ -240,6 +240,13 @@ def sync_work_item(work_items_source_key, work_item_data, join_this=None):
                 work_items_source.id,
                 work_item_data.get('source_display_id')
             )
+            if work_item is None:
+                # Try finding by source_id
+                work_item = WorkItem.find_by_work_item_source_id_source_id(
+                    session,
+                    work_items_source.id,
+                    work_item_data.get('source_id')
+                )
             # Find linked parent work item
             # FIXME: Epics can be from a different work item source. But here we are setting parent ids \
             #  only when parent is from same work item source.
@@ -323,7 +330,8 @@ def sync_work_item(work_items_source_key, work_item_data, join_this=None):
                     updated_at=work_item.source_last_updated,
                     last_sync=work_item.last_sync,
                     source_id=work_item.source_id,
-                    commit_identifiers=work_item.commit_identifiers
+                    commit_identifiers=work_item.commit_identifiers,
+                    is_moved=work_item.is_moved
                 )
             )
         else:
