@@ -374,7 +374,7 @@ def move_work_item(source_work_items_source_key, target_work_items_source_key, w
                         parent_key = None
                 else:
                     parent_key = None
-                move_result['is_moved'] = work_item.update(work_item_data)
+                move_result['work_items_source_changed'] = work_item.update(work_item_data)
                 session.flush()
                 work_item = session.connection().execute(
                     select([work_items]).where(

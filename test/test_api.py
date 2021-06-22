@@ -373,7 +373,7 @@ class TestMoveWorkItem:
             result = api.move_work_item(fixture.source_work_items_source.key, fixture.target_work_items_source.key,
                                         updated_work_item)
             assert result
-            assert result['is_moved']
+            assert result['work_items_source_changed']
             assert db.connection().execute(
                 f"select count(id) from work_tracking.work_items where work_items_source_id={fixture.source_work_items_source.id} and source_id='{updated_work_item['source_id']}'"
             ).scalar() == 0
@@ -456,7 +456,7 @@ class TestMoveWorkItem:
             result = api.move_work_item(fixture.source_work_items_source.key, fixture.target_work_items_source.key,
                                         updated_work_item)
             assert result
-            assert result['is_moved']
+            assert result['work_items_source_changed']
             assert db.connection().execute(
                 f"select count(id) from work_tracking.work_items where work_items_source_id={fixture.source_work_items_source.id} and source_id='{updated_work_item['source_id']}'"
             ).scalar() == 0
