@@ -29,6 +29,16 @@ def create_new_work_item_in_active_work_items_source(work_items_source, issue, j
     return new_work_item
 
 
+def mark_work_item_as_moved(work_items_source, issue, join_this=None):
+    source_jira_project_source = JiraProject(work_items_source)
+    moved_work_item_data = source_jira_project_source.map_issue_to_work_item_data(issue)
+    moved_work_item_data['is_moved'] = True
+    moved_work_item = api.sync_work_item(work_items_source.key, moved_work_item_data, join_this=join_this)
+    moved_work_item['organization_key'] = work_items_source.organization_key
+    moved_work_item['work_items_source_key'] = work_items_source.key
+    return moved_work_item
+
+
 def handle_issue_moved_event(jira_connector_key, jira_event):
     issue = jira_event.get('issue')
     if issue:
@@ -64,10 +74,10 @@ def handle_issue_moved_event(jira_connector_key, jira_event):
                             return moved_work_item
                         else:
                             # mark item as moved
-                            return None
+                            return mark_work_item_as_moved(source_work_items_source, issue, session)
                     else:
                         # mark item as moved
-                        return None
+                        return mark_work_item_as_moved(source_work_items_source, issue, session)
                 else:
                     if target_work_items_source:
                         if target_work_items_source.import_state == WorkItemsSourceImportState.auto_update.value:
