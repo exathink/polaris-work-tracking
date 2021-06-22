@@ -69,7 +69,8 @@ class TestSyncWorkItem:
                                                   new_work_item['source_display_id']):
                 pass
 
-            # import again
+            # import again after updating a relevant field
+            new_work_item['source_state'] = 'In progress'
             for result in commands.sync_work_item(token_provider, work_items_source.key,
                                                   new_work_item['source_display_id']):
                 assert result['display_id'] == new_work_item['source_display_id']
