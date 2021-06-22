@@ -246,6 +246,8 @@ class WorkItemsTopicSubscriber(TopicSubscriber):
                             updated_work_items=[work_item]
                         ))
                         self.publish(WorkItemsTopic, response_message)
+                    # Keeping is_moved at the end after is_updated check is important here with the current move logic.
+                    # Might need to refactor for more clarity
                     elif work_item.get('is_moved'):
                         logger.info(f'work_item moved')
                         response_message = WorkItemMoved(send=dict(

@@ -411,10 +411,14 @@ class TestMoveWorkItem:
                 }
             )
             updated_work_item['source_display_id'] = 'TP2-1'
+            updated_work_item['is_moved'] = True
             updated_work_item['commit_identifiers'] = ["TP2-1", "Tp2-1", "tp2-1"]
-            result = api.move_work_item(fixture.source_work_items_source.key, fixture.target_work_items_source.key,
+            result = api.sync_work_item(fixture.source_work_items_source.key,
                                         updated_work_item)
-            assert result is None
+            assert result
+            assert result['is_updated']
+            assert result['is_moved']
+            assert result['display_id'] == 'TP2-1'
 
         def it_does_not_change_parent_when_work_item_is_moved_to_different_source(self, setup):
             fixture = setup
