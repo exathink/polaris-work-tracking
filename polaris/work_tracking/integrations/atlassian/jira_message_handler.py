@@ -19,27 +19,6 @@ from polaris.work_tracking.integrations.atlassian.jira_work_items_source import 
 from polaris.common.enums import WorkItemsSourceImportState
 
 
-def create_new_work_item_in_active_work_items_source(work_items_source, issue, join_this=None):
-    target_jira_project_source = JiraProject(work_items_source)
-    new_work_item_data = target_jira_project_source.map_issue_to_work_item_data(issue)
-    new_work_item = api.sync_work_item(work_items_source.key, new_work_item_data,
-                                       join_this=join_this)
-    new_work_item['organization_key'] = work_items_source.organization_key
-    new_work_item['work_items_source_key'] = work_items_source.key
-    return new_work_item
-
-
-def mark_work_item_as_moved(work_items_source, issue, join_this=None):
-    source_jira_project_source = JiraProject(work_items_source)
-    moved_work_item_data = source_jira_project_source.map_issue_to_work_item_data(issue)
-    moved_work_item_data['is_moved'] = True
-    moved_work_item = api.move_work_item(work_items_source.key, None, moved_work_item_data, join_this=join_this)
-    moved_work_item['organization_key'] = work_items_source.organization_key
-    moved_work_item['source_work_items_source_key'] = work_items_source.key
-    moved_work_item['target_work_items_source_key'] = None
-    return moved_work_item
-
-
 def handle_issue_moved_event(jira_connector_key, jira_event):
     issue = jira_event.get('issue')
     if issue:
@@ -59,45 +38,37 @@ def handle_issue_moved_event(jira_connector_key, jira_event):
                 connector_key=jira_connector_key,
                 source_id=target_project_id
             )
-            if source_work_items_source:
-                if source_work_items_source.import_state == WorkItemsSourceImportState.auto_update.value:
-                    if target_work_items_source:
-                        if target_work_items_source.import_state == WorkItemsSourceImportState.auto_update.value:
-                            target_jira_project_source = JiraProject(target_work_items_source)
-                            moved_work_item_data = target_jira_project_source.map_issue_to_work_item_data(issue)
-                            moved_work_item = api.move_work_item(source_work_items_source.key,
-                                                                 target_work_items_source.key,
-                                                                 moved_work_item_data,
-                                                                 join_this=session)
-                            moved_work_item['organization_key'] = target_work_items_source.organization_key
-                            moved_work_item['source_work_items_source_key'] = source_work_items_source.key
-                            moved_work_item['target_work_items_source_key'] = target_work_items_source.key
-                            return moved_work_item
-                        else:
-                            # mark item as moved
-                            return mark_work_item_as_moved(source_work_items_source, issue, session)
-                    else:
-                        # mark item as moved
-                        return mark_work_item_as_moved(source_work_items_source, issue, session)
+            if source_work_items_source and source_work_items_source.import_state == WorkItemsSourceImportState.auto_update.value:
+                # Issue should exist in Polaris, so either move it to active target work items source or set is_moved to True
+                source_work_items_source_key = source_work_items_source.key
+                target_work_items_source_key = target_work_items_source.key if target_work_items_source else None
+                organization_key = source_work_items_source.organization_key
+                if target_work_items_source and target_work_items_source.import_state == WorkItemsSourceImportState.auto_update.value:
+                    target_jira_project_source = JiraProject(target_work_items_source)
+                    moved_work_item_data = target_jira_project_source.map_issue_to_work_item_data(issue)
+                    organization_key = target_work_items_source.organization_key
                 else:
-                    if target_work_items_source:
-                        if target_work_items_source.import_state == WorkItemsSourceImportState.auto_update.value:
-                            return create_new_work_item_in_active_work_items_source(
-                                work_items_source=target_work_items_source, issue=issue, join_this=session)
-                        else:
-                            # both target and source are inactive. Work item should not be present. Do nothing.
-                            return None
+                    source_jira_project_source = JiraProject(source_work_items_source)
+                    moved_work_item_data = source_jira_project_source.map_issue_to_work_item_data(issue)
+                    moved_work_item_data['is_moved'] = True
+                moved_work_item = api.move_work_item(source_work_items_source_key,
+                                                     target_work_items_source_key,
+                                                     moved_work_item_data,
+                                                     join_this=session)
+                moved_work_item['organization_key'] = organization_key
+                moved_work_item['source_work_items_source_key'] = source_work_items_source_key
+                moved_work_item['target_work_items_source_key'] = target_work_items_source_key
+                return moved_work_item
             else:
-                if target_work_items_source:
-                    if target_work_items_source.import_state == WorkItemsSourceImportState.auto_update.value:
-                        return create_new_work_item_in_active_work_items_source(
-                            work_items_source=target_work_items_source, issue=issue, join_this=session)
-                    else:
-                        # both target and source are inactive. Work item should not be present. Do nothing.
-                        return None
-                else:
-                    # Do nothing
-                    return None
+                # the issue does not exist in Polaris
+                if target_work_items_source and target_work_items_source.import_state == WorkItemsSourceImportState.auto_update.value:
+                    target_jira_project_source = JiraProject(target_work_items_source)
+                    new_work_item_data = target_jira_project_source.map_issue_to_work_item_data(issue)
+                    new_work_item = api.sync_work_item(target_work_items_source.key, new_work_item_data,
+                                                       join_this=session)
+                    new_work_item['organization_key'] = target_work_items_source.organization_key
+                    new_work_item['work_items_source_key'] = target_work_items_source.key
+                    return new_work_item
     else:
         raise ProcessingException(f"Could not find issue field on jira issue event {jira_event}. ")
 
