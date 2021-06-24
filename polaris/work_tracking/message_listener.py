@@ -246,7 +246,7 @@ class WorkItemsTopicSubscriber(TopicSubscriber):
                             updated_work_items=[work_item]
                         ))
                         self.publish(WorkItemsTopic, response_message)
-                    elif work_item.get('work_items_source_changed') or work_item.get('is_moved'):
+                    elif work_item.get('is_moved'):
                         logger.info(f'work_item moved from one source to another or is_moved marked True')
                         response_message = WorkItemMoved(send=dict(
                             organization_key=work_item['organization_key'],

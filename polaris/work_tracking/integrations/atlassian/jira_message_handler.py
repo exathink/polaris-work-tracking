@@ -50,7 +50,6 @@ def handle_issue_moved_event(jira_connector_key, jira_event):
                 else:
                     source_jira_project_source = JiraProject(source_work_items_source)
                     moved_work_item_data = source_jira_project_source.map_issue_to_work_item_data(issue)
-                    moved_work_item_data['is_moved'] = True
                 moved_work_item = api.move_work_item(source_work_items_source_key,
                                                      target_work_items_source_key,
                                                      moved_work_item_data,

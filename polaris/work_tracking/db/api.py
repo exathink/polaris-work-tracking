@@ -361,27 +361,8 @@ def move_work_item(source_work_items_source_key, target_work_items_source_key, w
                 parent_key = None
             if target_work_items_source_key is None or (target_work_items_source is None) or (
                     target_work_items_source and target_work_items_source.import_state != WorkItemsSourceImportState.auto_update.value):
-                work_item.is_moved = True
-                return dict(
-                    key=work_item.key,
-                    work_item_type=work_item.work_item_type,
-                    display_id=work_item.source_display_id,
-                    url=work_item.url,
-                    name=work_item.name,
-                    description=work_item.description,
-                    is_bug=work_item.is_bug,
-                    is_epic=work_item.is_epic,
-                    parent_source_display_id=work_item.parent_source_display_id,
-                    parent_key=parent_key,
-                    tags=work_item.tags,
-                    state=work_item.source_state,
-                    created_at=work_item.source_created_at,
-                    updated_at=work_item.source_last_updated,
-                    last_sync=work_item.last_sync,
-                    source_id=work_item.source_id,
-                    commit_identifiers=work_item.commit_identifiers,
-                    is_moved=work_item.is_moved
-                )
+                work_item.is_moved_from_current_source = True
+                is_moved = True
             else:
                 work_item_data['work_items_source_id'] = target_work_items_source.id
                 # Set parent key to null if parent_source_display_id is not passed as same. Ideally it would be same or null.
@@ -390,33 +371,35 @@ def move_work_item(source_work_items_source_key, target_work_items_source_key, w
                         work_item_data['parent_id'] = parent_work_item.id
                     else:
                         parent_key = None
-                work_items_source_changed = work_item.update(work_item_data)
+                work_item_data['is_moved_from_current_source'] = False
+                is_moved = work_item.update(work_item_data)
                 session.flush()
                 work_item = session.connection().execute(
                     select([work_items]).where(
                         work_items.c.key == work_item.key
                     )
                 ).fetchone()
-                return dict(
-                    work_items_source_changed=work_items_source_changed,
-                    key=work_item.key,
-                    work_item_type=work_item.work_item_type,
-                    display_id=work_item.source_display_id,
-                    url=work_item.url,
-                    name=work_item.name,
-                    description=work_item.description,
-                    is_bug=work_item.is_bug,
-                    is_epic=work_item.is_epic,
-                    parent_source_display_id=work_item.parent_source_display_id,
-                    parent_key=parent_key,
-                    tags=work_item.tags,
-                    state=work_item.source_state,
-                    created_at=work_item.source_created_at,
-                    updated_at=work_item.source_last_updated,
-                    last_sync=work_item.last_sync,
-                    source_id=work_item.source_id,
-                    commit_identifiers=work_item.commit_identifiers
-                )
+            return dict(
+                is_moved=is_moved,
+                key=work_item.key,
+                work_item_type=work_item.work_item_type,
+                display_id=work_item.source_display_id,
+                url=work_item.url,
+                name=work_item.name,
+                description=work_item.description,
+                is_bug=work_item.is_bug,
+                is_epic=work_item.is_epic,
+                parent_source_display_id=work_item.parent_source_display_id,
+                parent_key=parent_key,
+                tags=work_item.tags,
+                state=work_item.source_state,
+                created_at=work_item.source_created_at,
+                updated_at=work_item.source_last_updated,
+                last_sync=work_item.last_sync,
+                source_id=work_item.source_id,
+                commit_identifiers=work_item.commit_identifiers,
+                is_moved_from_current_source=work_item.is_moved_from_current_source
+            )
 
 
 def delete_work_item(work_items_source_key, work_item_data, join_this=None):
