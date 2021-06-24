@@ -294,7 +294,7 @@ class WorkItem(Base):
     commit_identifiers = Column(JSONB, nullable=True, default=[], server_default='[]')
 
     # Field to identify if the work item is moved from current work items source
-    is_moved = Column(Boolean, nullable=True, default=False, server_default='FALSE')
+    is_moved_from_current_source = Column(Boolean, nullable=True, default=False, server_default='FALSE')
 
     # Work Items Source relationship
     work_items_source_id = Column(Integer, ForeignKey('work_items_sources.id'))
