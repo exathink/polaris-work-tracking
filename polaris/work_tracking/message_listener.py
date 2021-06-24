@@ -14,7 +14,7 @@ import logging
 from polaris.common import db
 from polaris.messaging.message_consumer import MessageConsumer
 from polaris.messaging.messages import ImportWorkItems, ImportWorkItem, WorkItemsCreated, WorkItemsUpdated, \
-    WorkItemsSourceCreated, WorkItemsSourceUpdated, ProjectImported, ConnectorCreated, ConnectorEvent
+    WorkItemsSourceCreated, WorkItemsSourceUpdated, ProjectImported, ConnectorCreated, ConnectorEvent, WorkItemMoved
 
 from polaris.work_tracking.messages import AtlassianConnectWorkItemEvent, RefreshConnectorProjects, \
     ResolveWorkItemsForEpic, GitlabProjectEvent, TrelloBoardEvent
@@ -225,7 +225,8 @@ class WorkItemsTopicSubscriber(TopicSubscriber):
 
         try:
             if jira_event_type in ['issue_created', 'issue_updated', 'issue_deleted']:
-                work_item = jira_message_handler.handle_issue_events(jira_connector_key, jira_event_type, jira_event)
+                work_item = jira_message_handler.handle_issue_events(jira_connector_key, jira_event_type,
+                                                                     jira_event)
                 if work_item:
                     response_message = None
                     if work_item.get('is_new'):
@@ -243,6 +244,17 @@ class WorkItemsTopicSubscriber(TopicSubscriber):
                             work_items_source_key=work_item['work_items_source_key'],
                             is_delete=work_item.get('is_delete') is not None,
                             updated_work_items=[work_item]
+                        ))
+                        self.publish(WorkItemsTopic, response_message)
+                    elif work_item.get('is_moved'):
+                        logger.info(f'work_item moved from one source to another or is_moved marked True')
+                        response_message = WorkItemMoved(send=dict(
+                            organization_key=work_item['organization_key'],
+                            source_work_items_source_key=work_item[
+                                'source_work_items_source_key'],
+                            target_work_items_source_key=work_item[
+                                'target_work_items_source_key'],
+                            moved_work_item=work_item
                         ))
                         self.publish(WorkItemsTopic, response_message)
 

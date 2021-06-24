@@ -293,12 +293,21 @@ class WorkItem(Base):
     # Fields to be used to match commits
     commit_identifiers = Column(JSONB, nullable=True, default=[], server_default='[]')
 
+    # Field to identify if the work item is moved from current work items source
+    is_moved_from_current_source = Column(Boolean, nullable=True, default=False, server_default='FALSE')
+
     # Work Items Source relationship
     work_items_source_id = Column(Integer, ForeignKey('work_items_sources.id'))
     work_items_source = relationship('WorkItemsSource', back_populates='work_items')
 
     # Work Item Source Payload from API
     api_payload = Column(JSONB, nullable=True, default={}, server_default='{}')
+
+    @classmethod
+    def find_by_id(cls, session, id):
+        return session.query(cls).filter(
+            cls.id == id
+        ).first()
 
     @classmethod
     def find_by_key(cls, session, key):
@@ -322,6 +331,15 @@ class WorkItem(Base):
             )
         ).first()
 
+    @classmethod
+    def find_by_work_item_source_id_source_id(cls, session, work_items_source_id, source_id):
+        return session.query(cls).filter(
+            and_(
+                cls.work_items_source_id == work_items_source_id,
+                cls.source_id == source_id
+            )
+        ).first()
+
     # This method will return true only if the specified attributes have changed.
     # remaining attributes may be updated, but they are "internal" updates and the changes
     # are not material to the rest of the app. So the result value should be used
@@ -329,8 +347,9 @@ class WorkItem(Base):
     def update(self, work_item_data):
         updated = False
         for attribute in ['name', 'description', 'is_bug', 'work_item_type', 'is_epic', 'tags', 'url', 'source_state',
-                          'source_display_id', 'parent_id', 'api_payload']:
-            if getattr(self, attribute) != work_item_data.get(attribute):
+                          'source_display_id', 'parent_id', 'api_payload', 'work_items_source_id', 'commit_identifiers',
+                          'parent_source_display_id']:
+            if work_item_data.get(attribute) is not None and getattr(self, attribute) != work_item_data.get(attribute):
                 setattr(self, attribute, work_item_data.get(attribute))
                 updated = True
 

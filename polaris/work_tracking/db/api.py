@@ -265,6 +265,8 @@ def sync_work_item(work_items_source_key, work_item_data, join_this=None):
 
             else:
                 work_item_key = work_item.key
+                # work_item_data should have work_items_source_id field too
+                work_item_data['work_items_source_id'] = work_items_source.id
                 sync_result['is_updated'] = work_item.update(work_item_data)
 
         # The reason we do this flush and refetch from the database below as follows:
@@ -338,6 +340,66 @@ def insert_work_item(work_items_source_key, work_item_data, join_this=None):
 
 def update_work_item(work_items_source_key, work_item_data, join_this=None):
     return sync_work_item(work_items_source_key, work_item_data, join_this)
+
+
+def move_work_item(source_work_items_source_key, target_work_items_source_key, work_item_data, join_this=None):
+    with db.orm_session(join_this) as session:
+        source_work_items_source = WorkItemsSource.find_by_key(session, source_work_items_source_key)
+        if target_work_items_source_key:
+            target_work_items_source = WorkItemsSource.find_by_key(session, target_work_items_source_key)
+        work_item = WorkItem.find_by_work_item_source_id_source_id(
+            session,
+            str(source_work_items_source.id),
+            work_item_data.get('source_id')
+        )
+        if work_item:
+            # Find parent key of work item to pass in return value. Needed for composing message.
+            if work_item.parent_id is not None:
+                parent_work_item = WorkItem.find_by_id(session, id=work_item.parent_id)
+                parent_key = parent_work_item.key
+            else:
+                parent_key = None
+            if target_work_items_source_key is None or (target_work_items_source is None) or (
+                    target_work_items_source and target_work_items_source.import_state != WorkItemsSourceImportState.auto_update.value):
+                work_item.is_moved_from_current_source = True
+                is_moved = True
+            else:
+                work_item_data['work_items_source_id'] = target_work_items_source.id
+                # Set parent key to null if parent_source_display_id is not passed as same. Ideally it would be same or null.
+                if parent_key:
+                    if work_item_data.get('parent_source_display_id') == parent_work_item.source_display_id:
+                        work_item_data['parent_id'] = parent_work_item.id
+                    else:
+                        parent_key = None
+                work_item_data['is_moved_from_current_source'] = False
+                is_moved = work_item.update(work_item_data)
+                session.flush()
+                work_item = session.connection().execute(
+                    select([work_items]).where(
+                        work_items.c.key == work_item.key
+                    )
+                ).fetchone()
+            return dict(
+                is_moved=is_moved,
+                key=work_item.key,
+                work_item_type=work_item.work_item_type,
+                display_id=work_item.source_display_id,
+                url=work_item.url,
+                name=work_item.name,
+                description=work_item.description,
+                is_bug=work_item.is_bug,
+                is_epic=work_item.is_epic,
+                parent_source_display_id=work_item.parent_source_display_id,
+                parent_key=parent_key,
+                tags=work_item.tags,
+                state=work_item.source_state,
+                created_at=work_item.source_created_at,
+                updated_at=work_item.source_last_updated,
+                last_sync=work_item.last_sync,
+                source_id=work_item.source_id,
+                commit_identifiers=work_item.commit_identifiers,
+                is_moved_from_current_source=work_item.is_moved_from_current_source
+            )
 
 
 def delete_work_item(work_items_source_key, work_item_data, join_this=None):

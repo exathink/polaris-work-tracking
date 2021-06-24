@@ -19,7 +19,60 @@ from polaris.work_tracking.integrations.atlassian.jira_work_items_source import 
 from polaris.common.enums import WorkItemsSourceImportState
 
 
-def handle_issue_events(jira_connector_key, jira_event_type, jira_event):
+def handle_issue_moved_event(jira_connector_key, jira_event):
+    issue = jira_event.get('issue')
+    if issue:
+        changelog = jira_event.get('changelog')
+        for item in changelog.get('items'):
+            if item['field'] == 'project':
+                source_project_id = item['from']
+                target_project_id = item['to']
+        with db.orm_session() as session:
+            source_work_items_source = WorkItemsSource.find_by_connector_key_and_source_id(
+                session,
+                connector_key=jira_connector_key,
+                source_id=source_project_id
+            )
+            target_work_items_source = WorkItemsSource.find_by_connector_key_and_source_id(
+                session,
+                connector_key=jira_connector_key,
+                source_id=target_project_id
+            )
+            if source_work_items_source and source_work_items_source.import_state == WorkItemsSourceImportState.auto_update.value:
+                # Issue should exist in Polaris, so either move it to active target work items source or set is_moved to True
+                source_work_items_source_key = source_work_items_source.key
+                target_work_items_source_key = target_work_items_source.key if target_work_items_source else None
+                organization_key = source_work_items_source.organization_key
+                if target_work_items_source and target_work_items_source.import_state == WorkItemsSourceImportState.auto_update.value:
+                    target_jira_project_source = JiraProject(target_work_items_source)
+                    moved_work_item_data = target_jira_project_source.map_issue_to_work_item_data(issue)
+                    organization_key = target_work_items_source.organization_key
+                else:
+                    source_jira_project_source = JiraProject(source_work_items_source)
+                    moved_work_item_data = source_jira_project_source.map_issue_to_work_item_data(issue)
+                moved_work_item = api.move_work_item(source_work_items_source_key,
+                                                     target_work_items_source_key,
+                                                     moved_work_item_data,
+                                                     join_this=session)
+                moved_work_item['organization_key'] = organization_key
+                moved_work_item['source_work_items_source_key'] = source_work_items_source_key
+                moved_work_item['target_work_items_source_key'] = target_work_items_source_key
+                return moved_work_item
+            else:
+                # the issue does not exist in Polaris
+                if target_work_items_source and target_work_items_source.import_state == WorkItemsSourceImportState.auto_update.value:
+                    target_jira_project_source = JiraProject(target_work_items_source)
+                    new_work_item_data = target_jira_project_source.map_issue_to_work_item_data(issue)
+                    new_work_item = api.sync_work_item(target_work_items_source.key, new_work_item_data,
+                                                       join_this=session)
+                    new_work_item['organization_key'] = target_work_items_source.organization_key
+                    new_work_item['work_items_source_key'] = target_work_items_source.key
+                    return new_work_item
+    else:
+        raise ProcessingException(f"Could not find issue field on jira issue event {jira_event}. ")
+
+
+def handle_issue_events_for_same_source_project(jira_connector_key, jira_event_type, jira_event):
     issue = jira_event.get('issue')
     if issue:
         project_id = issue['fields']['project']['id']
@@ -50,6 +103,13 @@ def handle_issue_events(jira_connector_key, jira_event_type, jira_event):
                     return work_item
 
 
+def handle_issue_events(jira_connector_key, jira_event_type, jira_event):
+    issue = jira_event.get('issue')
+    if issue:
+        if jira_event.get('issue_event_type_name') == 'issue_moved':
+            return handle_issue_moved_event(jira_connector_key, jira_event)
+        else:
+            return handle_issue_events_for_same_source_project(jira_connector_key, jira_event_type, jira_event)
     else:
         raise ProcessingException(f"Could not find issue field on jira issue event {jira_event}. ")
 
