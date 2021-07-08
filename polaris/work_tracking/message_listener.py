@@ -14,7 +14,8 @@ import logging
 from polaris.common import db
 from polaris.messaging.message_consumer import MessageConsumer
 from polaris.messaging.messages import ImportWorkItems, ImportWorkItem, WorkItemsCreated, WorkItemsUpdated, \
-    WorkItemsSourceCreated, WorkItemsSourceUpdated, ProjectImported, ConnectorCreated, ConnectorEvent, WorkItemMoved
+    WorkItemsSourceCreated, WorkItemsSourceUpdated, ProjectImported, ConnectorCreated, ConnectorEvent, WorkItemMoved, \
+    WorkItemDeleted
 
 from polaris.work_tracking.messages import AtlassianConnectWorkItemEvent, RefreshConnectorProjects, \
     ResolveWorkItemsForEpic, GitlabProjectEvent, TrelloBoardEvent
@@ -237,13 +238,20 @@ class WorkItemsTopicSubscriber(TopicSubscriber):
                             new_work_items=[work_item]
                         ))
                         self.publish(WorkItemsTopic, response_message)
-                    elif work_item.get('is_updated') or work_item.get('is_delete'):
+                    elif work_item.get('is_updated'):
                         logger.info(f'new work_item updated')
                         response_message = WorkItemsUpdated(send=dict(
                             organization_key=work_item['organization_key'],
                             work_items_source_key=work_item['work_items_source_key'],
-                            is_delete=work_item.get('is_delete') is not None,
                             updated_work_items=[work_item]
+                        ))
+                        self.publish(WorkItemsTopic, response_message)
+                    elif work_item.get('is_deleted'):
+                        logger.info(f'work_item deleted')
+                        response_message = WorkItemDeleted(send=dict(
+                            organization_key=work_item['organization_key'],
+                            work_items_source_key=work_item['work_items_source_key'],
+                            deleted_work_item=work_item
                         ))
                         self.publish(WorkItemsTopic, response_message)
                     elif work_item.get('is_moved'):
