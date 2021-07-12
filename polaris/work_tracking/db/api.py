@@ -431,6 +431,10 @@ def delete_work_item(work_items_source_key, work_item_data, join_this=None):
                     last_sync=work_item.last_sync,
                     deleted_at=work_item.deleted_at
                 )
+            else:
+                raise ProcessingException(f"Could not find work item with source id {work_item_data.get('source_display_id')}")
+        else:
+            raise ProcessingException(f"Could not find work items source with key f{work_items_source_key}")
 
 
 def sync_work_items_sources(connector, work_items_sources_list, join_this=None):
