@@ -16,7 +16,7 @@ from ..fixtures.jira_fixtures import *
 
 from polaris.common import db
 from polaris.messaging.message_consumer import MessageConsumer
-from polaris.messaging.messages import WorkItemsCreated, WorkItemsUpdated, WorkItemMoved
+from polaris.messaging.messages import WorkItemsCreated, WorkItemsUpdated, WorkItemMoved, WorkItemDeleted
 from polaris.messaging.test_utils import fake_send, mock_publisher, mock_channel
 from polaris.messaging.topics import WorkItemsTopic
 from polaris.utils.token_provider import get_token_provider
@@ -343,8 +343,7 @@ class TestAtlassianConnectEvent:
 
         message = subscriber.dispatch(mock_channel, jira_issue_deleted_message)
         assert message
-        assert message['is_delete']
-        publisher.assert_topic_called_with_message(WorkItemsTopic, WorkItemsUpdated)
+        publisher.assert_topic_called_with_message(WorkItemsTopic, WorkItemDeleted)
 
         # check that the delete date is set
         assert db.connection().execute(f"Select count(id) from work_tracking.work_items "

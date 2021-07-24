@@ -414,7 +414,7 @@ def delete_work_item(work_items_source_key, work_item_data, join_this=None):
             if work_item:
                 work_item.deleted_at = work_item_data['deleted_at']
                 return dict(
-                    is_delete=True,
+                    is_deleted=True,
                     key=work_item.key,
                     work_item_type=work_item.work_item_type,
                     display_id=work_item.source_display_id,
@@ -431,6 +431,10 @@ def delete_work_item(work_items_source_key, work_item_data, join_this=None):
                     last_sync=work_item.last_sync,
                     deleted_at=work_item.deleted_at
                 )
+            else:
+                raise ProcessingException(f"Could not find work item with source id {work_item_data.get('source_display_id')}")
+        else:
+            raise ProcessingException(f"Could not find work items source with key f{work_items_source_key}")
 
 
 def sync_work_items_sources(connector, work_items_sources_list, join_this=None):
