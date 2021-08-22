@@ -36,7 +36,7 @@ class JiraProject(JiraWorkItemsSource):
         self.work_items_source = work_items_source
         self.project_id = work_items_source.source_id
         self.initial_import_days = int(self.work_items_source.parameters.get('initial_import_days', 90))
-        self.sync_import_days = int(self.work_items_source.parameters.get('sync_import_days', 5))
+        self.sync_import_days = int(self.work_items_source.parameters.get('sync_import_days', 1))
 
         self.last_updated = work_items_source.latest_work_item_update_timestamp
         self.last_updated_issue_source_id = work_items_source.most_recently_updated_work_item_source_id

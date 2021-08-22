@@ -182,8 +182,7 @@ def get_work_items_sources_to_sync():
                     and_(
                         work_items_sources.c.project_id != None,
                         work_items_sources.c.integration_type.in_([
-                            WorkTrackingIntegrationType.github.value,
-                            WorkTrackingIntegrationType.pivotal.value
+                            WorkTrackingIntegrationType.jira.value
                         ]),
                         work_items_sources.c.import_state == WorkItemsSourceImportState.auto_update.value
                     )
