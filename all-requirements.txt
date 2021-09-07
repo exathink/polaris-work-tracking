@@ -30,7 +30,7 @@ flask-talisman==0.7.0
 Flask-WTF==0.14.2
 graphene==2.1.2
 graphene-sqlalchemy==2.0.0
-graphql-core==2.0
+graphql-core==2.3.2
 graphql-relay==0.4.5
 idna==2.7
 iso8601==0.1.12
