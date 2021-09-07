@@ -604,33 +604,6 @@ def sync_work_items_for_epic(work_items_source_key, epic, work_item_list, join_t
                 )
             )
 
-            work_items_removed_from_epic = session.connection().execute(
-                select([
-                    *work_items.columns
-                ]
-                ).select_from(
-                    work_items
-                ).where(
-                    and_(
-                        work_items.c.parent_id == epic_work_item.id,
-                        work_items.c.key.notin_([wi['key'] for wi in synced_work_items])
-                    )
-
-                )
-            ).fetchall()
-
-            if len(work_items_removed_from_epic) > 0:
-                session.connection().execute(
-                    work_items_temp.insert().values([
-                        dict(
-                            key=work_item['key'],
-                            parent_id=None
-                        )
-                        for work_item in work_items_removed_from_epic
-                    ]
-                    )
-                )
-
             # update work items
             session.connection().execute(
                 work_items.update().where(
@@ -645,28 +618,7 @@ def sync_work_items_for_epic(work_items_source_key, epic, work_item_list, join_t
             for work_item in synced_work_items:
                 work_item['parent_key'] = epic_work_item.key
             work_items_upserted.extend(synced_work_items)
-            additional_work_items_updated = [
-                dict(
-                    is_new=False,
-                    key=work_item.key,
-                    work_item_type=work_item.work_item_type,
-                    display_id=work_item.source_display_id,
-                    url=work_item.url,
-                    name=work_item.name,
-                    description=work_item.description,
-                    is_bug=work_item.is_bug,
-                    is_epic=work_item.is_epic,
-                    parent_key=None,
-                    tags=work_item.tags,
-                    state=work_item.source_state,
-                    created_at=work_item.source_created_at,
-                    updated_at=work_item.source_last_updated,
-                    last_sync=work_item.last_sync,
-                    source_id=work_item.source_id
-                )
-                for work_item in work_items_removed_from_epic
-            ]
-            work_items_upserted.extend(additional_work_items_updated)
+
             return work_items_upserted
 
 

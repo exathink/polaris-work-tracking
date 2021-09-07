@@ -161,7 +161,7 @@ class WorkItemsTopicSubscriber(TopicSubscriber):
             for created, updated in self.process_resolve_work_items_for_epic(message):
                 if len(created) > 0:
                     total = total + len(created)
-                    logger.info(f'{len(created)} new work_items')
+                    logger.info(f'{len(created)} new work_items were added to epic')
                     created_message = WorkItemsCreated(send=dict(
                         organization_key=message['organization_key'],
                         work_items_source_key=message['work_items_source_key'],
@@ -172,7 +172,7 @@ class WorkItemsTopicSubscriber(TopicSubscriber):
 
                 if len(updated) > 0:
                     total = total + len(updated)
-                    logger.info(f'{len(updated)} updated work_items')
+                    logger.info(f'{len(updated)} work_items updated in the epic')
                     updated_message = WorkItemsUpdated(send=dict(
                         organization_key=message['organization_key'],
                         work_items_source_key=message['work_items_source_key'],
@@ -381,6 +381,8 @@ class WorkItemsTopicSubscriber(TopicSubscriber):
         work_items_source_key = message['work_items_source_key']
         logger.info(f"Processing  {message.message_type}: "
                     f" Work Items Source Key : {work_items_source_key}")
+        logger.info(f"Epic: {message['epic'].get('display_id')}")
+
         try:
             for work_items in commands.sync_work_items_for_epic(work_items_source_key, message['epic']):
                 created = []
