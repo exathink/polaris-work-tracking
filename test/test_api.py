@@ -198,63 +198,7 @@ class TestSyncWorkItemsForJiraEpic:
             f"select count(id) from work_tracking.work_items where work_items_source_id={work_items_source.id} and parent_id={parent_id} "
         ).scalar() == 0
 
-    def it_sets_epic_id_to_null_for_an_existing_work_item_with_non_null_epic_id(self, jira_work_items_fixture, cleanup):
-        work_items, work_items_source, _, _ = jira_work_items_fixture
-        work_items_list = [
-            object_to_dict(
-                issue,
-                ['name',
-                 'description',
-                 'work_item_type',
-                 'is_bug',
-                 'is_epic',
-                 'tags',
-                 'source_id',
-                 'source_display_id',
-                 'source_state',
-                 'url',
-                 'source_created_at',
-                 'source_last_updated'
-                 ]
-            )
-            for issue in work_items if not issue.is_epic
-        ]
-        epic_issue = [issue for issue in work_items if issue.is_epic][0]
-        epic = object_to_dict(
-            epic_issue,
-            ['key',
-             'name',
-             'description',
-             'work_item_type',
-             'is_bug',
-             'is_epic',
-             'tags',
-             'source_id',
-             'source_display_id',
-             'source_state',
-             'url',
-             'source_created_at',
-             'source_last_updated',
-             'last_sync',
-             'parent_id'],
-            {
-                'source_display_id': 'display_id',
-                'source_created_at': 'created_at',
-                'source_last_updated': 'last_updated',
-                'source_state': 'state',
-                'parent_id': 'parent_key'}
-        )
-        api.sync_work_items_for_epic(work_items_source.key, epic, work_items_list)
-        # remove a work item from work_items_list which are part of epic
-        updated = api.sync_work_items_for_epic(work_items_source.key, epic, work_items_list[:2])
-        parent_id = db.connection().execute(
-            f"select id from work_tracking.work_items where key='{epic['key']}'").scalar()
-        assert len(updated) == len(work_items_list)
-        assert db.connection().execute(
-            f"select count(id) from work_tracking.work_items where work_items_source_id={work_items_source.id} and parent_id={parent_id} "
-        ).scalar() == 2
-        assert db.connection().execute(
-            f"select count(id) from work_tracking.work_items where parent_id is NULL and is_epic=FALSE ").scalar() == 8
+
 
 
 class TestSyncWorkItem:
