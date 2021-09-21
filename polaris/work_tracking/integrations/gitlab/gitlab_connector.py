@@ -53,7 +53,7 @@ class GitlabWorkTrackingConnector(GitlabConnector):
         while fetch_projects_url is not None:
             response = requests.get(
                 fetch_projects_url,
-                params=dict(membership=True, with_issues_enabled=True),
+                params=dict(membership=True),
                 headers={"Authorization": f"Bearer {self.personal_access_token}"},
             )
             if response.ok:
@@ -64,7 +64,7 @@ class GitlabWorkTrackingConnector(GitlabConnector):
                     fetch_projects_url = None
             else:
                 raise ProcessingException(
-                    f"Server test failed {response.text} status: {response.status_code}\n"
+                    f"Gitlab Fetch Projects failed {response.text} status: {response.status_code}\n"
                 )
 
     def fetch_work_items_sources_to_sync(self):
@@ -72,6 +72,7 @@ class GitlabWorkTrackingConnector(GitlabConnector):
             yield [
                 self.map_project_to_work_items_sources_data(project)
                 for project in projects
+                if 'issues' in project['_links']
             ]
 
     def register_project_webhooks(self, project_source_id, registered_webhooks):
