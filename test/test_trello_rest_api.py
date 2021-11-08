@@ -69,7 +69,7 @@ trello_api_card_payload = {
 
 class TestTrelloWorkItemSource:
 
-    @pytest.yield_fixture
+    @pytest.fixture
     def setup(self, setup_work_item_sources, cleanup):
         _, work_items_source = setup_work_item_sources
         trello_work_items_source = work_items_source['trello']

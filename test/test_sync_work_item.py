@@ -29,7 +29,6 @@ work_items_common_jira = dict(
 )
 
 
-@pytest.fixture
 def new_work_items_jira():
     return [
         dict(

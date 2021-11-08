@@ -34,7 +34,7 @@ def setup_schema(db_up):
     integrations_model.recreate_all(db.engine())
 
 
-@pytest.yield_fixture
+@pytest.fixture
 def setup_connectors(setup_schema):
     pivotal_connector_key = uuid.uuid4()
     github_connector_key = uuid.uuid4()
@@ -97,7 +97,7 @@ def setup_connectors(setup_schema):
     )
 
 
-@pytest.yield_fixture()
+@pytest.fixture()
 def setup_work_item_sources(setup_schema, setup_connectors):
     connector_keys = setup_connectors
     work_items_sources = {}
@@ -200,7 +200,7 @@ def setup_work_item_sources(setup_schema, setup_connectors):
         yield session, work_items_sources
 
 
-@pytest.yield_fixture()
+@pytest.fixture()
 def setup_work_items(setup_work_item_sources, cleanup):
     session, work_items_sources = setup_work_item_sources
     work_items = []
@@ -310,7 +310,7 @@ def new_work_items():
     ]
 
 
-@pytest.yield_fixture
+@pytest.fixture
 def cleanup():
     yield
     db.connection().execute(f"delete from work_tracking.work_items")

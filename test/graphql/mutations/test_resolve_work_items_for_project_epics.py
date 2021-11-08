@@ -22,7 +22,7 @@ from polaris.messaging.test_utils import assert_topic_and_message
 from polaris.messaging.topics import WorkItemsTopic
 
 
-@pytest.yield_fixture()
+@pytest.fixture()
 def setup_project():
     project = model.Project(
         name='TestProject',
@@ -38,7 +38,7 @@ def setup_project():
 
 class TestResolveWorkItemsForProjectEpics:
 
-    @pytest.yield_fixture()
+    @pytest.fixture()
     def setup(self, setup_project):
         project = setup_project
 
@@ -66,7 +66,7 @@ class TestResolveWorkItemsForProjectEpics:
 
     class TestJiraResolveWorkItemsForProjectEpics:
 
-        @pytest.yield_fixture()
+        @pytest.fixture()
         def setup(self, setup, jira_work_items_fixture, cleanup):
             fixture = setup
             work_items, work_items_source, jira_project_id, connector_key = jira_work_items_fixture
