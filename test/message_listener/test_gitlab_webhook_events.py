@@ -38,7 +38,7 @@ mock_consumer.token_provider = get_token_provider()
 class TestGitlabWebhookEvents:
     class TestGitlabIssueEvents:
 
-        @pytest.yield_fixture()
+        @pytest.fixture()
         def setup(self, setup_work_item_sources, cleanup):
             session, work_items_sources = setup_work_item_sources
             session.commit()
@@ -53,7 +53,7 @@ class TestGitlabWebhookEvents:
 
         class TestNewIssueEvent:
 
-            @pytest.yield_fixture()
+            @pytest.fixture()
             def setup(self, setup):
                 fixture = setup
 
@@ -258,7 +258,7 @@ class TestGitlabWebhookEvents:
                         assert_topic_and_message(publish, WorkItemsTopic, WorkItemsCreated)
 
             class TestUpdateIssueEvent:
-                @pytest.yield_fixture()
+                @pytest.fixture()
                 def setup(self, setup):
                     fixture = setup
 
@@ -502,7 +502,7 @@ class TestGitlabWebhookEvents:
                             assert_topic_and_message(publish, WorkItemsTopic, WorkItemsUpdated)
 
             class TestUpdateClosedIssueWithLabels:
-                @pytest.yield_fixture()
+                @pytest.fixture()
                 def setup(self, setup):
                     fixture = setup
 

@@ -258,7 +258,7 @@ class TestSyncWorkItem:
 class TestMoveWorkItem:
     class TestWhenSourceAndTargetWorkItemsSourcesArePresent:
 
-        @pytest.yield_fixture()
+        @pytest.fixture()
         def setup(self, jira_work_items_fixture, cleanup):
             work_items, work_items_source, jira_project_id, connector_key = jira_work_items_fixture
             # create a new work items source
@@ -408,7 +408,7 @@ class TestMoveWorkItem:
 
     class TestWhenSourceExistsTargetDoesNot:
 
-        @pytest.yield_fixture()
+        @pytest.fixture()
         def setup(self, jira_work_items_fixture, cleanup):
             work_items, work_items_source, jira_project_id, connector_key = jira_work_items_fixture
 
@@ -452,7 +452,7 @@ class TestMoveWorkItem:
 
     class TestWhenTargetExistsSourceDoesNot:
 
-        @pytest.yield_fixture()
+        @pytest.fixture()
         def setup(self, jira_work_items_fixture, cleanup):
             work_items, work_items_source, jira_project_id, connector_key = jira_work_items_fixture
 

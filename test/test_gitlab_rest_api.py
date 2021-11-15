@@ -87,7 +87,7 @@ gitlab_api_issue_payload = {
 
 class TestGitlabWorkItemSource:
 
-    @pytest.yield_fixture
+    @pytest.fixture
     def setup(self, setup_work_item_sources, cleanup):
         _, work_items_source = setup_work_item_sources
         gitlab_work_items_source = work_items_source['gitlab']

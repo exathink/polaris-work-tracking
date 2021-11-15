@@ -56,7 +56,7 @@ def setup_work_tracking_schema(db_up):
     work_tracking.recreate_all(db.engine())
 
 
-@pytest.yield_fixture
+@pytest.fixture
 def app_fixture(setup_integrations_schema):
     app = Flask(__name__)
     app.testing = True
@@ -76,7 +76,7 @@ def app_fixture(setup_integrations_schema):
     yield app, client, connector.key
 
 
-@pytest.yield_fixture
+@pytest.fixture
 def jira_work_item_source_fixture(setup_work_tracking_schema, app_fixture):
     _, _, connector_key = app_fixture
     jira_project_id = "10001"
@@ -148,7 +148,7 @@ def setup_jira_work_items(work_items_source):
     return work_items_source.work_items
 
 
-@pytest.yield_fixture()
+@pytest.fixture()
 def jira_work_items_fixture(jira_work_item_source_fixture):
     work_items_source, jira_project_id, connector_key = jira_work_item_source_fixture
     work_items = []
@@ -160,7 +160,7 @@ def jira_work_items_fixture(jira_work_item_source_fixture):
     yield work_items, work_items_source, jira_project_id, connector_key
 
 
-@pytest.yield_fixture
+@pytest.fixture
 def cleanup():
     yield
 

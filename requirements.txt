@@ -1,9 +1,5 @@
 alembic
 pytest
-sqlalchemy
-psycopg2
 argh
 pytest
-PyGithub==1.43.3
-PyJWT==1.6.4
 uwsgi

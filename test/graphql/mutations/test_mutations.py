@@ -150,7 +150,7 @@ class TestCreateWorkItemSource:
             assert_topic_and_message(publish, WorkItemsTopic, WorkItemsSourceCreated)
 
 
-@pytest.yield_fixture
+@pytest.fixture
 def setup_attached_and_unattached_work_items_sources(setup_connectors):
     connector_keys = setup_connectors
     with db.orm_session() as session:
@@ -261,7 +261,7 @@ class TestDeleteWorkTrackingConnector:
             f"select archived from integrations.connectors where key='{attached_connector_key}'").scalar()
 
 
-@pytest.yield_fixture
+@pytest.fixture
 def setup_import_project(setup_connectors):
     connector_keys = setup_connectors
     with db.orm_session() as session:

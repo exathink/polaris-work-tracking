@@ -21,7 +21,7 @@ from polaris.common import db
 class TestRegisterWorkItemsSourceConnectorWebhooks:
     class TestWithGitlabConnector:
 
-        @pytest.yield_fixture()
+        @pytest.fixture()
         def setup(self, setup_work_item_sources, cleanup):
             session, work_items_sources = setup_work_item_sources
             session.commit()

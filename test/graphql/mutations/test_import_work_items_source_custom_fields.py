@@ -21,7 +21,7 @@ from polaris.work_tracking.service.graphql import schema
 
 class TestUpdateWorkItemsSourceCustomFields:
 
-    @pytest.yield_fixture
+    @pytest.fixture
     def setup(self):
         mutation_statement = """
         mutation updateWorkItemsSourceCustomFields($updateWorkItemsSourceCustomFieldsInput: UpdateWorkItemsSourceCustomFieldsInput!){
@@ -47,7 +47,7 @@ class TestUpdateWorkItemsSourceCustomFields:
 
     class TestJiraUpdateWorkItemsSourceCustomFields:
 
-        @pytest.yield_fixture()
+        @pytest.fixture()
         def setup(self, setup, jira_work_item_source_fixture, cleanup):
             fixture = setup
             work_items_source, _, _ = jira_work_item_source_fixture
@@ -122,7 +122,7 @@ class TestUpdateWorkItemsSourceCustomFields:
 
     class TestNonJiraCustomFieldsImport:
 
-        @pytest.yield_fixture
+        @pytest.fixture
         def setup(self, setup, setup_work_item_sources, cleanup):
             fixture = setup
             _, work_items_sources = setup_work_item_sources

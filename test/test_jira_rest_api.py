@@ -223,7 +223,7 @@ jira_api_issue_payload_with_parent = {'id': '10357', 'self': 'https://urjuna.atl
 
 class TestJiraWorkItemSource:
 
-    @pytest.yield_fixture
+    @pytest.fixture
     def setup(self, jira_work_item_source_fixture, cleanup):
         work_items_source, _, _ = jira_work_item_source_fixture
 
@@ -296,7 +296,7 @@ class TestJiraWorkItemSource:
 
 class TestCustomTypeMapping:
 
-    @pytest.yield_fixture()
+    @pytest.fixture()
     def setup(self, jira_work_item_source_fixture, cleanup):
         work_items_source, _, _ = jira_work_item_source_fixture
 
@@ -375,7 +375,7 @@ class TestCustomTypeMapping:
 
 class TestCustomTypeMappingWithoutDefault:
 
-    @pytest.yield_fixture()
+    @pytest.fixture()
     def setup(self, jira_work_item_source_fixture, cleanup):
         work_items_source, _, _ = jira_work_item_source_fixture
 
