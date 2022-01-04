@@ -14,6 +14,7 @@ import uuid
 import pytest
 from flask import Flask
 from datetime import datetime
+from unittest.mock import patch
 from polaris.common import db
 from polaris.common.enums import JiraWorkItemSourceType, WorkItemsSourceImportState
 from polaris.integrations.db import model as integrations
@@ -64,12 +65,14 @@ def app_fixture(setup_integrations_schema):
 
     jira_atlassian_connect.init_connector(app)
 
-    # Install the app
-    response = client.post(
-        '/atlassian_connect/lifecycle/installed',
-        json={**payload, **dict(eventType="installed")}
-    )
-    assert response.status_code == 204
+    # Install the app - turning off install signature verification here since
+    # it is not relevant to this the actual functional tests for the connector.
+    with patch('polaris.integrations.atlassian_connect.atlassian_connect_verify_install_signature'):
+        response = client.post(
+            '/atlassian_connect/lifecycle/installed',
+            json={**payload, **dict(eventType="installed")}
+        )
+        assert response.status_code == 204
 
     connector = load_atlassian_connect_record(client_key)
 
