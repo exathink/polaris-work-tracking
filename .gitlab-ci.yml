@@ -33,6 +33,7 @@ test:
     - master
   tags:
     - polaris-runner
+    - shared-macos-amd64
   script:
     - package test-package
 
