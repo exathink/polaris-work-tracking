@@ -22,6 +22,7 @@ build-package-image:
     - master
   tags:
     - polaris-runner
+
   script:
     - git submodule sync --recursive
     - package submodule_update checkout-clean "${CI_COMMIT_REF_NAME}"
@@ -33,7 +34,6 @@ test:
     - master
   tags:
     - polaris-runner
-    - shared-macos-amd64
   script:
     - package test-package
 
