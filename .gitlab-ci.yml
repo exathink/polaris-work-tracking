@@ -53,7 +53,6 @@ cleanup:
   only:
     - master
     - production
-    -
   tags:
     - polaris-runner
   stage: cleanup
