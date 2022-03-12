@@ -90,6 +90,13 @@ class WorkItemsSource(Base):
     # this may be nullable, but needs to be non null on creation before commit mapping can proceed.
     commit_mapping_scope_key = Column(UUID(as_uuid=True), nullable=True)
 
+    # This is text prefix that can be used to map commits from the work items source using the
+    # display_id. For Jira this is the project key PP in the PP-51 display id for example.
+    # Not useful for providers where the display id is a number, but when there is a text prefix
+    # we can use this find out potential matches between commits and work items, missing matches etc.
+    # so this is a useful field to capture if we have it.
+    commit_mapping_prefix = Column(String, nullable=True)
+
     # Sync Status: the last point at which work items from this source were synced with the source system.
     last_synced = Column(DateTime, nullable=True)
 

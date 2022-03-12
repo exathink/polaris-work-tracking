@@ -102,6 +102,7 @@ class JiraConnector(PolarisAtlassianConnector):
             integration_type=WorkTrackingIntegrationType.jira.value,
             work_items_source_type=JiraWorkItemSourceType.project.value,
             commit_mapping_scope='organization',
+            commit_mapping_prefix=project.get('key'),
             source_id=project['id'],
             name=project['name'],
             url=project.get('url'),

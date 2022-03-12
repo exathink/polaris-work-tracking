@@ -488,7 +488,8 @@ def sync_work_items_sources(connector, work_items_sources_list, join_this=None):
                     set_=dict(
                         name=upsert.excluded.name,
                         description=upsert.excluded.description,
-                        url=upsert.excluded.url
+                        url=upsert.excluded.url,
+                        commit_mapping_prefix=upsert.excluded.commit_mapping_prefix
                     )
                 )
             )
