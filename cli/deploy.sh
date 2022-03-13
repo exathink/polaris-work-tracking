@@ -10,7 +10,7 @@ package aws deploy-task-definition polaris-work-tracking-service-aux
 package aws deploy-task-definition polaris-work-tracking-listener-aux 
 
 echo "Running migrations"
-#package aws run-task polaris-work-tracking-db-migrator
+package aws run-task polaris-work-tracking-db-migrator
 
 echo "Deploying Services.."
 package aws deploy-fargate-services polaris-work-tracking-listener-aux polaris-work-tracking-service-aux
