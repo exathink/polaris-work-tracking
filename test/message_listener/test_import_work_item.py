@@ -19,6 +19,8 @@ from polaris.messaging.test_utils import mock_publisher, mock_channel, assert_to
 from polaris.utils.token_provider import get_token_provider
 from polaris.work_tracking.message_listener import WorkItemsTopicSubscriber
 from polaris.messaging.topics import WorkItemsTopic
+from polaris.utils.exceptions import ProcessingException
+
 from test.constants import *
 from ..fixtures.jira_fixtures import *
 
@@ -76,6 +78,30 @@ class TestWorkItemsTopicSubscriber:
                 messages = subscriber.dispatch(mock_channel, import_work_item_message)
                 assert len(messages) == 1
                 publisher.assert_topic_called_with_message(WorkItemsTopic, WorkItemsCreated)
+
+        def it_raises_an_exception_if_fetch_fails(self, jira_work_item_source_fixture, cleanup):
+            work_items_source, jira_project_id, connector_key = jira_work_item_source_fixture
+            new_work_item = new_work_items_jira()[0]
+            with patch(
+                    'polaris.work_tracking.integrations.atlassian.jira_work_items_source.JiraProject.fetch_work_item') as fetch_work_item:
+                fetch_work_item.return_value = []
+
+                import_work_item_message = fake_send(
+                    ImportWorkItem(send=dict(
+                        organization_key=polaris_organization_key,
+                        work_items_source_key=work_items_source.key,
+                        source_id=new_work_item['source_display_id']
+                    ))
+                )
+
+                publisher = mock_publisher()
+                subscriber = WorkItemsTopicSubscriber(mock_channel, publisher=publisher)
+                subscriber.consumer_context = mock_consumer
+
+                with pytest.raises(ProcessingException):
+                    subscriber.dispatch(mock_channel, import_work_item_message)
+
+
 
         def it_returns_a_valid_response_when_there_are_updated_work_items(self, jira_work_item_source_fixture, cleanup):
             work_items_source, jira_project_id, connector_key = jira_work_item_source_fixture
