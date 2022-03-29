@@ -43,15 +43,20 @@ def update_work_items_source_before_work_item_sync(work_items_source_provider):
 
 
 def sync_work_item(token_provider, work_items_source_key, source_id):
-    work_items_source_provider = work_items_source_factory.get_provider_impl(token_provider, work_items_source_key)
-    work_items_source = work_items_source_provider.work_items_source
-    if work_items_source.import_state != WorkItemsSourceImportState.disabled.value:
-        if getattr(work_items_source_provider, 'fetch_work_item', None):
-            for work_item in work_items_source_provider.fetch_work_item(source_id):
-                yield api.sync_work_item(work_items_source_key, work_item) or []
-    else:
-        logger.info(f'Attempted to call sync_work_item on a disabled work_item_source: {work_items_source.key}.'
-                    f'Sync request will be ignored')
+    try:
+        work_items_source_provider = work_items_source_factory.get_provider_impl(token_provider, work_items_source_key)
+        work_items_source = work_items_source_provider.work_items_source
+        if work_items_source.import_state != WorkItemsSourceImportState.disabled.value:
+            if getattr(work_items_source_provider, 'fetch_work_item', None):
+                for work_item in work_items_source_provider.fetch_work_item(source_id):
+                    logger.info(f'Calling sync work item for work_item {work_item}')
+                    yield api.sync_work_item(work_items_source_key, work_item) or []
+        else:
+            logger.info(f'Attempted to call sync_work_item on a disabled work_item_source: {work_items_source.key}.'
+                        f'Sync request will be ignored')
+    except Exception as exc:
+        logger.error(f"Unexpected error raised on sync_work_item {source_id}")
+        raise ProcessingException(f"Unexpected error raised on sync_work_item {source_id}")
 
 
 def sync_work_items(token_provider, work_items_source_key):
