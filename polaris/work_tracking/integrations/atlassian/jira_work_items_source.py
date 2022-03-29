@@ -201,6 +201,8 @@ class JiraProject(JiraWorkItemsSource):
         else:
             logger.error(f"Could not fetch work items for to sync for project  {self.project_id}. Response {response.status_code} {response.text}")
 
+        yield []
+
     def fetch_work_items_for_epic(self, epic):
         epic_source_id = epic['source_id']
         jql_base = f"project = {self.project_id} "
@@ -217,6 +219,7 @@ class JiraProject(JiraWorkItemsSource):
             headers={"Accept": "application/json"},
             params=query_params
         )
+
         if response.ok:
             offset = 0
             body = response.json()
@@ -243,7 +246,10 @@ class JiraProject(JiraWorkItemsSource):
         else:
             logger.error(f"Could not fetch work items for epic {epic_source_id}. Response {response.status_code} {response.text}")
 
+        yield []
+
     def fetch_work_item(self, source_id):
+        logger.info(f"Fetching work item with source_id {source_id}")
         jql_base = f"project = {self.project_id} "
         get_issue_query = dict(
             fields="*all, -comment",
@@ -254,14 +260,20 @@ class JiraProject(JiraWorkItemsSource):
             headers={"Accept": "application/json"},
             params=get_issue_query
         )
+        work_item_data = []
         if response.ok:
             body = response.json()
-            issues = body.get('issues', [])
-            if len(issues) > 0:
-                work_item_data = self.map_issue_to_work_item_data(issues[0])
-                yield work_item_data
-            else:
-                logger.error(f"Could not fetch work item with key: {source_id}: No issues were returned. Response was {body}")
+            if body is not None:
+                issues = body.get('issues', [])
+                if len(issues) > 0:
+                    work_item_data = self.map_issue_to_work_item_data(issues[0])
 
+                else:
+                    logger.error(f"Could not fetch work item with key: {source_id}: No issues were returned. Response was {body}")
+            else:
+                logger.error("Null response json body returned for JQL query.")
         else:
             logger.error(f"Could not fetch work item with key {source_id}. Response: {response.status_code} {response.text}")
+
+        yield work_item_data
+
