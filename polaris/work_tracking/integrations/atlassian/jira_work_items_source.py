@@ -201,6 +201,8 @@ class JiraProject(JiraWorkItemsSource):
         else:
             logger.error(f"Could not fetch work items for to sync for project  {self.project_id}. Response {response.status_code} {response.text}")
 
+        yield []
+
     def fetch_work_items_for_epic(self, epic):
         epic_source_id = epic['source_id']
         jql_base = f"project = {self.project_id} "
@@ -217,6 +219,7 @@ class JiraProject(JiraWorkItemsSource):
             headers={"Accept": "application/json"},
             params=query_params
         )
+
         if response.ok:
             offset = 0
             body = response.json()
@@ -242,6 +245,8 @@ class JiraProject(JiraWorkItemsSource):
                 body = response.json()
         else:
             logger.error(f"Could not fetch work items for epic {epic_source_id}. Response {response.status_code} {response.text}")
+
+        yield []
 
     def fetch_work_item(self, source_id):
         logger.info(f"Fetching work item with source_id {source_id}")
