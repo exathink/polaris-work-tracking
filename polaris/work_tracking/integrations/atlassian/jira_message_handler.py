@@ -40,24 +40,28 @@ def handle_issue_moved_event(jira_connector_key, jira_event):
             )
             if source_work_items_source and source_work_items_source.import_state == WorkItemsSourceImportState.auto_update.value:
                 # Issue should exist in Polaris, so either move it to active target work items source or set is_moved to True
-                source_work_items_source_key = source_work_items_source.key
-                target_work_items_source_key = target_work_items_source.key if target_work_items_source else None
-                organization_key = source_work_items_source.organization_key
-                if target_work_items_source and target_work_items_source.import_state == WorkItemsSourceImportState.auto_update.value:
-                    target_jira_project_source = JiraProject(target_work_items_source)
-                    moved_work_item_data = target_jira_project_source.map_issue_to_work_item_data(issue)
-                    organization_key = target_work_items_source.organization_key
-                else:
-                    source_jira_project_source = JiraProject(source_work_items_source)
-                    moved_work_item_data = source_jira_project_source.map_issue_to_work_item_data(issue)
-                moved_work_item = api.move_work_item(source_work_items_source_key,
-                                                     target_work_items_source_key,
-                                                     moved_work_item_data,
-                                                     join_this=session)
-                moved_work_item['organization_key'] = organization_key
-                moved_work_item['source_work_items_source_key'] = source_work_items_source_key
-                moved_work_item['target_work_items_source_key'] = target_work_items_source_key
-                return moved_work_item
+                try:
+                    source_work_items_source_key = source_work_items_source.key
+                    target_work_items_source_key = target_work_items_source.key if target_work_items_source else None
+                    organization_key = source_work_items_source.organization_key
+                    if target_work_items_source and target_work_items_source.import_state == WorkItemsSourceImportState.auto_update.value:
+                        target_jira_project_source = JiraProject(target_work_items_source)
+                        moved_work_item_data = target_jira_project_source.map_issue_to_work_item_data(issue)
+                        organization_key = target_work_items_source.organization_key
+                    else:
+                        source_jira_project_source = JiraProject(source_work_items_source)
+                        moved_work_item_data = source_jira_project_source.map_issue_to_work_item_data(issue)
+                    moved_work_item = api.move_work_item(source_work_items_source_key,
+                                                         target_work_items_source_key,
+                                                         moved_work_item_data,
+                                                         join_this=session)
+                    moved_work_item['organization_key'] = organization_key
+                    moved_work_item['source_work_items_source_key'] = source_work_items_source_key
+                    moved_work_item['target_work_items_source_key'] = target_work_items_source_key
+                    return moved_work_item
+                except Exception as exc:
+                    raise ProcessingException(
+                        f"Exception {exc} caught on jira connector issue moved event {jira_connector_key}: issue event {issue}")
             else:
                 # the issue does not exist in Polaris
                 if target_work_items_source and target_work_items_source.import_state == WorkItemsSourceImportState.auto_update.value:
@@ -86,21 +90,24 @@ def handle_issue_events_for_same_source_project(jira_connector_key, jira_event_t
                 # if the work_items source is not enabled for updates nothing is propagated
                 # This ensures that even though the connector is active, it wont import issues etc until
                 # the work_items_source is associated with a project and an initial import is done.
-                jira_project_source = JiraProject(work_items_source)
-                work_item_data = jira_project_source.map_issue_to_work_item_data(issue)
-                if work_item_data:
-                    work_item = {}
-                    if jira_event_type == 'issue_created':
-                        work_item = api.insert_work_item(work_items_source.key, work_item_data, join_this=session)
-                    elif jira_event_type == 'issue_updated':
-                        work_item = api.update_work_item(work_items_source.key, work_item_data, join_this=session)
-                    elif jira_event_type == 'issue_deleted':
-                        work_item_data['deleted_at'] = datetime.utcnow()
-                        work_item = api.delete_work_item(work_items_source.key, work_item_data, join_this=session)
+                try:
+                    jira_project_source = JiraProject(work_items_source)
+                    work_item_data = jira_project_source.map_issue_to_work_item_data(issue)
+                    if work_item_data:
+                        work_item = {}
+                        if jira_event_type == 'issue_created':
+                            work_item = api.insert_work_item(work_items_source.key, work_item_data, join_this=session)
+                        elif jira_event_type == 'issue_updated':
+                            work_item = api.update_work_item(work_items_source.key, work_item_data, join_this=session)
+                        elif jira_event_type == 'issue_deleted':
+                            work_item_data['deleted_at'] = datetime.utcnow()
+                            work_item = api.delete_work_item(work_items_source.key, work_item_data, join_this=session)
 
-                    work_item['organization_key'] = work_items_source.organization_key
-                    work_item['work_items_source_key'] = work_items_source.key
-                    return work_item
+                        work_item['organization_key'] = work_items_source.organization_key
+                        work_item['work_items_source_key'] = work_items_source.key
+                        return work_item
+                except Exception as exc:
+                    raise ProcessingException(f"Exception {exc} caught on jira connector {jira_connector_key}: issue event {issue}")
 
 
 def handle_issue_events(jira_connector_key, jira_event_type, jira_event):
