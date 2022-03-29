@@ -228,6 +228,7 @@ def create_work_items_source(work_items_source_input, join_this=None):
 
 
 def sync_work_item(work_items_source_key, work_item_data, join_this=None):
+    logger.info(f'Sync work item called for work items source {work_items_source_key}')
     with db.orm_session(join_this) as session:
         work_item_key = None
         work_items_source = WorkItemsSource.find_by_key(session, work_items_source_key)
