@@ -543,11 +543,14 @@ if __name__ == "__main__":
     db.init(config_provider.get('POLARIS_DB_URL'))
     token_provider = get_token_provider()
 
-    MessageConsumer(
-        name='polaris.work_tracking.message_listener',
-        topic_subscriber_classes=[
-            WorkItemsTopicSubscriber,
-            ConnectorsTopicSubscriber
-        ],
-        token_provider=token_provider
-    ).start_consuming()
+    try:
+        MessageConsumer(
+            name='polaris.work_tracking.message_listener',
+            topic_subscriber_classes=[
+                WorkItemsTopicSubscriber,
+                ConnectorsTopicSubscriber
+            ],
+            token_provider=token_provider
+        ).start_consuming()
+    except Exception as exc:
+        logger.error(f"Message consumer raised an unexpected exception {exc}. Terminating listener")
