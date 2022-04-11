@@ -206,7 +206,7 @@ class JiraProject(JiraWorkItemsSource):
     def fetch_work_items_for_epic(self, epic):
         epic_source_id = epic['source_id']
         jql_base = f"project = {self.project_id} "
-        jql = f'{jql_base} AND parent={epic_source_id} OR \"Epic Link\" = {epic_source_id}'
+        jql = f'{jql_base} AND (parent={epic_source_id} OR \"Epic Link\" = {epic_source_id}) AND updated >= "-{self.initial_import_days}d"'
 
         query_params = dict(
             fields="*all,-comment",
