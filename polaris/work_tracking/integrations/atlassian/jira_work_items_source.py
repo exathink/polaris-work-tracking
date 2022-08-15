@@ -96,41 +96,52 @@ class JiraProject(JiraWorkItemsSource):
         return timestamp.strftime("%Y-%m-%d %H:%M")
 
     def map_issue_to_work_item_data(self, issue):
-        fields = issue.get('fields')
-        issue_type = fields.get('issuetype').get('name')
-        parent_link = issue.get('fields').get('parent')  # We have parent in next-gen project issue fields
-        if not parent_link:
-            parent_link = find(self.work_items_source.custom_fields, lambda field: field['name'] == 'Epic Link')
-            parent_link_custom_field = parent_link.get('key') if parent_link else None
-            parent_source_display_id = issue.get('fields').get(
-                parent_link_custom_field) if parent_link_custom_field else None
+        if issue is not None:
+            fields = issue.get('fields')
+            if fields is not None:
+                if 'issuetype' in fields:
+                    issue_type = fields.get('issuetype').get('name')
+                else:
+                    raise ProcessingException(f"Expected field 'issuetype' was not found in issue {issue}")
+
+                parent_link = fields.get('parent')  # We have parent in next-gen project issue fields
+                if not parent_link:
+                    parent_link = find(self.work_items_source.custom_fields, lambda field: field['name'] == 'Epic Link')
+                    parent_link_custom_field = parent_link.get('key') if parent_link else None
+                    parent_source_display_id = fields.get(
+                        parent_link_custom_field) if parent_link_custom_field else None
+                else:
+                    parent_source_display_id = parent_link.get('key')
+
+                tags = fields.get('labels', [])
+                if self.is_custom_type(issue_type):
+                    tags.append(f'custom_type:{issue_type}')
+
+                mapped_type = self.map_work_item_type(issue_type)
+                mapped_data = dict(
+                    name=fields.get('summary'),
+                    description=fields.get('description'),
+                    work_item_type=mapped_type,
+                    is_bug=mapped_type == JiraWorkItemType.bug.value,
+
+                    tags=fields.get('labels', []),
+                    url=issue.get('self'),
+                    source_id=str(issue.get('id')),
+                    source_display_id=issue.get('key'),
+                    source_last_updated=self.jira_time_to_utc_time_string(fields.get('updated')),
+                    source_created_at=self.jira_time_to_utc_time_string(fields.get('created')),
+                    source_state=fields.get('status').get('name'),
+                    is_epic=issue_type == 'Epic',
+                    parent_source_display_id=parent_source_display_id,
+                    api_payload=issue,
+                    commit_identifiers=[issue.get('key'), issue.get('key').lower(), issue.get('key').capitalize()]
+                )
+
+                return mapped_data
+            else:
+                raise ProcessingException(f"Map Jira issue failed: Issue did not have field called 'fields' {issue}")
         else:
-            parent_source_display_id = parent_link.get('key')
-        tags = fields.get('labels', [])
-        if self.is_custom_type(issue_type):
-            tags.append(f'custom_type:{issue_type}')
-
-        mapped_type = self.map_work_item_type(issue_type)
-        mapped_data = dict(
-            name=fields.get('summary'),
-            description=fields.get('description'),
-            work_item_type=mapped_type,
-            is_bug=mapped_type == JiraWorkItemType.bug.value,
-
-            tags=fields.get('labels', []),
-            url=issue.get('self'),
-            source_id=str(issue.get('id')),
-            source_display_id=issue.get('key'),
-            source_last_updated=self.jira_time_to_utc_time_string(fields.get('updated')),
-            source_created_at=self.jira_time_to_utc_time_string(fields.get('created')),
-            source_state=fields.get('status').get('name'),
-            is_epic=issue_type == 'Epic',
-            parent_source_display_id=parent_source_display_id,
-            api_payload=issue,
-            commit_identifiers=[issue.get('key'), issue.get('key').lower(), issue.get('key').capitalize()]
-        )
-
-        return mapped_data
+            raise ProcessingException("Map Jira issue failed: Issue was None")
 
     def get_server_timezone_offset(self):
         # This is an awful hack to get around Jira APIs
@@ -155,7 +166,7 @@ class JiraProject(JiraWorkItemsSource):
                     return last_updated.utcoffset()
 
     def fetch_work_items_to_sync(self):
-
+        logger.info(f"Sync work items for Jira Connector {self.jira_connector.key}")
         jql_base = f"project = {self.project_id} "
 
         if self.work_items_source.last_synced is None or self.last_updated is None:
@@ -174,29 +185,35 @@ class JiraProject(JiraWorkItemsSource):
             headers={"Accept": "application/json"},
             params=query_params
         )
-        if response.ok:
+        if response.status_code == 200:
             offset = 0
             body = response.json()
-            total = int(body.get('total') or 0)
-            while offset < total and response.ok:
-                issues = body.get('issues', [])
-                if len(issues) == 0:
-                    break
-                work_items = []
-                for issue in issues:
-                    work_item_data = self.map_issue_to_work_item_data(issue)
-                    if work_item_data:
-                        work_items.append(work_item_data)
+            if body is not None:
+                total = int(body.get('total') or 0)
+                while offset < total and response.status_code == 200:
+                    issues = body.get('issues', [])
+                    if len(issues) == 0:
+                        break
+                    work_items = []
+                    for issue in issues:
+                        try:
+                            work_item_data = self.map_issue_to_work_item_data(issue)
+                            if work_item_data:
+                                work_items.append(work_item_data)
+                        except ProcessingException as e:
+                            logger.error(f"Failed to map issue data {e}")
 
-                yield work_items
-                offset = offset + len(issues)
-                query_params['startAt'] = offset
-                response = self.jira_connector.get(
-                    '/search',
-                    headers={"Accept": "application/json"},
-                    params=query_params
-                )
-                body = response.json()
+                    yield work_items
+                    offset = offset + len(issues)
+                    query_params['startAt'] = offset
+                    response = self.jira_connector.get(
+                        '/search',
+                        headers={"Accept": "application/json"},
+                        params=query_params
+                    )
+                    body = response.json()
+            else:
+                logger.error(f'Response body was empty: Request {response.request}')
 
         else:
             logger.error(f"Could not fetch work items for to sync for project  {self.project_id}. Response {response.status_code} {response.text}")
