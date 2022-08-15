@@ -27,7 +27,7 @@ build-package-image:
 
   script:
     - git submodule sync --recursive
-    - package submodule_update checkout-clean "${CI_COMMIT_REF_NAME}"
+    - package submodule_update checkout-clean
     - package build
 
 test:

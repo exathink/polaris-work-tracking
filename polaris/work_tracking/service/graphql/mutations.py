@@ -202,12 +202,17 @@ class ImportWorkItems(graphene.Mutation):
 
     def mutate(self, info, import_work_items_input):
         logger.info("Import work items called")
-
-        for source_id in import_work_items_input.source_ids:
-            publish.import_work_item_command(
+        if import_work_items_input.source_ids is not None:
+            for source_id in import_work_items_input.source_ids:
+                publish.import_work_item_command(
+                    import_work_items_input.organization_key,
+                    import_work_items_input.work_items_source_key,
+                    source_id
+                )
+        else:
+            publish.sync_work_items_source_command(
                 import_work_items_input.organization_key,
-                import_work_items_input.work_items_source_key,
-                source_id
+                import_work_items_input.work_items_source_key
             )
 
         return ImportWorkItems(success=True)
