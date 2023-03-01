@@ -117,6 +117,9 @@ class JiraProject(JiraWorkItemsSource):
                 if self.is_custom_type(issue_type):
                     tags.append(f'custom_type:{issue_type}')
 
+                for component in fields.get('components', []):
+                    tags.append(f"component:{component['name']}")
+
                 mapped_type = self.map_work_item_type(issue_type)
                 mapped_data = dict(
                     name=fields.get('summary'),

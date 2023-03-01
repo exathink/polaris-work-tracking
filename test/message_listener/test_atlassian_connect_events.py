@@ -60,7 +60,21 @@ def create_issue(project_id, issue_key, issue_id, issue_type='Story', epic_link=
                 id="10000",
                 name=issue_type
             ),
-            customfield_10014=epic_link
+            customfield_10014=epic_link,
+            components=[
+                {
+                    "id": "10011",
+                    "name": "Jira Integration",
+                    "self": "https://exathinkdev.atlassian.net/rest/api/2/component/10011",
+                    "description": "Jira Intergration"
+                },
+                {
+                    "id": "10011",
+                    "name": "Work Tracking",
+                    "self": "https://exathinkdev.atlassian.net/rest/api/2/component/10012",
+                    "description": "Work Tracking"
+                }
+            ]
         )
     )
 
