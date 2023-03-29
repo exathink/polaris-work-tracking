@@ -1,0 +1,374 @@
+{
+  "id": "84540",
+  "key": "APPS-10275",
+  "self": "https://lab7io.atlassian.net/rest/api/2/84540",
+  "fields": {
+    "votes": {
+      "self": "https://lab7io.atlassian.net/rest/api/2/issue/APPS-10275/votes",
+      "votes": 0,
+      "hasVoted": false
+    },
+    "labels": [
+      "3.2.0_Candidate",
+      "stage"
+    ],
+    "status": {
+      "id": "6",
+      "name": "Closed",
+      "self": "https://lab7io.atlassian.net/rest/api/2/status/6",
+      "iconUrl": "https://lab7io.atlassian.net/images/icons/statuses/closed.png",
+      "description": "The issue is considered finished, the resolution is correct. Issues which are closed can be reopened.",
+      "statusCategory": {
+        "id": 3,
+        "key": "done",
+        "name": "Complete",
+        "self": "https://lab7io.atlassian.net/rest/api/2/statuscategory/3",
+        "colorName": "green"
+      }
+    },
+    "created": "2022-11-04T09:04:28.549-0500",
+    "creator": {
+      "self": "https://lab7io.atlassian.net/rest/api/2/user?accountId=5e28bc47a7b9540e76f53317",
+      "active": true,
+      "timeZone": "America/Chicago",
+      "accountId": "5e28bc47a7b9540e76f53317",
+      "avatarUrls": {
+        "16x16": "https://secure.gravatar.com/avatar/8e790c31b850fa7ec6d6c119e4ddaa73?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FED-5.png",
+        "24x24": "https://secure.gravatar.com/avatar/8e790c31b850fa7ec6d6c119e4ddaa73?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FED-5.png",
+        "32x32": "https://secure.gravatar.com/avatar/8e790c31b850fa7ec6d6c119e4ddaa73?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FED-5.png",
+        "48x48": "https://secure.gravatar.com/avatar/8e790c31b850fa7ec6d6c119e4ddaa73?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FED-5.png"
+      },
+      "accountType": "atlassian",
+      "displayName": "Einsteins Do"
+    },
+    "duedate": "2022-08-26",
+    "project": {
+      "id": "11203",
+      "key": "APPS",
+      "name": "L7|ESP",
+      "self": "https://lab7io.atlassian.net/rest/api/2/project/11203",
+      "avatarUrls": {
+        "16x16": "https://lab7io.atlassian.net/rest/api/2/universal_avatar/view/type/project/avatar/11221?size=xsmall",
+        "24x24": "https://lab7io.atlassian.net/rest/api/2/universal_avatar/view/type/project/avatar/11221?size=small",
+        "32x32": "https://lab7io.atlassian.net/rest/api/2/universal_avatar/view/type/project/avatar/11221?size=medium",
+        "48x48": "https://lab7io.atlassian.net/rest/api/2/universal_avatar/view/type/project/avatar/11221"
+      },
+      "simplified": false,
+      "projectTypeKey": "software"
+    },
+    "summary": "Entities: Added description data in bulk edit didn’t display under description column in Entity page (3.1.0)",
+    "updated": "2023-02-02T09:30:10.830-0600",
+    "watches": {
+      "self": "https://lab7io.atlassian.net/rest/api/2/issue/APPS-10275/watchers",
+      "isWatching": true,
+      "watchCount": 3
+    },
+    "assignee": {
+      "self": "https://lab7io.atlassian.net/rest/api/2/user?accountId=604f46c44a91ad0068929377",
+      "active": true,
+      "timeZone": "America/Chicago",
+      "accountId": "604f46c44a91ad0068929377",
+      "avatarUrls": {
+        "16x16": "https://secure.gravatar.com/avatar/f82e32e72003d4bc019831eebaca78ef?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FK-2.png",
+        "24x24": "https://secure.gravatar.com/avatar/f82e32e72003d4bc019831eebaca78ef?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FK-2.png",
+        "32x32": "https://secure.gravatar.com/avatar/f82e32e72003d4bc019831eebaca78ef?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FK-2.png",
+        "48x48": "https://secure.gravatar.com/avatar/f82e32e72003d4bc019831eebaca78ef?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FK-2.png"
+      },
+      "accountType": "atlassian",
+      "displayName": "kirupayini.selvaraju"
+    },
+    "priority": {
+      "id": "3",
+      "name": "Major",
+      "self": "https://lab7io.atlassian.net/rest/api/2/priority/3",
+      "iconUrl": "https://lab7io.atlassian.net/images/icons/priorities/major.svg"
+    },
+    "progress": {
+      "total": 0,
+      "progress": 0
+    },
+    "reporter": {
+      "self": "https://lab7io.atlassian.net/rest/api/2/user?accountId=5e28bc47a7b9540e76f53317",
+      "active": true,
+      "timeZone": "America/Chicago",
+      "accountId": "5e28bc47a7b9540e76f53317",
+      "avatarUrls": {
+        "16x16": "https://secure.gravatar.com/avatar/8e790c31b850fa7ec6d6c119e4ddaa73?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FED-5.png",
+        "24x24": "https://secure.gravatar.com/avatar/8e790c31b850fa7ec6d6c119e4ddaa73?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FED-5.png",
+        "32x32": "https://secure.gravatar.com/avatar/8e790c31b850fa7ec6d6c119e4ddaa73?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FED-5.png",
+        "48x48": "https://secure.gravatar.com/avatar/8e790c31b850fa7ec6d6c119e4ddaa73?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FED-5.png"
+      },
+      "accountType": "atlassian",
+      "displayName": "Einsteins Do"
+    },
+    "security": null,
+    "subtasks": [],
+    "versions": [
+      {
+        "id": "12189",
+        "name": "2.5.0",
+        "self": "https://lab7io.atlassian.net/rest/api/2/version/12189",
+        "archived": false,
+        "released": false,
+        "description": "Internal Release",
+        "releaseDate": "2021-10-15"
+      }
+    ],
+    "issuetype": {
+      "id": "1",
+      "name": "Bug",
+      "self": "https://lab7io.atlassian.net/rest/api/2/issuetype/1",
+      "iconUrl": "https://lab7io.atlassian.net/rest/api/2/universal_avatar/view/type/issuetype/avatar/10403?size=medium",
+      "subtask": false,
+      "avatarId": 10403,
+      "description": "A problem which impairs or prevents the functions of the product.",
+      "hierarchyLevel": 0
+    },
+    "timespent": null,
+    "workratio": -1,
+    "attachment": [
+      {
+        "id": "43538",
+        "self": "https://lab7io.atlassian.net/rest/api/2/attachment/43538",
+        "size": 6140415,
+        "author": {
+          "self": "https://lab7io.atlassian.net/rest/api/2/user?accountId=5e28bc47a7b9540e76f53317",
+          "active": true,
+          "timeZone": "America/Chicago",
+          "accountId": "5e28bc47a7b9540e76f53317",
+          "avatarUrls": {
+            "16x16": "https://secure.gravatar.com/avatar/8e790c31b850fa7ec6d6c119e4ddaa73?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FED-5.png",
+            "24x24": "https://secure.gravatar.com/avatar/8e790c31b850fa7ec6d6c119e4ddaa73?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FED-5.png",
+            "32x32": "https://secure.gravatar.com/avatar/8e790c31b850fa7ec6d6c119e4ddaa73?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FED-5.png",
+            "48x48": "https://secure.gravatar.com/avatar/8e790c31b850fa7ec6d6c119e4ddaa73?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FED-5.png"
+          },
+          "accountType": "atlassian",
+          "displayName": "Einsteins Do"
+        },
+        "content": "https://lab7io.atlassian.net/rest/api/2/attachment/content/43538",
+        "created": "2022-11-04T09:04:28.368-0500",
+        "filename": "Screen Recording 2021-08-26 at 1.41.40 PM.mov",
+        "mimeType": "video/quicktime"
+      }
+    ],
+    "components": [
+      {
+        "id": "11835",
+        "name": "Entities",
+        "self": "https://lab7io.atlassian.net/rest/api/2/component/11835",
+        "description": "Entities App"
+      }
+    ],
+    "issuelinks": [
+      {
+        "id": "59809",
+        "self": "https://lab7io.atlassian.net/rest/api/2/issueLink/59809",
+        "type": {
+          "id": "10101",
+          "name": "Cloners",
+          "self": "https://lab7io.atlassian.net/rest/api/2/issueLinkType/10101",
+          "inward": "is cloned by",
+          "outward": "clones"
+        },
+        "outwardIssue": {
+          "id": "62543",
+          "key": "APPS-6489",
+          "self": "https://lab7io.atlassian.net/rest/api/2/issue/62543",
+          "fields": {
+            "status": {
+              "id": "6",
+              "name": "Closed",
+              "self": "https://lab7io.atlassian.net/rest/api/2/status/6",
+              "iconUrl": "https://lab7io.atlassian.net/images/icons/statuses/closed.png",
+              "description": "The issue is considered finished, the resolution is correct. Issues which are closed can be reopened.",
+              "statusCategory": {
+                "id": 3,
+                "key": "done",
+                "name": "Done",
+                "self": "https://lab7io.atlassian.net/rest/api/2/statuscategory/3",
+                "colorName": "green"
+              }
+            },
+            "summary": "Entities: Added description data in bulk edit didn’t display under description column in Entity page",
+            "priority": {
+              "id": "3",
+              "name": "Major",
+              "self": "https://lab7io.atlassian.net/rest/api/2/priority/3",
+              "iconUrl": "https://lab7io.atlassian.net/images/icons/priorities/major.svg"
+            },
+            "issuetype": {
+              "id": "1",
+              "name": "Bug",
+              "self": "https://lab7io.atlassian.net/rest/api/2/issuetype/1",
+              "iconUrl": "https://lab7io.atlassian.net/rest/api/2/universal_avatar/view/type/issuetype/avatar/10403?size=medium",
+              "subtask": false,
+              "avatarId": 10403,
+              "description": "A problem which impairs or prevents the functions of the product.",
+              "hierarchyLevel": 0
+            }
+          }
+        }
+      }
+    ],
+    "lastViewed": "2023-02-02T09:30:10.610-0600",
+    "resolution": {
+      "id": "1",
+      "name": "Fixed",
+      "self": "https://lab7io.atlassian.net/rest/api/2/resolution/1",
+      "description": "A fix for this issue is checked into the tree and tested."
+    },
+    "description": "Steps to recreate:\r\n\r\n * Go to Entities\r\n * Select the desired entities for bulk editing \r\n * Click on \"Bulk Edit\"\r\n * In \"Bulk edit entity data\" page, enter text/numeric data in the description input field\r\n * Click on Done\r\n\r\n See attachment\r\n\r\n Actual result: \r\n Added description data in bulk edit didn’t display under description column in Entity main page\r\n\r\n Expected result: \r\n Added description data in bulk edit should display under description column in Entity main page",
+    "environment": null,
+    "fixVersions": [
+      {
+        "id": "12245",
+        "name": "3.1.0",
+        "self": "https://lab7io.atlassian.net/rest/api/2/version/12245",
+        "archived": false,
+        "released": false,
+        "description": "",
+        "releaseDate": "2023-02-21"
+      }
+    ],
+    "timeestimate": null,
+    "timetracking": {},
+    "resolutiondate": "2023-02-02T09:30:10.775-0600",
+    "issuerestriction": {
+      "shouldDisplay": false,
+      "issuerestrictions": {}
+    },
+    "aggregateprogress": {
+      "total": 0,
+      "progress": 0
+    },
+    "customfield_10200": [
+      {
+        "id": 848,
+        "goal": "",
+        "name": "Bug Fixes - Week 10",
+        "state": "closed",
+        "boardId": 217,
+        "endDate": "2022-11-08T22:54:00.000Z",
+        "startDate": "2022-11-01T11:16:36.771Z",
+        "completeDate": "2022-11-09T15:23:44.455Z"
+      },
+      {
+        "id": 891,
+        "goal": "",
+        "name": "Scheduling 3.2.0 Sprint #1",
+        "state": "future",
+        "boardId": 193,
+        "endDate": "2023-02-14T20:39:00.000Z",
+        "startDate": "2023-01-31T20:39:00.000Z"
+      }
+    ],
+    "customfield_10500": null,
+    "customfield_10700": [
+      {
+        "id": "12533",
+        "name": "3.1.0.0-beta.13",
+        "self": "https://lab7io.atlassian.net/rest/api/2/version/12533",
+        "archived": false,
+        "released": false,
+        "description": ""
+      }
+    ],
+    "customfield_10900": "0|00f4ri:zuzz",
+    "customfield_11200": null,
+    "customfield_11201": null,
+    "customfield_11202": [],
+    "customfield_11203": null,
+    "customfield_11204": null,
+    "customfield_11206": null,
+    "customfield_11207": null,
+    "customfield_11300": {
+      "showField": false,
+      "nonEditableReason": {
+        "reason": "EPIC_LINK_SHOULD_BE_USED",
+        "message": "To set an epic as the parent, use the epic link instead"
+      },
+      "hasEpicLinkFieldDependency": false
+    },
+    "customfield_11400": "{pullrequest={dataType=pullrequest, state=MERGED, stateCount=1}, build={count=1, dataType=build, failedBuildCount=0, successfulBuildCount=1, unknownBuildCount=0}, json={\"cachedValue\":{\"errors\":[],\"summary\":{\"pullrequest\":{\"overall\":{\"count\":1,\"lastUpdated\":\"2023-01-26T08:37:15.014-0600\",\"stateCount\":1,\"state\":\"MERGED\",\"dataType\":\"pullrequest\",\"open\":false},\"byInstanceType\":{\"bitbucket\":{\"count\":1,\"name\":\"Bitbucket Cloud\"}}},\"build\":{\"overall\":{\"count\":1,\"lastUpdated\":null,\"failedBuildCount\":0,\"successfulBuildCount\":1,\"unknownBuildCount\":0,\"dataType\":\"build\"},\"byInstanceType\":{\"cloud-providers\":{\"count\":1,\"name\":\"Other providers\"}}}}},\"isStale\":false}}",
+    "customfield_11500": null,
+    "customfield_11600": null,
+    "customfield_11700": null,
+    "customfield_11800": null,
+    "customfield_12000": null,
+    "customfield_12100": null,
+    "customfield_12110": null,
+    "customfield_12111": "2022-11-04T09:04:30.641-0500",
+    "customfield_12112": "3_*:*_1_*:*_6595408784_*|*_5_*:*_1_*:*_55905059_*|*_6_*:*_1_*:*_0_*|*_10609_*:*_1_*:*_521854970_*|*_10101_*:*_1_*:*_592946956_*|*_10100_*:*_1_*:*_15026550",
+    "customfield_12113": null,
+    "customfield_12114": null,
+    "customfield_12116": null,
+    "customfield_12117": null,
+    "customfield_12118": null,
+    "customfield_12119": null,
+    "customfield_12120": null,
+    "customfield_12121": null,
+    "customfield_12122": null,
+    "customfield_12123": null,
+    "customfield_12124": null,
+    "customfield_12125": null,
+    "customfield_12126": null,
+    "customfield_12127": null,
+    "customfield_12128": null,
+    "customfield_12129": null,
+    "customfield_12130": null,
+    "customfield_12131": null,
+    "customfield_12132": [
+      "3.1.0.0-beta.14-44-ge2e4225d91.20230131143557"
+    ],
+    "customfield_12135": null,
+    "customfield_12136": [
+      "EN-43-8"
+    ],
+    "customfield_12138": null,
+    "customfield_12139": null,
+    "customfield_12150": {
+      "id": "10610",
+      "self": "https://lab7io.atlassian.net/rest/api/2/customFieldOption/10610",
+      "value": "Triage Complete"
+    },
+    "customfield_12152": null,
+    "customfield_12153": null,
+    "customfield_12155": null,
+    "customfield_12163": null,
+    "customfield_12164": null,
+    "customfield_12174": null,
+    "customfield_12175": null,
+    "customfield_12208": null,
+    "customfield_12209": null,
+    "customfield_12210": null,
+    "customfield_12213": null,
+    "customfield_12230": null,
+    "customfield_12231": null,
+    "customfield_12232": null,
+    "customfield_12233": null,
+    "customfield_12236": {
+      "id": "10920",
+      "self": "https://lab7io.atlassian.net/rest/api/2/customFieldOption/10920",
+      "value": "3"
+    },
+    "customfield_12237": {
+      "id": "10925",
+      "self": "https://lab7io.atlassian.net/rest/api/2/customFieldOption/10925",
+      "value": "2"
+    },
+    "customfield_12238": {
+      "id": "10930",
+      "self": "https://lab7io.atlassian.net/rest/api/2/customFieldOption/10930",
+      "value": "3"
+    },
+    "customfield_12239": null,
+    "customfield_12241": null,
+    "customfield_12242": null,
+    "customfield_12253": null,
+    "aggregatetimespent": null,
+    "timeoriginalestimate": null,
+    "aggregatetimeestimate": null,
+    "statuscategorychangedate": "2023-02-02T09:30:10.836-0600",
+    "aggregatetimeoriginalestimate": null
+  }
+}
