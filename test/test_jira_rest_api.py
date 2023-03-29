@@ -8,7 +8,7 @@
 
 # Author: Krishna Kumar
 import json
-
+import pkg_resources
 from polaris.utils.collections import Fixture
 from .fixtures.jira_fixtures import *
 from polaris.work_tracking.integrations.atlassian.jira_work_items_source import JiraProject
@@ -303,8 +303,8 @@ class TestCustomTypeMapping:
 
 
         # this payload contains an issue with a custom type: Feature
-        with open('test/fixtures/jira_test_files/jira_payload_with_custom_type.json', 'r') as f:
-            jira_api_issue_with_custom_type = json.load(f)
+
+        jira_api_issue_with_custom_type = json.loads(pkg_resources.resource_string(__name__, 'fixtures/jira_test_files/jira_payload_with_custom_type.json'))
 
         with db.orm_session() as session:
             session.add(work_items_source)
@@ -356,8 +356,8 @@ class TestComponentMapping:
 
 
         # this payload contains an issue with a component "Entities"
-        with open('test/fixtures/jira_test_files/jira_payload_with_components.json', 'r') as f:
-            jira_api_issue_with_components = json.load(f)
+        jira_api_issue_with_components = json.loads(pkg_resources.resource_string(__name__, 'fixtures/jira_test_files/jira_payload_with_components.json'))
+
 
         with db.orm_session() as session:
             session.add(work_items_source)
