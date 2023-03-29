@@ -303,7 +303,7 @@ class TestCustomTypeMapping:
 
 
         # this payload contains an issue with a custom type: Feature
-        with open('fixtures/jira_test_files/jira_payload_with_custom_type.json', 'r') as f:
+        with open('test/fixtures/jira_test_files/jira_payload_with_custom_type.json', 'r') as f:
             jira_api_issue_with_custom_type = json.load(f)
 
         with db.orm_session() as session:
@@ -356,7 +356,7 @@ class TestComponentMapping:
 
 
         # this payload contains an issue with a component "Entities"
-        with open('fixtures/jira_test_files/jira_payload_with_components.json', 'r') as f:
+        with open('test/fixtures/jira_test_files/jira_payload_with_components.json', 'r') as f:
             jira_api_issue_with_components = json.load(f)
 
         with db.orm_session() as session:
