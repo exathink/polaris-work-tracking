@@ -1,0 +1,318 @@
+{
+  "id": "10570",
+  "key": "PP-429",
+  "self": "https://exathinkdev.atlassian.net/rest/api/latest/issue/10570",
+  "expand": "operations,versionedRepresentations,editmeta,changelog,customfield_10010.requestTypePractice,renderedFields",
+  "fields": {
+    "votes": {
+      "self": "https://exathinkdev.atlassian.net/rest/api/2/issue/PP-429/votes",
+      "votes": 0,
+      "hasVoted": false
+    },
+    "labels": [],
+    "parent": {
+      "id": "10569",
+      "key": "PP-428",
+      "self": "https://exathinkdev.atlassian.net/rest/api/2/issue/10569",
+      "fields": {
+        "status": {
+          "id": "10001",
+          "name": "Backlog",
+          "self": "https://exathinkdev.atlassian.net/rest/api/2/status/10001",
+          "iconUrl": "https://exathinkdev.atlassian.net/",
+          "description": "",
+          "statusCategory": {
+            "id": 2,
+            "key": "new",
+            "name": "To Do",
+            "self": "https://exathinkdev.atlassian.net/rest/api/2/statuscategory/2",
+            "colorName": "blue-gray"
+          }
+        },
+        "summary": "Custom Type Mapping",
+        "priority": {
+          "id": "3",
+          "name": "Medium",
+          "self": "https://exathinkdev.atlassian.net/rest/api/2/priority/3",
+          "iconUrl": "https://exathinkdev.atlassian.net/images/icons/priorities/medium.svg"
+        },
+        "issuetype": {
+          "id": "10000",
+          "name": "Epic",
+          "self": "https://exathinkdev.atlassian.net/rest/api/2/issuetype/10000",
+          "iconUrl": "https://exathinkdev.atlassian.net/images/icons/issuetypes/epic.svg",
+          "subtask": false,
+          "description": "A big user story that needs to be broken down. Created by Jira Software - do not edit or delete.",
+          "hierarchyLevel": 1
+        }
+      }
+    },
+    "status": {
+      "id": "10001",
+      "name": "Backlog",
+      "self": "https://exathinkdev.atlassian.net/rest/api/2/status/10001",
+      "iconUrl": "https://exathinkdev.atlassian.net/",
+      "description": "",
+      "statusCategory": {
+        "id": 2,
+        "key": "new",
+        "name": "To Do",
+        "self": "https://exathinkdev.atlassian.net/rest/api/2/statuscategory/2",
+        "colorName": "blue-gray"
+      }
+    },
+    "created": "2023-03-28T14:42:55.465-0500",
+    "creator": {
+      "self": "https://exathinkdev.atlassian.net/rest/api/2/user?accountId=557058%3Afe3847a4-f489-452f-8a83-0629c51e0455",
+      "active": true,
+      "timeZone": "America/Chicago",
+      "accountId": "557058:fe3847a4-f489-452f-8a83-0629c51e0455",
+      "avatarUrls": {
+        "16x16": "https://secure.gravatar.com/avatar/ff19230d4b6d9a5d7d441dc62fec4619?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FK-2.png",
+        "24x24": "https://secure.gravatar.com/avatar/ff19230d4b6d9a5d7d441dc62fec4619?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FK-2.png",
+        "32x32": "https://secure.gravatar.com/avatar/ff19230d4b6d9a5d7d441dc62fec4619?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FK-2.png",
+        "48x48": "https://secure.gravatar.com/avatar/ff19230d4b6d9a5d7d441dc62fec4619?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FK-2.png"
+      },
+      "accountType": "atlassian",
+      "displayName": "KrishnaK"
+    },
+    "duedate": null,
+    "project": {
+      "id": "10013",
+      "key": "PP",
+      "name": "Polaris Platform",
+      "self": "https://exathinkdev.atlassian.net/rest/api/2/project/10013",
+      "avatarUrls": {
+        "16x16": "https://exathinkdev.atlassian.net/rest/api/2/universal_avatar/view/type/project/avatar/10412?size=xsmall",
+        "24x24": "https://exathinkdev.atlassian.net/rest/api/2/universal_avatar/view/type/project/avatar/10412?size=small",
+        "32x32": "https://exathinkdev.atlassian.net/rest/api/2/universal_avatar/view/type/project/avatar/10412?size=medium",
+        "48x48": "https://exathinkdev.atlassian.net/rest/api/2/universal_avatar/view/type/project/avatar/10412"
+      },
+      "simplified": false,
+      "projectTypeKey": "software"
+    },
+    "summary": "Custom Type Mapping Feature",
+    "updated": "2023-03-28T14:53:29.442-0500",
+    "watches": {
+      "self": "https://exathinkdev.atlassian.net/rest/api/2/issue/PP-429/watchers",
+      "isWatching": false,
+      "watchCount": 1
+    },
+    "worklog": {
+      "total": 0,
+      "startAt": 0,
+      "worklogs": [],
+      "maxResults": 20
+    },
+    "assignee": null,
+    "priority": {
+      "id": "3",
+      "name": "Medium",
+      "self": "https://exathinkdev.atlassian.net/rest/api/2/priority/3",
+      "iconUrl": "https://exathinkdev.atlassian.net/images/icons/priorities/medium.svg"
+    },
+    "progress": {
+      "total": 0,
+      "progress": 0
+    },
+    "reporter": {
+      "self": "https://exathinkdev.atlassian.net/rest/api/2/user?accountId=557058%3Afe3847a4-f489-452f-8a83-0629c51e0455",
+      "active": true,
+      "timeZone": "America/Chicago",
+      "accountId": "557058:fe3847a4-f489-452f-8a83-0629c51e0455",
+      "avatarUrls": {
+        "16x16": "https://secure.gravatar.com/avatar/ff19230d4b6d9a5d7d441dc62fec4619?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FK-2.png",
+        "24x24": "https://secure.gravatar.com/avatar/ff19230d4b6d9a5d7d441dc62fec4619?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FK-2.png",
+        "32x32": "https://secure.gravatar.com/avatar/ff19230d4b6d9a5d7d441dc62fec4619?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FK-2.png",
+        "48x48": "https://secure.gravatar.com/avatar/ff19230d4b6d9a5d7d441dc62fec4619?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FK-2.png"
+      },
+      "accountType": "atlassian",
+      "displayName": "KrishnaK"
+    },
+    "security": null,
+    "subtasks": [],
+    "versions": [],
+    "issuetype": {
+      "id": "10045",
+      "name": "Feature",
+      "self": "https://exathinkdev.atlassian.net/rest/api/2/issuetype/10045",
+      "iconUrl": "https://exathinkdev.atlassian.net/rest/api/2/universal_avatar/view/type/issuetype/avatar/10300?size=medium",
+      "subtask": false,
+      "avatarId": 10300,
+      "description": "",
+      "hierarchyLevel": 0
+    },
+    "timespent": null,
+    "workratio": -1,
+    "attachment": [],
+    "components": [],
+    "issuelinks": [
+      {
+        "id": "10707",
+        "self": "https://exathinkdev.atlassian.net/rest/api/2/issueLink/10707",
+        "type": {
+          "id": "10103",
+          "name": "Children",
+          "self": "https://exathinkdev.atlassian.net/rest/api/2/issueLinkType/10103",
+          "inward": "Parent",
+          "outward": "Children"
+        },
+        "outwardIssue": {
+          "id": "10571",
+          "key": "PP-430",
+          "self": "https://exathinkdev.atlassian.net/rest/api/2/issue/10571",
+          "fields": {
+            "status": {
+              "id": "10001",
+              "name": "Backlog",
+              "self": "https://exathinkdev.atlassian.net/rest/api/2/status/10001",
+              "iconUrl": "https://exathinkdev.atlassian.net/",
+              "description": "",
+              "statusCategory": {
+                "id": 2,
+                "key": "new",
+                "name": "To Do",
+                "self": "https://exathinkdev.atlassian.net/rest/api/2/statuscategory/2",
+                "colorName": "blue-gray"
+              }
+            },
+            "summary": "Mutation to create/update a custom type map for work item source",
+            "priority": {
+              "id": "3",
+              "name": "Medium",
+              "self": "https://exathinkdev.atlassian.net/rest/api/2/priority/3",
+              "iconUrl": "https://exathinkdev.atlassian.net/images/icons/priorities/medium.svg"
+            },
+            "issuetype": {
+              "id": "10001",
+              "name": "Story",
+              "self": "https://exathinkdev.atlassian.net/rest/api/2/issuetype/10001",
+              "iconUrl": "https://exathinkdev.atlassian.net/rest/api/2/universal_avatar/view/type/issuetype/avatar/10315?size=medium",
+              "subtask": false,
+              "avatarId": 10315,
+              "description": "Stories track functionality or features expressed as user goals.",
+              "hierarchyLevel": 0
+            }
+          }
+        }
+      },
+      {
+        "id": "10710",
+        "self": "https://exathinkdev.atlassian.net/rest/api/2/issueLink/10710",
+        "type": {
+          "id": "10103",
+          "name": "Children",
+          "self": "https://exathinkdev.atlassian.net/rest/api/2/issueLinkType/10103",
+          "inward": "Parent",
+          "outward": "Children"
+        },
+        "outwardIssue": {
+          "id": "10572",
+          "key": "PP-431",
+          "self": "https://exathinkdev.atlassian.net/rest/api/2/issue/10572",
+          "fields": {
+            "status": {
+              "id": "10001",
+              "name": "Backlog",
+              "self": "https://exathinkdev.atlassian.net/rest/api/2/status/10001",
+              "iconUrl": "https://exathinkdev.atlassian.net/",
+              "description": "",
+              "statusCategory": {
+                "id": 2,
+                "key": "new",
+                "name": "To Do",
+                "self": "https://exathinkdev.atlassian.net/rest/api/2/statuscategory/2",
+                "colorName": "blue-gray"
+              }
+            },
+            "summary": "When a work item is imported or updated, update the custom type using the current map",
+            "priority": {
+              "id": "3",
+              "name": "Medium",
+              "self": "https://exathinkdev.atlassian.net/rest/api/2/priority/3",
+              "iconUrl": "https://exathinkdev.atlassian.net/images/icons/priorities/medium.svg"
+            },
+            "issuetype": {
+              "id": "10001",
+              "name": "Story",
+              "self": "https://exathinkdev.atlassian.net/rest/api/2/issuetype/10001",
+              "iconUrl": "https://exathinkdev.atlassian.net/rest/api/2/universal_avatar/view/type/issuetype/avatar/10315?size=medium",
+              "subtask": false,
+              "avatarId": 10315,
+              "description": "Stories track functionality or features expressed as user goals.",
+              "hierarchyLevel": 0
+            }
+          }
+        }
+      }
+    ],
+    "lastViewed": null,
+    "resolution": null,
+    "description": "This is a dummy task used to test out the custom issue type feature that four kite uses. \n\nIts not quite a match for their model, since the children of these features, created via custom links are also children of the epic, but it is close enough that we will have some test data to work with.",
+    "environment": null,
+    "fixVersions": [],
+    "timeestimate": null,
+    "timetracking": {},
+    "resolutiondate": null,
+    "issuerestriction": {
+      "shouldDisplay": false,
+      "issuerestrictions": {}
+    },
+    "aggregateprogress": {
+      "total": 0,
+      "progress": 0
+    },
+    "customfield_10000": "{}",
+    "customfield_10001": null,
+    "customfield_10002": null,
+    "customfield_10003": null,
+    "customfield_10004": null,
+    "customfield_10005": null,
+    "customfield_10006": null,
+    "customfield_10007": null,
+    "customfield_10008": null,
+    "customfield_10009": null,
+    "customfield_10010": null,
+    "customfield_10014": "PP-428",
+    "customfield_10015": null,
+    "customfield_10016": null,
+    "customfield_10017": null,
+    "customfield_10018": {
+      "showField": false,
+      "nonEditableReason": {
+        "reason": "PLUGIN_LICENSE_ERROR",
+        "message": "The Parent Link is only available to Jira Premium users."
+      },
+      "hasEpicLinkFieldDependency": false
+    },
+    "customfield_10019": null,
+    "customfield_10020": null,
+    "customfield_10021": null,
+    "customfield_10022": "0|i002yj:",
+    "customfield_10023": null,
+    "customfield_10024": [],
+    "customfield_10025": null,
+    "customfield_10026": null,
+    "customfield_10030": null,
+    "customfield_10031": null,
+    "customfield_10032": null,
+    "customfield_10033": null,
+    "customfield_10034": null,
+    "customfield_10035": null,
+    "customfield_10036": null,
+    "customfield_10037": [],
+    "customfield_10038": null,
+    "customfield_10039": null,
+    "customfield_10040": null,
+    "customfield_10041": null,
+    "customfield_10042": null,
+    "customfield_10043": null,
+    "customfield_10044": null,
+    "customfield_10045": null,
+    "aggregatetimespent": null,
+    "timeoriginalestimate": null,
+    "aggregatetimeestimate": null,
+    "statuscategorychangedate": "2023-03-28T14:42:56.083-0500",
+    "aggregatetimeoriginalestimate": null
+  }
+}

@@ -57,20 +57,9 @@ class JiraProject(JiraWorkItemsSource):
 
     def map_work_item_type(self, issue_type_to_map):
         issue_type = issue_type_to_map.lower()
-        work_item_type = self.work_item_type_map.get(issue_type)
-        if work_item_type is None:
-            if issue_type in self.custom_type_map:
-                work_item_type = self.custom_type_map[issue_type]
-            else:
-                if 'default' in self.custom_type_map:
-                    work_item_type = self.work_item_type_map.get(
-                        self.custom_type_map['default'].lower(),
-                        JiraWorkItemType.story.value
-                    )
-                else:
-                    work_item_type = JiraWorkItemType.story.value
+        # we return story as the default value of the type
+        return self.work_item_type_map.get(issue_type, JiraWorkItemType.story.value)
 
-        return work_item_type
 
     def is_custom_type(self, issue_type):
         return issue_type.lower() not in self.work_item_type_map
@@ -113,12 +102,6 @@ class JiraProject(JiraWorkItemsSource):
                 else:
                     parent_source_display_id = parent_link.get('key')
 
-                tags = fields.get('labels', [])
-                if self.is_custom_type(issue_type):
-                    tags.append(f'custom_type:{issue_type}')
-
-                for component in fields.get('components', []):
-                    tags.append(f"component:{component['name']}")
 
                 mapped_type = self.map_work_item_type(issue_type)
                 mapped_data = dict(
@@ -126,15 +109,15 @@ class JiraProject(JiraWorkItemsSource):
                     description=fields.get('description'),
                     work_item_type=mapped_type,
                     is_bug=mapped_type == JiraWorkItemType.bug.value,
-
-                    tags=fields.get('labels', []),
+                    is_epic=mapped_type == JiraWorkItemType.epic.value,
+                    tags=self.process_tags(fields, issue_type),
                     url=issue.get('self'),
                     source_id=str(issue.get('id')),
                     source_display_id=issue.get('key'),
                     source_last_updated=self.jira_time_to_utc_time_string(fields.get('updated')),
                     source_created_at=self.jira_time_to_utc_time_string(fields.get('created')),
                     source_state=fields.get('status').get('name'),
-                    is_epic=issue_type == 'Epic',
+
                     parent_source_display_id=parent_source_display_id,
                     api_payload=issue,
                     commit_identifiers=[issue.get('key'), issue.get('key').lower(), issue.get('key').capitalize()]
@@ -145,6 +128,16 @@ class JiraProject(JiraWorkItemsSource):
                 raise ProcessingException(f"Map Jira issue failed: Issue did not have field called 'fields' {issue}")
         else:
             raise ProcessingException("Map Jira issue failed: Issue was None")
+
+    def process_tags(self, fields, issue_type):
+        tags = set(fields.get('labels', []))
+        if self.is_custom_type(issue_type):
+            tags.add(f'custom_type:{issue_type}')
+        # lift the components into tags
+        for component in fields.get('components', []):
+            tags.add(f"component:{component['name']}")
+
+        return list(tags)
 
     def get_server_timezone_offset(self):
         # This is an awful hack to get around Jira APIs
