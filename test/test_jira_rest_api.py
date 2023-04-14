@@ -295,6 +295,8 @@ class TestJiraWorkItemSource:
         assert len(mapped_data.keys()) == 15
 
 
+
+
 class TestCustomTypeMapping:
 
     @pytest.fixture()
@@ -377,3 +379,74 @@ class TestComponentMapping:
         mapped_data = project.map_issue_to_work_item_data(fixture.jira_issue)
 
         assert 'component:Entities' in mapped_data['tags']
+
+class TestCustomParentMapping:
+
+    class TestWhenCustomParentExists:
+        @pytest.fixture()
+        def setup(self, jira_work_item_source_fixture, cleanup):
+            work_items_source, _, _ = jira_work_item_source_fixture
+
+            # this payload contains an issue with a custom parent link specified by a custom link in the
+            # issue payload.
+            jira_api_issue_with_components = json.loads(
+                pkg_resources.resource_string(__name__, 'data/jira_payload_with_custom_parent.json'))
+
+            with db.orm_session() as session:
+                session.add(work_items_source)
+                work_items_source.parameters = dict(
+                    parent_path_selectors=[
+                        "(fields.issuelinks[?type.name=='Parent/Child'].outwardIssue.key)[0]"
+                    ]
+                )
+                jira_project = JiraProject(work_items_source)
+
+            yield Fixture(
+                jira_project=jira_project,
+                jira_issue=jira_api_issue_with_components,
+                work_items_source=work_items_source
+            )
+
+        def it_returns_the_custom_parent_source_id(self, setup):
+            fixture = setup
+
+            project = fixture.jira_project
+
+            mapped_data = project.map_issue_to_work_item_data(fixture.jira_issue)
+
+
+            assert mapped_data['parent_source_display_id'] == "MM-5484"
+
+    class TestWhenCustomParentDoesNotExist:
+        @pytest.fixture()
+        def setup(self, jira_work_item_source_fixture, cleanup):
+            work_items_source, _, _ = jira_work_item_source_fixture
+
+            # this payload contains the parent issue referenced in the test above.
+            # It does not have a parent link.
+            jira_api_issue_with_components = json.loads(
+                pkg_resources.resource_string(__name__, 'data/jira_payload_for_custom_parent.json'))
+
+            with db.orm_session() as session:
+                session.add(work_items_source)
+                work_items_source.parameters = dict(
+                    parent_path_selectors=[
+                        "(fields.issuelinks[?type.name=='Parent/Child'].outwardIssue.key)[0]"
+                    ]
+                )
+                jira_project = JiraProject(work_items_source)
+
+            yield Fixture(
+                jira_project=jira_project,
+                jira_issue=jira_api_issue_with_components,
+                work_items_source=work_items_source
+            )
+
+        def it_returns_a_null_custom_parent_source_id(self, setup):
+            fixture = setup
+
+            project = fixture.jira_project
+
+            mapped_data = project.map_issue_to_work_item_data(fixture.jira_issue)
+
+            assert mapped_data['parent_source_display_id'] is None

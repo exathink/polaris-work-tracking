@@ -10,6 +10,8 @@
 
 import logging
 from datetime import datetime, timedelta
+import jmespath
+
 from polaris.utils.collections import find
 
 import polaris.work_tracking.connector_factory
@@ -37,6 +39,7 @@ class JiraProject(JiraWorkItemsSource):
         self.project_id = work_items_source.source_id
         self.initial_import_days = int(self.work_items_source.parameters.get('initial_import_days', 90))
         self.sync_import_days = int(self.work_items_source.parameters.get('sync_import_days', 1))
+        self.parent_path_selectors = self.work_items_source.parameters.get('parent_path_selectors')
 
         self.last_updated = work_items_source.latest_work_item_update_timestamp
         self.last_updated_issue_source_id = work_items_source.most_recently_updated_work_item_source_id
@@ -84,6 +87,13 @@ class JiraProject(JiraWorkItemsSource):
     def jira_time_string(timestamp):
         return timestamp.strftime("%Y-%m-%d %H:%M")
 
+    def get_custom_parent_key(self, issue):
+        for parent_path in self.parent_path_selectors:
+            parent_key = jmespath.search(parent_path, issue)
+            if parent_key is not None:
+                return parent_key
+
+
     def map_issue_to_work_item_data(self, issue):
         if issue is not None:
             fields = issue.get('fields')
@@ -93,15 +103,7 @@ class JiraProject(JiraWorkItemsSource):
                 else:
                     raise ProcessingException(f"Expected field 'issuetype' was not found in issue {issue}")
 
-                parent_link = fields.get('parent')  # We have parent in next-gen project issue fields
-                if not parent_link:
-                    parent_link = find(self.work_items_source.custom_fields, lambda field: field['name'] == 'Epic Link')
-                    parent_link_custom_field = parent_link.get('key') if parent_link else None
-                    parent_source_display_id = fields.get(
-                        parent_link_custom_field) if parent_link_custom_field else None
-                else:
-                    parent_source_display_id = parent_link.get('key')
-
+                parent_source_display_id = self.resolve_parent_source_key(issue)
 
                 mapped_type = self.map_work_item_type(issue_type)
                 mapped_data = dict(
@@ -128,6 +130,27 @@ class JiraProject(JiraWorkItemsSource):
                 raise ProcessingException(f"Map Jira issue failed: Issue did not have field called 'fields' {issue}")
         else:
             raise ProcessingException("Map Jira issue failed: Issue was None")
+
+    def resolve_parent_source_key(self, issue):
+        fields = issue.get('fields')
+
+        # see if we can get the parent link directly.
+        parent_link = fields.get('parent')  # We have parent in next-gen project issue fields
+        if parent_link:
+            return parent_link.get('key')
+
+        # See if we can get it from the epic link custom field - Jira classic projects.
+        parent_link = find(self.work_items_source.custom_fields, lambda field: field['name'] == 'Epic Link')
+        if parent_link:
+            parent_link_custom_field = parent_link.get('key')
+            if parent_link_custom_field in fields:
+                return fields.get(parent_link_custom_field)
+
+        # see if we have configured custom path lookups
+        if self.parent_path_selectors is not None:
+            return self.get_custom_parent_key(issue)
+
+
 
     def process_tags(self, fields, issue_type):
         tags = set(fields.get('labels', []))
