@@ -81,17 +81,8 @@ class JiraConnector(PolarisAtlassianConnector):
             headers={"Accept": "application/json"},
         )
         if response.ok:
-            body = response.json()
-            custom_fields = []
-            for field in body:
-                if field['name'] == 'Epic Link':
-                    custom_fields.append(dict(
-                        name=field['name'],
-                        id=field['id'],
-                        key=field['key'])
-                    )
-                    break
-            return custom_fields
+            return response.json()
+
         else:
             raise ProcessingException(
                 f'Failed to fetch custom fields from connect {self.key}: {response.text}')
