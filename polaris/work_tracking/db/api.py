@@ -21,6 +21,7 @@ from polaris.common.enums import WorkTrackingIntegrationType, WorkItemsSourceImp
 from polaris.utils.collections import dict_select
 from polaris.utils.exceptions import IllegalArgumentError, ProcessingException
 from .model import WorkItemsSource, work_items, work_items_sources, WorkItem, Project
+from polaris.integrations.db.model import Connector
 
 logger = logging.getLogger('polaris.work_tracker.db.api')
 
@@ -716,3 +717,30 @@ def register_webhooks(work_items_source_key, webhook_info, join_this=None):
         return db.process_exception("Register Webhook", exc)
     except Exception as e:
         return db.failure_message('Register Webhook', e)
+
+
+def update_work_items_source_parameters(connector_key, work_items_source_keys, work_items_source_parameters, join_this=None):
+    try:
+        with db.orm_session(join_this) as session:
+            connector = Connector.find_by_key(session, connector_key)
+            if connector is not None:
+                updated = 0
+                for work_items_source_key in work_items_source_keys:
+                    work_items_source = WorkItemsSource.find_by_key(session, work_items_source_key)
+                    if work_items_source is not None:
+                        if str(work_items_source.connector_key) == connector_key:
+                            work_items_source.update_parameters(work_items_source_parameters)
+                            updated = updated + 1
+                        else:
+                            raise ProcessingException(f'The work items source {work_items_source.name} with key {work_items_source_key}'
+                                                      f'does not belong to the connector with key {connector_key}')
+
+        return dict(
+            success=True,
+            updated=updated
+        )
+
+    except SQLAlchemyError as exc:
+        return db.process_exception("update_work_items_source_parameters", exc)
+    except Exception as e:
+        return db.failure_message('update_work_items_source_parameters', e)

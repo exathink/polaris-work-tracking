@@ -21,5 +21,18 @@ class WorkItemsSourceInfo(graphene.Interface):
     initial_import_days = graphene.Int()
 
 
+class WorkItemsSourceParameters(graphene.InputObjectType):
+    initial_import_days=graphene.Int(required=False, description="Days of data to import on initial import")
+    sync_import_days=graphene.Int(required=False, description="Days of data to import on subsequent sync operations")
+    parent_path_selectors=graphene.List(graphene.String, required=False,
+                                        description="""
+                                        Array of jmespath expressions to select a parent key 
+                                        from the json api payload for a work item fetched from this source.
+                                        The expressions are evaluated in sequence and the value returned by the first
+                                        non-null selector is used as the the parent key. The key here should be a user facing key
+                                        and not the internal source identifier. 
+                                        """)
+
+
 class WorkItemCount(graphene.Interface):
     work_item_count = graphene.Int()

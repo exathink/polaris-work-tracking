@@ -25,6 +25,7 @@ from polaris.work_tracking.db import api
 from polaris.work_tracking.integrations import pivotal_tracker, github, gitlab
 from polaris.work_tracking.integrations.atlassian import jira_work_items_source
 from .work_tracking_connector import WorkTrackingConnector
+from polaris.work_tracking.service.graphql.interfaces import WorkItemsSourceParameters
 
 logger = logging.getLogger('polaris.work_tracking.mutations')
 
@@ -382,3 +383,33 @@ class RegisterWorkItemsSourcesConnectorWebhooks(graphene.Mutation):
                         )
                         for status in result]
                 )
+
+
+class UpdateWorkItemsSourceParametersInput(graphene.InputObjectType):
+    connector_key = graphene.String(required=True)
+    work_items_source_keys = graphene.List(graphene.String, required=True)
+    work_items_source_parameters = WorkItemsSourceParameters(required=True)
+
+
+class UpdateWorkItemsSourceParameters(graphene.Mutation):
+    class Arguments:
+        update_work_items_source_parameters_input = UpdateWorkItemsSourceParametersInput(required=True)
+
+    success = graphene.Boolean()
+    error_message = graphene.String()
+    updated = graphene.Int(description="The number of sources updated")
+
+    def mutate(self, info, update_work_items_source_parameters_input):
+
+        connector_key = update_work_items_source_parameters_input.connector_key
+        work_items_source_keys = update_work_items_source_parameters_input.work_items_source_keys
+        work_items_source_parameters = update_work_items_source_parameters_input.work_items_source_parameters
+
+        with db.orm_session() as session:
+            result = api.update_work_items_source_parameters(connector_key, work_items_source_keys, work_items_source_parameters, join_this=session)
+
+
+        return UpdateWorkItemsSourceParameters(
+            success=result['success'],
+            updated=result['updated']
+        )

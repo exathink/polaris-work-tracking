@@ -19,6 +19,7 @@ from sqlalchemy import \
     Boolean, MetaData, ForeignKey, and_, UniqueConstraint, cast, text
 
 from polaris.utils.config import get_config_provider
+from polaris.utils.collections import dict_merge
 from polaris.common.enums import WorkItemsSourceImportState
 from sqlalchemy.orm import relationship, object_session
 from sqlalchemy.sql import select, func
@@ -256,6 +257,14 @@ class WorkItemsSource(Base):
         for key, value in source_data.items():
             new_source_data[key] = value
         self.source_data = new_source_data
+
+    def update_parameters(self, work_items_source_parameters):
+        self.parameters = dict_merge(
+            dict(self.parameters),
+            work_items_source_parameters
+        )
+
+
 
 
 work_items_sources = WorkItemsSource.__table__
