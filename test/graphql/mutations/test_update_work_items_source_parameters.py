@@ -17,6 +17,8 @@ from polaris.common import db
 from polaris.messaging.test_utils import assert_topic_and_message
 from polaris.messaging.topics import WorkItemsTopic
 from polaris.messaging.messages import ImportWorkItems
+from polaris.work_tracking.messages import ParentPathSelectorsChanged
+
 
 from polaris.work_tracking.db.model import WorkItemsSource
 from polaris.work_tracking.service.graphql import schema
@@ -25,7 +27,7 @@ from test.fixtures.jira_fixtures import *
 
 
 class TestUpdateWorkItemsSourceParameters(WorkItemsSourceTest):
-    class TestUpdateParameters:
+    class TestUpdateSyncParameters:
 
         def it_creates_the_parameters_for_the_first_time(self, setup):
             fixture = setup
@@ -162,3 +164,149 @@ class TestUpdateWorkItemsSourceParameters(WorkItemsSourceTest):
             assert result['data']['updateWorkItemsSourceSyncParameters']['updated'] == 1
 
             assert_topic_and_message(publish, WorkItemsTopic, ImportWorkItems)
+
+    class TestUpdateParentPathSelectors:
+
+        def it_creates_the_parameters_for_the_first_time(self, setup):
+            fixture = setup
+            organization_key=fixture.organization_key
+            work_items_source = fixture.work_items_source
+            connector_key = fixture.connector_key
+
+            client = Client(schema)
+            mutation = """
+                mutation updateWorkItemsSourceParentPathSelectors(
+                    $updateWorkItemsSourceParentPathSelectorsInput: UpdateWorkItemsSourceParentPathSelectorsInput! 
+                    ) {
+                        updateWorkItemsSourceParentPathSelectors(updateWorkItemsSourceParentPathSelectorsInput: $updateWorkItemsSourceParentPathSelectorsInput) {
+                            success
+                            errorMessage
+                            updated
+                        }
+                    } 
+            """
+            with patch('polaris.work_tracking.publish.publish'):
+                result = client.execute(mutation, variable_values=dict(
+                    updateWorkItemsSourceParentPathSelectorsInput=dict(
+                        organizationKey=organization_key,
+                        connectorKey=str(connector_key),
+                        workItemsSourceKeys=[
+                            str(work_items_source.key)
+                        ],
+                        workItemsSourceParentPathSelectors=dict(
+                            parentPathSelectors=[
+                                "(fields.issuelinks[?(type.name=='Parent/Child' && outwardIssue.fields.issuetype.name=='Feature')].outwardIssue.key)[0]"
+                            ]
+                        )
+                    )))
+            assert result.get('errors') is None
+            assert result['data']['updateWorkItemsSourceParentPathSelectors']['success']
+            assert result['data']['updateWorkItemsSourceParentPathSelectors']['updated'] == 1
+
+            with db.orm_session() as session:
+                source = WorkItemsSource.find_by_key(session, work_items_source.key)
+                assert source.parameters == dict(
+                    parent_path_selectors=[
+                                "(fields.issuelinks[?(type.name=='Parent/Child' && outwardIssue.fields.issuetype.name=='Feature')].outwardIssue.key)[0]"
+                    ]
+
+                )
+
+        def it_only_updates_the_parent_path_selectors(self, setup):
+            fixture = setup
+            organization_key=fixture.organization_key
+            work_items_source = fixture.work_items_source
+            connector_key = fixture.connector_key
+
+            with db.orm_session() as session:
+                session.add(work_items_source)
+                work_items_source.parameters=dict(
+                    initial_import_days=180,
+                    sync_import_days=7
+                )
+
+            client = Client(schema)
+            mutation = """
+                mutation updateWorkItemsSourceParentPathSelectors(
+                    $updateWorkItemsSourceParentPathSelectorsInput: UpdateWorkItemsSourceParentPathSelectorsInput! 
+                    ) {
+                        updateWorkItemsSourceParentPathSelectors(updateWorkItemsSourceParentPathSelectorsInput: $updateWorkItemsSourceParentPathSelectorsInput) {
+                            success
+                            errorMessage
+                            updated
+                        }
+                    } 
+            """
+            with patch('polaris.work_tracking.publish.publish'):
+                result = client.execute(mutation, variable_values=dict(
+                    updateWorkItemsSourceParentPathSelectorsInput=dict(
+                        organizationKey=organization_key,
+                        connectorKey=str(connector_key),
+                        workItemsSourceKeys=[
+                            str(work_items_source.key)
+                        ],
+                        workItemsSourceParentPathSelectors=dict(
+                            parentPathSelectors=[
+                                "(fields.issuelinks[?(type.name=='Parent/Child' && outwardIssue.fields.issuetype.name=='Feature')].outwardIssue.key)[0]"
+                            ]
+                        )
+                    )))
+            assert result.get('errors') is None
+            assert result['data']['updateWorkItemsSourceParentPathSelectors']['success']
+            assert result['data']['updateWorkItemsSourceParentPathSelectors']['updated'] == 1
+
+            with db.orm_session() as session:
+                source = WorkItemsSource.find_by_key(session, work_items_source.key)
+                assert source.parameters == dict(
+                    initial_import_days=180,
+                    sync_import_days=7,
+                    parent_path_selectors=[
+                                "(fields.issuelinks[?(type.name=='Parent/Child' && outwardIssue.fields.issuetype.name=='Feature')].outwardIssue.key)[0]"
+                    ]
+
+                )
+
+        def it_publishes_parent_path_selectors_changed_message(self, setup):
+            fixture = setup
+            organization_key=fixture.organization_key
+            work_items_source = fixture.work_items_source
+            connector_key = fixture.connector_key
+
+            with db.orm_session() as session:
+                session.add(work_items_source)
+                work_items_source.parameters=dict(
+                    initial_import_days=180,
+                    sync_import_days=7
+                )
+
+            client = Client(schema)
+            mutation = """
+                mutation updateWorkItemsSourceParentPathSelectors(
+                    $updateWorkItemsSourceParentPathSelectorsInput: UpdateWorkItemsSourceParentPathSelectorsInput! 
+                    ) {
+                        updateWorkItemsSourceParentPathSelectors(updateWorkItemsSourceParentPathSelectorsInput: $updateWorkItemsSourceParentPathSelectorsInput) {
+                            success
+                            errorMessage
+                            updated
+                        }
+                    } 
+            """
+            with patch('polaris.work_tracking.publish.publish') as publish:
+                result = client.execute(mutation, variable_values=dict(
+                    updateWorkItemsSourceParentPathSelectorsInput=dict(
+                        organizationKey=organization_key,
+                        connectorKey=str(connector_key),
+                        workItemsSourceKeys=[
+                            str(work_items_source.key)
+                        ],
+                        workItemsSourceParentPathSelectors=dict(
+                            parentPathSelectors=[
+                                "(fields.issuelinks[?(type.name=='Parent/Child' && outwardIssue.fields.issuetype.name=='Feature')].outwardIssue.key)[0]"
+                            ]
+                        )
+                    )))
+            assert result.get('errors') is None
+            assert result['data']['updateWorkItemsSourceParentPathSelectors']['success']
+            assert result['data']['updateWorkItemsSourceParentPathSelectors']['updated'] == 1
+
+            assert_topic_and_message(publish, WorkItemsTopic, ParentPathSelectorsChanged)

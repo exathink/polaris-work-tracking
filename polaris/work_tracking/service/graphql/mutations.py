@@ -446,8 +446,9 @@ class UpdateWorkItemsSourceSyncParameters(graphene.Mutation):
             updated=result['updated']
         )
 
+# Parent path selectors.
 
-class WorkItemsSourceParentPathSelectorParameter(graphene.InputObjectType):
+class WorkItemsSourceParentPathSelectors(graphene.InputObjectType):
     parent_path_selectors=graphene.List(graphene.String, required=False,
                                         description="""
                                         Array of jmespath expressions to select a parent key 
@@ -456,3 +457,36 @@ class WorkItemsSourceParentPathSelectorParameter(graphene.InputObjectType):
                                         non-null selector is used as the the parent key. The key here should be a user facing key
                                         and not the internal source identifier. 
                                         """)
+
+
+class UpdateWorkItemsSourceParentPathSelectorsInput(graphene.InputObjectType):
+    organization_key = graphene.String(required=True)
+    connector_key = graphene.String(required=True)
+    work_items_source_keys = graphene.List(graphene.String, required=True)
+    work_items_source_parent_path_selectors = WorkItemsSourceParentPathSelectors(required=True)
+
+class UpdateWorkItemsSourceParentPathSelectors(graphene.Mutation):
+    class Arguments:
+        update_work_items_source_parent_path_selectors_input = UpdateWorkItemsSourceParentPathSelectorsInput(required=True)
+
+    success = graphene.Boolean()
+    error_message = graphene.String()
+    updated = graphene.Int(description="The number of sources updated")
+
+    def mutate(self, info, update_work_items_source_parent_path_selectors_input):
+        organization_key = update_work_items_source_parent_path_selectors_input.organization_key
+        connector_key = update_work_items_source_parent_path_selectors_input.connector_key
+        work_items_source_keys = update_work_items_source_parent_path_selectors_input.work_items_source_keys
+        work_items_source_parameters = update_work_items_source_parent_path_selectors_input.work_items_source_parent_path_selectors
+
+        with db.orm_session() as session:
+            result = api.update_work_items_source_parameters(connector_key, work_items_source_keys, work_items_source_parameters, join_this=session)
+            if result.get('success'):
+                for work_items_source_key in work_items_source_keys:
+                    publish.parent_path_selectors_changed(connector_key, work_items_source_key)
+
+
+        return UpdateWorkItemsSourceParentPathSelectors(
+            success=result['success'],
+            updated=result['updated']
+        )
