@@ -23,7 +23,7 @@ from .mutations import \
     RegisterWorkItemsSourcesConnectorWebhooks, \
     SyncWorkItemsSource, \
     ImportWorkItems, \
-    UpdateWorkItemsSourceParameters
+    UpdateWorkItemsSourceSyncParameters
 
 
 class Query(
@@ -52,7 +52,7 @@ class Mutations(
     import_work_items = ImportWorkItems.Field()
 
     update_work_items_source_custom_fields = UpdateWorkItemsSourceCustomFields.Field()
-    update_work_items_source_parameters = UpdateWorkItemsSourceParameters.Field()
+    update_work_items_source_sync_parameters = UpdateWorkItemsSourceSyncParameters.Field()
 
     resolve_work_items_for_project_epics = ResolveWorkItemsForProjectEpics.Field()
     register_work_items_source_connector_webhooks = RegisterWorkItemsSourcesConnectorWebhooks.Field()

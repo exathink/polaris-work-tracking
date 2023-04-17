@@ -25,7 +25,7 @@ from polaris.work_tracking.db import api
 from polaris.work_tracking.integrations import pivotal_tracker, github, gitlab
 from polaris.work_tracking.integrations.atlassian import jira_work_items_source
 from .work_tracking_connector import WorkTrackingConnector
-from polaris.work_tracking.service.graphql.interfaces import WorkItemsSourceParameters
+
 
 logger = logging.getLogger('polaris.work_tracking.mutations')
 
@@ -385,31 +385,70 @@ class RegisterWorkItemsSourcesConnectorWebhooks(graphene.Mutation):
                 )
 
 
-class UpdateWorkItemsSourceParametersInput(graphene.InputObjectType):
+
+"""
+For syncing the parameters of a work items source we are choosing to separate this out to several mutations
+that each mutate related groups of parameters that are persisted in the json field of the work items source. 
+
+This is because changing the parameters of work items source means that we have to reprocess history to reflect these parameters
+in many cases and these are expensive operations where you need to do different things based on what parameters was changed. 
+
+Also the changes are going to be localized in the UI as well so we will know where to invoke what mutation. 
+
+OTOH having a single parameters blob for persistence means that this can be read by the connectors and api clients in a uniform fashion
+
+So we are choosing to expose these as separate typed APIs for writes and as a single blob api for reads. 
+
+This means more boiler plate code for the mutations, but it seems like a worthwhile trade off overall. 
+
+"""
+
+# Mutation to update sync parameters
+class WorkItemsSourceSyncParameters(graphene.InputObjectType):
+    initial_import_days=graphene.Int(required=False, description="Days of data to import on initial import")
+    sync_import_days=graphene.Int(required=False, description="Days of data to import on subsequent sync operations")
+
+class UpdateWorkItemsSourceSyncParametersInput(graphene.InputObjectType):
     connector_key = graphene.String(required=True)
     work_items_source_keys = graphene.List(graphene.String, required=True)
-    work_items_source_parameters = WorkItemsSourceParameters(required=True)
+    work_items_source_sync_parameters = WorkItemsSourceSyncParameters(required=True)
 
 
-class UpdateWorkItemsSourceParameters(graphene.Mutation):
+"""
+Updates the sync parameters for the selected work items sources on the connector
+and publishes a message to sync the work items source from the source system using these parameters. 
+
+"""
+class UpdateWorkItemsSourceSyncParameters(graphene.Mutation):
     class Arguments:
-        update_work_items_source_parameters_input = UpdateWorkItemsSourceParametersInput(required=True)
+        update_work_items_source_sync_parameters_input = UpdateWorkItemsSourceSyncParametersInput(required=True)
 
     success = graphene.Boolean()
     error_message = graphene.String()
     updated = graphene.Int(description="The number of sources updated")
 
-    def mutate(self, info, update_work_items_source_parameters_input):
+    def mutate(self, info, update_work_items_source_sync_parameters_input):
 
-        connector_key = update_work_items_source_parameters_input.connector_key
-        work_items_source_keys = update_work_items_source_parameters_input.work_items_source_keys
-        work_items_source_parameters = update_work_items_source_parameters_input.work_items_source_parameters
+        connector_key = update_work_items_source_sync_parameters_input.connector_key
+        work_items_source_keys = update_work_items_source_sync_parameters_input.work_items_source_keys
+        work_items_source_parameters = update_work_items_source_sync_parameters_input.work_items_source_sync_parameters
 
         with db.orm_session() as session:
             result = api.update_work_items_source_parameters(connector_key, work_items_source_keys, work_items_source_parameters, join_this=session)
 
 
-        return UpdateWorkItemsSourceParameters(
+        return UpdateWorkItemsSourceSyncParameters(
             success=result['success'],
             updated=result['updated']
         )
+
+
+class WorkItemsSourceParentPathSelectorParameter(graphene.InputObjectType):
+    parent_path_selectors=graphene.List(graphene.String, required=False,
+                                        description="""
+                                        Array of jmespath expressions to select a parent key 
+                                        from the json api payload for a work item fetched from this source.
+                                        The expressions are evaluated in sequence and the value returned by the first
+                                        non-null selector is used as the the parent key. The key here should be a user facing key
+                                        and not the internal source identifier. 
+                                        """)

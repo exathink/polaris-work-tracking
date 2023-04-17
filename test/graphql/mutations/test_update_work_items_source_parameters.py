@@ -30,10 +30,10 @@ class TestUpdateWorkItemsSourceParameters(WorkItemsSourceTest):
 
             client = Client(schema)
             mutation = """
-                mutation updateWorkItemsSourceParameters(
-                    $updateWorkItemsSourceParametersInput: UpdateWorkItemsSourceParametersInput! 
+                mutation updateWorkItemsSourceSyncParameters(
+                    $updateWorkItemsSourceSyncParametersInput: UpdateWorkItemsSourceSyncParametersInput! 
                     ) {
-                        updateWorkItemsSourceParameters(updateWorkItemsSourceParametersInput: $updateWorkItemsSourceParametersInput) {
+                        updateWorkItemsSourceSyncParameters(updateWorkItemsSourceSyncParametersInput: $updateWorkItemsSourceSyncParametersInput) {
                             success
                             errorMessage
                             updated
@@ -41,31 +41,26 @@ class TestUpdateWorkItemsSourceParameters(WorkItemsSourceTest):
                     } 
             """
             result = client.execute(mutation, variable_values=dict(
-                updateWorkItemsSourceParametersInput=dict(
+                updateWorkItemsSourceSyncParametersInput=dict(
                     connectorKey=str(connector_key),
                     workItemsSourceKeys=[
                         str(work_items_source.key)
                     ],
-                    workItemsSourceParameters=dict(
+                    workItemsSourceSyncParameters=dict(
                         initialImportDays=180,
                         syncImportDays=7,
-                        parentPathSelectors=[
-                            "(fields.issuelinks[?(type.name=='Parent/Child' && outwardIssue.fields.issuetype.name=='Feature')].outwardIssue.key)[0]"
-                        ]
                     )
                 )))
             assert result.get('errors') is None
-            assert result['data']['updateWorkItemsSourceParameters']['success']
-            assert result['data']['updateWorkItemsSourceParameters']['updated'] == 1
+            assert result['data']['updateWorkItemsSourceSyncParameters']['success']
+            assert result['data']['updateWorkItemsSourceSyncParameters']['updated'] == 1
 
             with db.orm_session() as session:
                 source = WorkItemsSource.find_by_key(session, work_items_source.key)
                 assert source.parameters == dict(
                     initial_import_days=180,
                     sync_import_days=7,
-                    parent_path_selectors=[
-                        "(fields.issuelinks[?(type.name=='Parent/Child' && outwardIssue.fields.issuetype.name=='Feature')].outwardIssue.key)[0]"
-                    ]
+
                 )
 
         def it_only_updates_the_entries_that_are_passed_in(self, setup):
@@ -83,9 +78,9 @@ class TestUpdateWorkItemsSourceParameters(WorkItemsSourceTest):
             client = Client(schema)
             mutation = """
                 mutation updateWorkItemsSourceParameters(
-                    $updateWorkItemsSourceParametersInput: UpdateWorkItemsSourceParametersInput! 
+                    $updateWorkItemsSourceSyncParametersInput: UpdateWorkItemsSourceSyncParametersInput! 
                     ) {
-                        updateWorkItemsSourceParameters(updateWorkItemsSourceParametersInput: $updateWorkItemsSourceParametersInput) {
+                        updateWorkItemsSourceSyncParameters(updateWorkItemsSourceSyncParametersInput: $updateWorkItemsSourceSyncParametersInput) {
                             success
                             errorMessage
                             updated
@@ -93,28 +88,23 @@ class TestUpdateWorkItemsSourceParameters(WorkItemsSourceTest):
                     } 
             """
             result = client.execute(mutation, variable_values=dict(
-                updateWorkItemsSourceParametersInput=dict(
+                updateWorkItemsSourceSyncParametersInput=dict(
                     connectorKey=str(connector_key),
                     workItemsSourceKeys=[
                         str(work_items_source.key)
                     ],
-                    workItemsSourceParameters=dict(
-                        parentPathSelectors=[
-                            "(fields.issuelinks[?(type.name=='Parent/Child' && outwardIssue.fields.issuetype.name=='Feature')].outwardIssue.key)[0]"
-                        ]
+                    workItemsSourceSyncParameters=dict(
+                        syncImportDays=30
                     )
                 )))
 
             assert result.get('errors') is None
-            assert result['data']['updateWorkItemsSourceParameters']['success']
-            assert result['data']['updateWorkItemsSourceParameters']['updated'] == 1
+            assert result['data']['updateWorkItemsSourceSyncParameters']['success']
+            assert result['data']['updateWorkItemsSourceSyncParameters']['updated'] == 1
 
             with db.orm_session() as session:
                 source = WorkItemsSource.find_by_key(session, work_items_source.key)
                 assert source.parameters == dict(
                     initial_import_days=180,
-                    sync_import_days=7,
-                    parent_path_selectors=[
-                        "(fields.issuelinks[?(type.name=='Parent/Child' && outwardIssue.fields.issuetype.name=='Feature')].outwardIssue.key)[0]"
-                    ]
+                    sync_import_days=30,
                 )
