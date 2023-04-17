@@ -113,7 +113,8 @@ class WorkItemsSourceTest:
         yield Fixture(
             work_items_source=work_items_source,
             project_id=jira_project_id,
-            connector_key=connector_key
+            connector_key=connector_key,
+            organization_key=organization_key
         )
 
 

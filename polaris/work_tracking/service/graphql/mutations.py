@@ -409,6 +409,7 @@ class WorkItemsSourceSyncParameters(graphene.InputObjectType):
     sync_import_days=graphene.Int(required=False, description="Days of data to import on subsequent sync operations")
 
 class UpdateWorkItemsSourceSyncParametersInput(graphene.InputObjectType):
+    organization_key = graphene.String(required=True)
     connector_key = graphene.String(required=True)
     work_items_source_keys = graphene.List(graphene.String, required=True)
     work_items_source_sync_parameters = WorkItemsSourceSyncParameters(required=True)
@@ -428,13 +429,16 @@ class UpdateWorkItemsSourceSyncParameters(graphene.Mutation):
     updated = graphene.Int(description="The number of sources updated")
 
     def mutate(self, info, update_work_items_source_sync_parameters_input):
-
+        organization_key = update_work_items_source_sync_parameters_input.organization_key
         connector_key = update_work_items_source_sync_parameters_input.connector_key
         work_items_source_keys = update_work_items_source_sync_parameters_input.work_items_source_keys
         work_items_source_parameters = update_work_items_source_sync_parameters_input.work_items_source_sync_parameters
 
         with db.orm_session() as session:
             result = api.update_work_items_source_parameters(connector_key, work_items_source_keys, work_items_source_parameters, join_this=session)
+            if result.get('success'):
+                for work_items_source_key in work_items_source_keys:
+                    publish.sync_work_items_source_command(organization_key, work_items_source_key)
 
 
         return UpdateWorkItemsSourceSyncParameters(
