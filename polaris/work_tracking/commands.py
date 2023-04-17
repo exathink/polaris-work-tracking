@@ -49,7 +49,7 @@ def sync_work_item(token_provider, work_items_source_key, source_id):
         if work_items_source.import_state != WorkItemsSourceImportState.disabled.value:
             if getattr(work_items_source_provider, 'fetch_work_item', None):
                 for work_item in work_items_source_provider.fetch_work_item(source_id):
-                    logger.info(f'Calling sync work item for work_item {work_item}')
+
                     yield api.sync_work_item(work_items_source_key, work_item) or []
         else:
             logger.info(f'Attempted to call sync_work_item on a disabled work_item_source: {work_items_source.key}.'
