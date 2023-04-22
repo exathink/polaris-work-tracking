@@ -113,19 +113,19 @@ def sync_work_items_sources(connector_key, tracking_receipt_key=None):
 Find the work items in reprocessed_work_items that have changed from the original work items in work_items_batch
 and return a list of the changed work items
 """
-def changed_work_items(attributes, work_items_batch, reprocessed_work_items):
+def changed_work_items(work_items_batch, reprocessed_work_items, attributes_to_check):
     changed_items = reprocessed_work_items
-    if attributes is not None:
+    if attributes_to_check is not None:
         changed_items = []
         for work_item, reprocessed_work_item in zip(work_items_batch, reprocessed_work_items):
-            if any(getattr(work_item, attr, None) != reprocessed_work_item.get(attr, None) for attr in attributes):
+            if any(getattr(work_item, attr, None) != reprocessed_work_item.get(attr, None) for attr in attributes_to_check):
                 changed_items.append(reprocessed_work_item)
 
     return changed_items
 
 
 
-def reprocess_work_items(work_items_source_key, check_attributes=None, batch_size=1000, join_this=None):
+def reprocess_work_items(work_items_source_key, attributes_to_check=None, batch_size=1000, join_this=None):
     starting = None
     while True:
         # We always want to use a new session for each batch of work items
@@ -141,7 +141,7 @@ def reprocess_work_items(work_items_source_key, check_attributes=None, batch_siz
                     work_items_source_provider.map_issue_to_work_item_data(work_item.api_payload)
                     for work_item in original_work_items
                 ]
-                changed_items = changed_work_items(check_attributes, original_work_items, reprocessed_work_items)
+                changed_items = changed_work_items(original_work_items, reprocessed_work_items, attributes_to_check)
                 yield api.sync_work_items(work_items_source_key, changed_items, session) or []
 
         if starting is None:
