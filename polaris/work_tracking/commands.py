@@ -10,6 +10,7 @@
 
 import logging
 
+import polaris.work_tracking.db.model
 from polaris.common import db
 from polaris.common.enums import WorkItemsSourceImportState, TrackingReceiptState
 from polaris.utils.config import get_config_provider
@@ -108,6 +109,43 @@ def sync_work_items_sources(connector_key, tracking_receipt_key=None):
             for work_items_sources in connector.fetch_work_items_sources_to_sync():
                 yield api.sync_work_items_sources(connector, work_items_sources)
 
+"""
+Find the work items in reprocessed_work_items that have changed from the original work items in work_items_batch
+and return a list of the changed work items
+"""
+def changed_work_items(attributes, work_items_batch, reprocessed_work_items):
+    changed_items = reprocessed_work_items
+    if attributes is not None:
+        changed_items = []
+        for work_item, reprocessed_work_item in zip(work_items_batch, reprocessed_work_items):
+            if any(getattr(work_item, attr, None) != reprocessed_work_item.get(attr, None) for attr in attributes):
+                changed_items.append(reprocessed_work_item)
+
+    return changed_items
+
+
+
+def reprocess_work_items(work_items_source_key, check_attributes=None, batch_size=1000, join_this=None):
+    starting = None
+    while True:
+        # We always want to use a new session for each batch of work items
+        # so that a single transaction covers the fetch of the batch, the remapping of the
+        # payload, the sync of the changed items and any downstream processing triggered by the yield statement
+        # The downstream usually yields to a publish operation to the message bus, and this transaction
+        # should fail if the message publication fails.
+        with db.orm_session(join_this) as session:
+            work_items_source_provider = work_items_source_factory.get_provider_impl(None, work_items_source_key, join_this=session)
+            original_work_items, starting = WorkItemsSource.fetch_work_items_batch(work_items_source_key, batch_size, starting)
+            if len(original_work_items) > 0:
+                reprocessed_work_items = [
+                    work_items_source_provider.map_issue_to_work_item_data(work_item.api_payload)
+                    for work_item in original_work_items
+                ]
+                changed_items = changed_work_items(check_attributes, original_work_items, reprocessed_work_items)
+                yield api.sync_work_items(work_items_source_key, changed_items, session) or []
+
+        if starting is None:
+            break
 
 def register_work_items_source_webhooks(connector_key, work_items_source_key, join_this=None):
     with db.orm_session(join_this) as session:
