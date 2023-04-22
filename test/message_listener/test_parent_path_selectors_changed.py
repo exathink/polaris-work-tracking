@@ -90,6 +90,7 @@ class TestParentPathSelectorsChanged(WorkItemsSourceTest):
                 project=project,
                 work_items_source=work_items_source,
                 connector_key=work_items_source.connector_key,
+                issue_templates=issue_templates,
                 issue_with_custom_parent=issue_templates[0],
                 issue_for_custom_parent=issue_templates[1],
                 issue_with_components=issue_templates[2],
@@ -115,7 +116,7 @@ class TestParentPathSelectorsChanged(WorkItemsSourceTest):
                 )
             # reprocess the work items
             batches = 0
-            for reprocessed_items in commands.reprocess_work_items(work_items_source.key, check_attributes=['parent_source_display_attributes'], batch_size=100):
+            for reprocessed_items in commands.reprocess_work_items(work_items_source.key, attributes_to_check=['parent_source_display_attributes'], batch_size=100):
                 if len(reprocessed_items) > 0:
                     assert len(reprocessed_items) == 1
                     assert reprocessed_items[0]['parent_source_display_id'] != initial_state[0]['parent_source_display_id']
@@ -142,7 +143,7 @@ class TestParentPathSelectorsChanged(WorkItemsSourceTest):
                 )
             # reprocess the work items - we expect one batch of length 0 to be yielded
             batches = 0
-            for items in commands.reprocess_work_items(work_items_source.key, check_attributes=['source_display_id'], batch_size=100):
+            for items in commands.reprocess_work_items(work_items_source.key, attributes_to_check=['source_display_id'], batch_size=100):
                 assert len(items) == 0
                 batches = batches + 1
             # we want to test that there is only one batch processed
@@ -153,9 +154,10 @@ class TestParentPathSelectorsChanged(WorkItemsSourceTest):
             project = fixture.project
             work_items_source = fixture.work_items_source
             issue_template = fixture.issue_with_custom_parent
-            work_item_summaries = [project.map_issue_to_work_item_data(issue_template)]
+            issue_key = issue_template['key']
+            work_item_summaries = [project.map_issue_to_work_item_data(issue_template) for issue_template in fixture.issue_templates]
             # create a single work item without a parent path selector on the work item source
-            initial_state = api.sync_work_items(work_items_source.key, work_item_summaries)
+            initial_states = api.sync_work_items(work_items_source.key, work_item_summaries)
 
             # Now add a parent path selector to the work item source
             with db.orm_session() as session:
@@ -165,11 +167,16 @@ class TestParentPathSelectorsChanged(WorkItemsSourceTest):
                         "(fields.issuelinks[?type.name=='Parent/Child'].outwardIssue.key)[0]"
                     ]
                 )
-            # reprocess the work items - we expect one batch of length 0 to be yielded
+            # reprocess the work items - we expect one batch of length 1 to be yielded since only one
+            # item has a custom parent.
+
             batches = 0
-            for items in commands.reprocess_work_items(work_items_source.key, check_attributes=['source_display_id'], batch_size=100):
-                assert len(items) == 0
-                batches = batches + 1
+            for items in commands.reprocess_work_items(work_items_source.key, attributes_to_check=['parent_source_display_id'], batch_size=100):
+                if len(items) > 0:
+                    assert len(items) == 1
+                    # check that the item returned is the one with the custom parent
+                    assert items[0]['display_id'] == issue_key
+                    batches = batches + 1
             # we want to test that there is only one batch processed
             assert batches == 1
 

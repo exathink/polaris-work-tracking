@@ -18,7 +18,7 @@ from polaris.messaging.messages import ImportWorkItems, ImportWorkItem, WorkItem
     WorkItemDeleted
 
 from polaris.work_tracking.messages import AtlassianConnectWorkItemEvent, RefreshConnectorProjects, \
-    ResolveWorkItemsForEpic, GitlabProjectEvent, TrelloBoardEvent
+    ResolveWorkItemsForEpic, GitlabProjectEvent, TrelloBoardEvent, ParentPathSelectorsChanged
 
 from polaris.messaging.topics import WorkItemsTopic, ConnectorsTopic, TopicSubscriber
 from polaris.messaging.utils import raise_message_processing_error
@@ -64,6 +64,7 @@ class WorkItemsTopicSubscriber(TopicSubscriber):
                 WorkItemsUpdated,
                 GitlabProjectEvent,
                 TrelloBoardEvent,
+                ParentPathSelectorsChanged,
                 # Commands
                 ImportWorkItem,
                 ImportWorkItems,
@@ -183,6 +184,9 @@ class WorkItemsTopicSubscriber(TopicSubscriber):
 
             logger.info(f'{total} work items processed')
             return messages
+
+        elif ParentPathSelectorsChanged.message_type == message.message_type:
+            return self.process_parent_path_selectors_changed(message)
 
     def process_import_work_item(self, message):
         work_items_source_key = message['work_items_source_key']
@@ -397,6 +401,11 @@ class WorkItemsTopicSubscriber(TopicSubscriber):
 
         except Exception as exc:
             raise_message_processing_error(message, 'Failed to resolve work items for epic', str(exc))
+
+    def process_parent_path_selectors_changed(self, message):
+        connector_key = message['connector_key']
+        work_items_source_key = message['work_items_source_key']
+        return True
 
 
 class ConnectorsTopicSubscriber(TopicSubscriber):
