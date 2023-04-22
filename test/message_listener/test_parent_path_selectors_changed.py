@@ -116,11 +116,11 @@ class TestParentPathSelectorsChanged(WorkItemsSourceTest):
                 )
             # reprocess the work items
             batches = 0
-            for reprocessed_items in commands.reprocess_work_items(work_items_source.key, attributes_to_check=['parent_source_display_attributes'], batch_size=100):
+            for reprocessed_items in commands.reprocess_work_items(work_items_source.key, attributes_to_check=['parent_source_display_id'], batch_size=100):
                 if len(reprocessed_items) > 0:
                     assert len(reprocessed_items) == 1
                     assert reprocessed_items[0]['parent_source_display_id'] != initial_state[0]['parent_source_display_id']
-                batches = batches + 1
+                    batches = batches + 1
             # we want to test that there is only one batch processed
             assert batches == 1
 
@@ -149,15 +149,15 @@ class TestParentPathSelectorsChanged(WorkItemsSourceTest):
             # we want to test that there is only one batch processed
             assert batches == 1
 
-        def it_reprocesses_a_multiple_work_items_and_returns_changes(self, setup):
+        def it_reprocesses_multiple_work_items_and_returns_changes(self, setup):
             fixture = setup
             project = fixture.project
             work_items_source = fixture.work_items_source
             issue_template = fixture.issue_with_custom_parent
             issue_key = issue_template['key']
             work_item_summaries = [project.map_issue_to_work_item_data(issue_template) for issue_template in fixture.issue_templates]
-            # create a single work item without a parent path selector on the work item source
-            initial_states = api.sync_work_items(work_items_source.key, work_item_summaries)
+            # create multiple work items
+            api.sync_work_items(work_items_source.key, work_item_summaries)
 
             # Now add a parent path selector to the work item source
             with db.orm_session() as session:
@@ -179,6 +179,42 @@ class TestParentPathSelectorsChanged(WorkItemsSourceTest):
                     batches = batches + 1
             # we want to test that there is only one batch processed
             assert batches == 1
+
+        def it_reprocesses_a_multiple_work_items_in_batches_and_returns_changes(self, setup):
+            fixture = setup
+            project = fixture.project
+            work_items_source = fixture.work_items_source
+            issue_template = fixture.issue_with_custom_parent
+            issue_key = issue_template['key']
+            work_item_summaries = [project.map_issue_to_work_item_data(issue_template) for issue_template in fixture.issue_templates]
+            # create the initial set of work items
+            api.sync_work_items(work_items_source.key, work_item_summaries)
+
+            # Now add a parent path selector to the work item source
+            with db.orm_session() as session:
+                session.add(work_items_source)
+                work_items_source.parameters = dict(
+                    parent_path_selectors=[
+                        "(fields.issuelinks[?type.name=='Parent/Child'].outwardIssue.key)[0]"
+                    ]
+                )
+
+            batches_with_changes = 0
+            batches_without_changes = 0
+            for items in commands.reprocess_work_items(work_items_source.key, attributes_to_check=['parent_source_display_id'], batch_size=1):
+                assert len(items) <= 1
+                if len(items) > 0:
+                    # check that the item returned is the one with the custom parent
+                    assert items[0]['display_id'] == issue_key
+                    batches_with_changes = batches_with_changes + 1
+                else:
+                    batches_without_changes = batches_without_changes + 1
+
+            # we want to test that there are three batches, one with a change and two without
+            assert batches_with_changes == 1
+            assert batches_without_changes == 2
+
+
 
 
         @pytest.mark.skip

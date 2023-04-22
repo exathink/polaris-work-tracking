@@ -144,6 +144,7 @@ def reprocess_work_items(work_items_source_key, attributes_to_check=None, batch_
                 changed_items = changed_work_items(original_work_items, reprocessed_work_items, attributes_to_check)
                 yield api.sync_work_items(work_items_source_key, changed_items, session) or []
 
+
         if starting is None:
             break
 
