@@ -192,9 +192,9 @@ def sync_work_items_source_command(organization_key, work_items_source_key, chan
         channel=channel
     )
 
-def parent_path_selectors_changed(connector_key, work_items_source_key, channel=None):
+def parent_path_selectors_changed(organization_key, work_items_source_key, channel=None):
     message = ParentPathSelectorsChanged(send=dict(
-        connector_key=connector_key,
+        organization_key=organization_key,
         work_items_source_key=work_items_source_key
     ))
     publish(

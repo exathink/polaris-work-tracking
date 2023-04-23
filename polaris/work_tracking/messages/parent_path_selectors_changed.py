@@ -18,6 +18,6 @@ from polaris.messaging.messages import Message
 class ParentPathSelectorsChanged(Message):
     message_type = 'work_items_sources.parent_path_selectors_changed'
 
-    connector_key = fields.String(required=True)
+    organization_key = fields.String(required=True)
     work_items_source_key = fields.String(required=True)
 

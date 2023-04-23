@@ -403,9 +403,30 @@ class WorkItemsTopicSubscriber(TopicSubscriber):
             raise_message_processing_error(message, 'Failed to resolve work items for epic', str(exc))
 
     def process_parent_path_selectors_changed(self, message):
-        connector_key = message['connector_key']
+        organization_key = message['organization_key']
         work_items_source_key = message['work_items_source_key']
-        return True
+        logger.info(f"Processing  {message.message_type}: for organization {organization_key} and work_items_source {work_items_source_key}")
+
+        try:
+            messages = []
+            for work_items in commands.reprocess_work_items(work_items_source_key, attributes_to_check=['parent_source_display_id']):
+                if len(work_items)> 0:
+                    work_items_updated_message = WorkItemsUpdated(
+                            send=dict(
+                                organization_key=organization_key,
+                                work_items_source_key=work_items_source_key,
+                                updated_work_items=work_items
+                            )
+                        )
+                    self.publish(
+                            WorkItemsTopic,
+                            work_items_updated_message
+                        )
+                    messages.append(work_items_updated_message)
+
+            return messages
+        except Exception as exc:
+            raise_message_processing_error(message, 'Failed to process parent path selectors changed', str(exc))
 
 
 class ConnectorsTopicSubscriber(TopicSubscriber):

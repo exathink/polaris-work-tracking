@@ -9,39 +9,30 @@
 # confidential.
 
 # Author: Krishna Kumar
-import uuid
 import json
+from unittest.mock import MagicMock
+
 import pkg_resources
-from unittest.mock import patch, MagicMock
-from datetime import datetime
-import pytest
 from pika.channel import Channel
 
-from polaris.common import db
-from polaris.utils.collections import Fixture
 from polaris.messaging.message_consumer import MessageConsumer
-from polaris.work_tracking.db.model import WorkItem
-
+from polaris.messaging.messages import WorkItemsUpdated
 from polaris.messaging.test_utils import mock_publisher, mock_channel, assert_topic_and_message, fake_send
+from polaris.messaging.topics import WorkItemsTopic
 from polaris.utils.token_provider import get_token_provider
+from polaris.work_tracking import commands
+from polaris.work_tracking.db import api
+from polaris.work_tracking.integrations.atlassian.jira_work_items_source import JiraProject
 from polaris.work_tracking.message_listener import WorkItemsTopicSubscriber
 from polaris.work_tracking.messages import ParentPathSelectorsChanged
 from ..fixtures.jira_fixtures import *
-
-from polaris.work_tracking.integrations.atlassian.jira_work_items_source import JiraProject
-from polaris.work_tracking.db import api
-from polaris.work_tracking import commands
-
-from polaris.common.enums import JiraWorkItemType
 
 mock_channel = MagicMock(Channel)
 mock_consumer = MagicMock(MessageConsumer)
 mock_consumer.token_provider = get_token_provider()
 
 
-
 class TestParentPathSelectorsChanged(WorkItemsSourceTest):
-
     """
     The setup here is a work item source with an
     existing set of work items that have an api_payload.
@@ -64,6 +55,7 @@ class TestParentPathSelectorsChanged(WorkItemsSourceTest):
 
 
     """
+
     class TestMessageListener:
         @pytest.fixture()
         def setup(self, setup):
@@ -80,13 +72,12 @@ class TestParentPathSelectorsChanged(WorkItemsSourceTest):
                 ]
             ]
 
-
             with db.orm_session() as session:
                 session.add(work_items_source)
                 project = JiraProject(work_items_source)
 
-
             yield Fixture(
+                organization_key=organization_key,
                 project=project,
                 work_items_source=work_items_source,
                 connector_key=work_items_source.connector_key,
@@ -96,8 +87,8 @@ class TestParentPathSelectorsChanged(WorkItemsSourceTest):
                 issue_with_components=issue_templates[2],
             )
 
-
-        def it_reprocesses_a_single_work_item_and_returns_the_ones_where_parent_source_display_attribute_changes(self, setup):
+        def it_reprocesses_a_single_work_item_and_returns_the_ones_where_parent_source_display_attribute_changes(self,
+                                                                                                                 setup):
             fixture = setup
             project = fixture.project
             work_items_source = fixture.work_items_source
@@ -116,10 +107,13 @@ class TestParentPathSelectorsChanged(WorkItemsSourceTest):
                 )
             # reprocess the work items
             batches = 0
-            for reprocessed_items in commands.reprocess_work_items(work_items_source.key, attributes_to_check=['parent_source_display_id'], batch_size=100):
+            for reprocessed_items in commands.reprocess_work_items(work_items_source.key,
+                                                                   attributes_to_check=['parent_source_display_id'],
+                                                                   batch_size=100):
                 if len(reprocessed_items) > 0:
                     assert len(reprocessed_items) == 1
-                    assert reprocessed_items[0]['parent_source_display_id'] != initial_state[0]['parent_source_display_id']
+                    assert reprocessed_items[0]['parent_source_display_id'] != initial_state[0][
+                        'parent_source_display_id']
                     batches = batches + 1
             # we want to test that there is only one batch processed
             assert batches == 1
@@ -143,7 +137,8 @@ class TestParentPathSelectorsChanged(WorkItemsSourceTest):
                 )
             # reprocess the work items - we expect one batch of length 0 to be yielded
             batches = 0
-            for items in commands.reprocess_work_items(work_items_source.key, attributes_to_check=['source_display_id'], batch_size=100):
+            for items in commands.reprocess_work_items(work_items_source.key, attributes_to_check=['source_display_id'],
+                                                       batch_size=100):
                 assert len(items) == 0
                 batches = batches + 1
             # we want to test that there is only one batch processed
@@ -155,7 +150,8 @@ class TestParentPathSelectorsChanged(WorkItemsSourceTest):
             work_items_source = fixture.work_items_source
             issue_template = fixture.issue_with_custom_parent
             issue_key = issue_template['key']
-            work_item_summaries = [project.map_issue_to_work_item_data(issue_template) for issue_template in fixture.issue_templates]
+            work_item_summaries = [project.map_issue_to_work_item_data(issue_template) for issue_template in
+                                   fixture.issue_templates]
             # create multiple work items
             api.sync_work_items(work_items_source.key, work_item_summaries)
 
@@ -171,7 +167,9 @@ class TestParentPathSelectorsChanged(WorkItemsSourceTest):
             # item has a custom parent.
 
             batches = 0
-            for items in commands.reprocess_work_items(work_items_source.key, attributes_to_check=['parent_source_display_id'], batch_size=100):
+            for items in commands.reprocess_work_items(work_items_source.key,
+                                                       attributes_to_check=['parent_source_display_id'],
+                                                       batch_size=100):
                 if len(items) > 0:
                     assert len(items) == 1
                     # check that the item returned is the one with the custom parent
@@ -186,7 +184,8 @@ class TestParentPathSelectorsChanged(WorkItemsSourceTest):
             work_items_source = fixture.work_items_source
             issue_template = fixture.issue_with_custom_parent
             issue_key = issue_template['key']
-            work_item_summaries = [project.map_issue_to_work_item_data(issue_template) for issue_template in fixture.issue_templates]
+            work_item_summaries = [project.map_issue_to_work_item_data(issue_template) for issue_template in
+                                   fixture.issue_templates]
             # create the initial set of work items
             api.sync_work_items(work_items_source.key, work_item_summaries)
 
@@ -201,7 +200,8 @@ class TestParentPathSelectorsChanged(WorkItemsSourceTest):
 
             batches_with_changes = 0
             batches_without_changes = 0
-            for items in commands.reprocess_work_items(work_items_source.key, attributes_to_check=['parent_source_display_id'], batch_size=1):
+            for items in commands.reprocess_work_items(work_items_source.key,
+                                                       attributes_to_check=['parent_source_display_id'], batch_size=1):
                 assert len(items) <= 1
                 if len(items) > 0:
                     # check that the item returned is the one with the custom parent
@@ -215,13 +215,15 @@ class TestParentPathSelectorsChanged(WorkItemsSourceTest):
             assert batches_without_changes == 2
 
 
-
-
-        @pytest.mark.skip
-        def it_processes_the_message_from_end_to_end(self, setup):
+        def it_processes_the_message_from_end_to_end_for_a_single_work_item_with_a_change(self, setup):
             fixture = setup
-            connector_key=fixture.connector_key
+            organization_key = fixture.organization_key
             work_items_source = fixture.work_items_source
+
+            issue_template = fixture.issue_with_custom_parent
+            work_item_summaries = [fixture.project.map_issue_to_work_item_data(issue_template)]
+            # create a single work item without a parent path selector on the work item source
+            api.sync_work_items(work_items_source.key, work_item_summaries)
 
             with db.orm_session() as session:
                 session.add(work_items_source)
@@ -231,11 +233,9 @@ class TestParentPathSelectorsChanged(WorkItemsSourceTest):
                     ]
                 )
 
-
-
             message = fake_send(
                 ParentPathSelectorsChanged(send=dict(
-                    connector_key=connector_key,
+                    organization_key=organization_key,
                     work_items_source_key=work_items_source.key
                 ))
             )
@@ -243,6 +243,32 @@ class TestParentPathSelectorsChanged(WorkItemsSourceTest):
             subscriber = WorkItemsTopicSubscriber(mock_channel, publisher=publisher)
             subscriber.consumer_context = mock_consumer
 
-            result = subscriber.dispatch(mock_channel, message)
+            messages = subscriber.dispatch(mock_channel, message)
+            assert len(messages) == 1
 
-            assert result['success']
+            publisher.assert_topic_called_with_message(WorkItemsTopic, WorkItemsUpdated, call_count=1)
+
+        def it_does_not_publish_a_message_when_there_are_no_changes(self, setup):
+            fixture = setup
+            organization_key = fixture.organization_key
+            work_items_source = fixture.work_items_source
+
+            issue_template = fixture.issue_with_custom_parent
+            work_item_summaries = [fixture.project.map_issue_to_work_item_data(issue_template)]
+            # create a single work item without a parent path selector on the work item source
+            api.sync_work_items(work_items_source.key, work_item_summaries)
+
+
+            message = fake_send(
+                ParentPathSelectorsChanged(send=dict(
+                    organization_key=organization_key,
+                    work_items_source_key=work_items_source.key
+                ))
+            )
+            publisher = mock_publisher()
+            subscriber = WorkItemsTopicSubscriber(mock_channel, publisher=publisher)
+            subscriber.consumer_context = mock_consumer
+
+            messages = subscriber.dispatch(mock_channel, message)
+            assert len(messages) == 0
+            publisher.assert_not_called()

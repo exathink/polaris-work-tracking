@@ -483,7 +483,7 @@ class UpdateWorkItemsSourceParentPathSelectors(graphene.Mutation):
             result = api.update_work_items_source_parameters(connector_key, work_items_source_keys, work_items_source_parameters, join_this=session)
             if result.get('success'):
                 for work_items_source_key in work_items_source_keys:
-                    publish.parent_path_selectors_changed(connector_key, work_items_source_key)
+                    publish.parent_path_selectors_changed(organization_key, work_items_source_key)
 
 
         return UpdateWorkItemsSourceParentPathSelectors(
