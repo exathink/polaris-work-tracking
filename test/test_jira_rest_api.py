@@ -460,3 +460,50 @@ class TestCustomParentMapping:
             mapped_data = project.map_issue_to_work_item_data(fixture.jira_issue)
 
             assert mapped_data['parent_source_display_id'] is None
+
+    class TestWhenCustomParentAndDefaultParentExists:
+
+        @pytest.fixture()
+        def setup(self, jira_work_item_source_fixture, cleanup):
+            work_items_source, _, _ = jira_work_item_source_fixture
+
+            # this payload contains an issue with a custom parent link specified by a custom link in the
+            # issue payload.
+            jira_api_issue_with_components = json.loads(
+                pkg_resources.resource_string(__name__, 'data/jira_payload_with_default_and_custom_parent.json'))
+
+            yield Fixture(
+                jira_issue=jira_api_issue_with_components,
+                work_items_source=work_items_source
+            )
+
+        def it_returns_the_default_parent_when_the_custom_type_mapping_is_not_specified(self, setup):
+            fixture = setup
+
+            work_items_source = fixture.work_items_source
+            with db.orm_session() as session:
+                session.add(work_items_source)
+                project = JiraProject(work_items_source)
+
+            mapped_data = project.map_issue_to_work_item_data(fixture.jira_issue)
+
+            assert mapped_data['parent_source_display_id'] == "PP-428"
+
+
+        def it_overrides_the_default_and_returns_the_custom_parent_when_the_custom_type_mapping_is_specified(self, setup):
+            fixture = setup
+
+            work_items_source = fixture.work_items_source
+            with db.orm_session() as session:
+                session.add(work_items_source)
+                # set to the selector for any ch
+                work_items_source.parameters = dict(
+                    parent_path_selectors=[
+                        "(fields.issuelinks[?(type.name=='Parent/Child' && outwardIssue.fields.issuetype.name=='Feature')].outwardIssue.key)[0]"
+                    ]
+                )
+                project = JiraProject(work_items_source)
+
+            mapped_data = project.map_issue_to_work_item_data(fixture.jira_issue)
+
+            assert mapped_data['parent_source_display_id'] == "MM-5485"

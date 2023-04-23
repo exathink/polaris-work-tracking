@@ -134,6 +134,11 @@ class JiraProject(JiraWorkItemsSource):
     def resolve_parent_source_key(self, issue):
         fields = issue.get('fields')
 
+        # see if we have configured custom path lookups - these override the default
+        # mechanism for parent selection.
+        if self.parent_path_selectors is not None:
+            return self.get_custom_parent_key(issue)
+
         # see if we can get the parent link directly.
         parent_link = fields.get('parent')  # We have parent in next-gen project issue fields
         if parent_link:
@@ -146,9 +151,7 @@ class JiraProject(JiraWorkItemsSource):
             if parent_link_custom_field in fields:
                 return fields.get(parent_link_custom_field)
 
-        # see if we have configured custom path lookups
-        if self.parent_path_selectors is not None:
-            return self.get_custom_parent_key(issue)
+
 
 
 
