@@ -17,6 +17,8 @@ from polaris.work_tracking.integrations.atlassian.jira_work_items_source import 
 from polaris.utils.token_provider import get_token_provider
 from polaris.work_tracking import commands
 from polaris.work_tracking.db import api
+from polaris.work_tracking.db.model import WorkItem
+from polaris.utils.collections import find
 
 token_provider = get_token_provider()
 
@@ -180,6 +182,31 @@ class TestSyncApi(WorkItemsSourceTest):
 
         class TestParentChildResolution:
 
+            def it_resolves_the_parent_child_relationship_if_the_parent_and_child_arrive_together(self, setup):
+                fixture = setup
+                project = fixture.project
+                work_items_source = fixture.work_items_source
+                child_issue = project.map_issue_to_work_item_data(fixture.issue_with_custom_parent)
+                parent_issue = project.map_issue_to_work_item_data(fixture.issue_for_custom_parent)
+
+                # make the parent child relationship. in the sample data these are not related by default.
+                child_issue['parent_source_display_id'] = parent_issue['source_display_id']
+
+                initial_state = api.sync_work_items(work_items_source.key, [child_issue, parent_issue])
+
+                # check that parent id has been assigned in the db.
+                assert db.connection().execute(
+                    f"select parent_id from work_tracking.work_items where source_display_id='{child_issue['source_display_id']}'").scalar() is not None
+
+                #check that the right number of results have been returned
+                assert len(initial_state) == 2
+
+                # check that the right parent key is being returned.
+                with db.orm_session() as session:
+                    parent_work_item = WorkItem.find_by_source_display_id(session, work_items_source_id=work_items_source.id, source_display_id=parent_issue['source_display_id'])
+                    updated_child = find(initial_state, lambda item: item['display_id'] == child_issue['source_display_id'])
+                    assert updated_child['parent_key'] == str(parent_work_item.key)
+
             def it_resolves_the_parent_child_relationship_if_the_parent_arrives_before_the_child(self, setup):
                 fixture = setup
                 project = fixture.project
@@ -189,13 +216,50 @@ class TestSyncApi(WorkItemsSourceTest):
 
                 # make the parent child relationship. in the sample data these are not related by default.
                 child_issue['parent_source_display_id'] = parent_issue['source_display_id']
+
                 initial_state = api.sync_work_items(work_items_source.key, [parent_issue])
-
-
                 next_state = api.sync_work_items(work_items_source.key, [child_issue])
+
+
                 assert len(next_state) == 1
-                assert next_state[0]['parent_key'] is not None
+                updated_child = next_state[0]
+
+                assert updated_child['parent_key'] is not None
+                with db.orm_session() as session:
+                    parent_work_item = WorkItem.find_by_source_display_id(session, work_items_source_id=work_items_source.id, source_display_id=parent_issue['source_display_id'])
+                    assert updated_child['parent_key'] == str(parent_work_item.key)
 
                 assert db.connection().execute(f"select parent_id from work_tracking.work_items where source_display_id='{child_issue['source_display_id']}'").scalar() is not None
 
 
+            def it_resolves_the_parent_child_relationship_if_the_child_arrives_before_the_parent(self, setup):
+                fixture = setup
+                project = fixture.project
+                work_items_source = fixture.work_items_source
+                child_issue = project.map_issue_to_work_item_data(fixture.issue_with_custom_parent)
+                parent_issue = project.map_issue_to_work_item_data(fixture.issue_for_custom_parent)
+
+                # make the parent child relationship. in the sample data these are not related by default.
+                child_issue['parent_source_display_id'] = parent_issue['source_display_id']
+                initial_state = api.sync_work_items(work_items_source.key, [child_issue])
+
+
+                next_state = api.sync_work_items(work_items_source.key, [parent_issue])
+                assert db.connection().execute(
+                    f"select parent_id from work_tracking.work_items where source_display_id='{child_issue['source_display_id']}'").scalar() is not None
+
+                # we want to see the child here since it's parent id should have been updated
+                # when the new parent came in.
+                assert len(next_state) == 2
+
+                # check that the right parent key is being returned.
+                with db.orm_session() as session:
+                    parent_work_item = WorkItem.find_by_source_display_id(session,
+                                                                          work_items_source_id=work_items_source.id,
+                                                                          source_display_id=parent_issue[
+                                                                              'source_display_id'])
+                    updated_child = find(next_state,
+                                         lambda item: item['display_id'] == child_issue['source_display_id'])
+
+                    assert updated_child['parent_key'] == str(parent_work_item.key)
+                    assert not updated_child['is_new']
