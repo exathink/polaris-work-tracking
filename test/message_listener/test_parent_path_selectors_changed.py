@@ -25,6 +25,7 @@ from polaris.work_tracking.db import api
 from polaris.work_tracking.integrations.atlassian.jira_work_items_source import JiraProject
 from polaris.work_tracking.message_listener import WorkItemsTopicSubscriber
 from polaris.work_tracking.messages import ParentPathSelectorsChanged
+from polaris.utils.collections import find
 from ..fixtures.jira_fixtures import *
 
 mock_channel = MagicMock(Channel)
@@ -87,188 +88,233 @@ class TestParentPathSelectorsChanged(WorkItemsSourceTest):
                 issue_with_components=issue_templates[2],
             )
 
-        def it_reprocesses_a_single_work_item_and_returns_the_ones_where_parent_source_display_attribute_changes(self,
-                                                                                                                 setup):
-            fixture = setup
-            project = fixture.project
-            work_items_source = fixture.work_items_source
-            issue_template = fixture.issue_with_custom_parent
-            work_item_summaries = [project.map_issue_to_work_item_data(issue_template)]
-            # create a single work item without a parent path selector on the work item source
-            initial_state = api.sync_work_items(work_items_source.key, work_item_summaries)
+        class TestParentSyncing:
 
-            # Now add a parent path selector to the work item source
-            with db.orm_session() as session:
-                session.add(work_items_source)
-                work_items_source.parameters = dict(
-                    parent_path_selectors=[
-                        "(fields.issuelinks[?type.name=='Parent/Child'].outwardIssue.key)[0]"
-                    ]
-                )
-            # reprocess the work items
-            batches = 0
-            for reprocessed_items in commands.reprocess_work_items(work_items_source.key,
-                                                                   attributes_to_check=['parent_source_display_id'],
-                                                                   batch_size=100):
-                if len(reprocessed_items) > 0:
-                    assert len(reprocessed_items) == 1
-                    assert reprocessed_items[0]['parent_source_display_id'] != initial_state[0][
-                        'parent_source_display_id']
+            def it_updates_the_parent_id_of_the_local_work_item_when_the_parent_changes(self, setup):
+                fixture = setup
+                project = fixture.project
+                work_items_source = fixture.work_items_source
+                child_issue = fixture.issue_with_custom_parent
+                parent_issue = fixture.issue_for_custom_parent
+
+                # Load the parent and child issue.
+                work_item_summaries = [
+                    project.map_issue_to_work_item_data(child_issue),
+                    project.map_issue_to_work_item_data(parent_issue)
+                ]
+                child_display_id = work_item_summaries[0]['source_display_id']
+                parent_display_id = work_item_summaries[1]['source_display_id']
+                # initially the parent and child issues are not linked, since we are using the default
+                # mapping and the child has no default parent link.
+                initial_state = api.sync_work_items(work_items_source.key, work_item_summaries)
+
+                # Now add a parent path selector to the work item source. When we reprocess, this should
+                # reset the parent source id and link to the new parent.
+                with db.orm_session() as session:
+                    session.add(work_items_source)
+                    work_items_source.parameters = dict(
+                        parent_path_selectors=[
+                            "(fields.issuelinks[?type.name=='Parent/Child'].outwardIssue.key)[0]"
+                        ]
+                    )
+                # reprocess the work items
+                for items in commands.reprocess_work_items(work_items_source.key,
+                                                                       attributes_to_check=['parent_source_display_id'],
+                                                                       batch_size=100):
+                    if len(items) > 0:
+                        child_item = find(items, lambda item: item['display_id'] == child_display_id)
+                        assert child_item['parent_source_display_id']
+                        assert child_item['parent_key']
+
+
+
+
+        class TestReprocessExistingWorkItems:
+
+            def it_reprocesses_a_single_work_item_and_returns_the_ones_where_parent_source_display_attribute_changes(self,
+                                                                                                                     setup):
+                fixture = setup
+                project = fixture.project
+                work_items_source = fixture.work_items_source
+                issue_template = fixture.issue_with_custom_parent
+                work_item_summaries = [project.map_issue_to_work_item_data(issue_template)]
+                # create a single work item without a parent path selector on the work item source
+                initial_state = api.sync_work_items(work_items_source.key, work_item_summaries)
+
+                # Now add a parent path selector to the work item source
+                with db.orm_session() as session:
+                    session.add(work_items_source)
+                    work_items_source.parameters = dict(
+                        parent_path_selectors=[
+                            "(fields.issuelinks[?type.name=='Parent/Child'].outwardIssue.key)[0]"
+                        ]
+                    )
+                # reprocess the work items
+                batches = 0
+                for reprocessed_items in commands.reprocess_work_items(work_items_source.key,
+                                                                       attributes_to_check=['parent_source_display_id'],
+                                                                       batch_size=100):
+                    if len(reprocessed_items) > 0:
+                        assert len(reprocessed_items) == 1
+                        assert reprocessed_items[0]['parent_source_display_id'] != initial_state[0][
+                            'parent_source_display_id']
+                        batches = batches + 1
+                # we want to test that there is only one batch processed
+                assert batches == 1
+
+            def it_reprocesses_a_single_work_item_and_returns_nothing_if_the_checked_attribute_has_not_changed(self, setup):
+                fixture = setup
+                project = fixture.project
+                work_items_source = fixture.work_items_source
+                issue_template = fixture.issue_with_custom_parent
+                work_item_summaries = [project.map_issue_to_work_item_data(issue_template)]
+                # create a single work item without a parent path selector on the work item source
+                initial_state = api.sync_work_items(work_items_source.key, work_item_summaries)
+
+                # Now add a parent path selector to the work item source
+                with db.orm_session() as session:
+                    session.add(work_items_source)
+                    work_items_source.parameters = dict(
+                        parent_path_selectors=[
+                            "(fields.issuelinks[?type.name=='Parent/Child'].outwardIssue.key)[0]"
+                        ]
+                    )
+                # reprocess the work items - we expect one batch of length 0 to be yielded
+                batches = 0
+                for items in commands.reprocess_work_items(work_items_source.key, attributes_to_check=['source_display_id'],
+                                                           batch_size=100):
+                    assert len(items) == 0
                     batches = batches + 1
-            # we want to test that there is only one batch processed
-            assert batches == 1
+                # we want to test that there is only one batch processed
+                assert batches == 1
 
-        def it_reprocesses_a_single_work_item_and_returns_nothing_if_the_checked_attribute_has_not_changed(self, setup):
-            fixture = setup
-            project = fixture.project
-            work_items_source = fixture.work_items_source
-            issue_template = fixture.issue_with_custom_parent
-            work_item_summaries = [project.map_issue_to_work_item_data(issue_template)]
-            # create a single work item without a parent path selector on the work item source
-            initial_state = api.sync_work_items(work_items_source.key, work_item_summaries)
+            def it_reprocesses_multiple_work_items_and_returns_changes(self, setup):
+                fixture = setup
+                project = fixture.project
+                work_items_source = fixture.work_items_source
+                issue_template = fixture.issue_with_custom_parent
+                issue_key = issue_template['key']
+                work_item_summaries = [project.map_issue_to_work_item_data(issue_template) for issue_template in
+                                       fixture.issue_templates]
+                # create multiple work items
+                api.sync_work_items(work_items_source.key, work_item_summaries)
 
-            # Now add a parent path selector to the work item source
-            with db.orm_session() as session:
-                session.add(work_items_source)
-                work_items_source.parameters = dict(
-                    parent_path_selectors=[
-                        "(fields.issuelinks[?type.name=='Parent/Child'].outwardIssue.key)[0]"
-                    ]
+                # Now add a parent path selector to the work item source
+                with db.orm_session() as session:
+                    session.add(work_items_source)
+                    work_items_source.parameters = dict(
+                        parent_path_selectors=[
+                            "(fields.issuelinks[?type.name=='Parent/Child'].outwardIssue.key)[0]"
+                        ]
+                    )
+                # reprocess the work items - we expect one batch of length 1 to be yielded since only one
+                # item has a custom parent.
+
+                batches = 0
+                for items in commands.reprocess_work_items(work_items_source.key,
+                                                           attributes_to_check=['parent_source_display_id'],
+                                                           batch_size=100):
+                    if len(items) > 0:
+                        assert len(items) == 1
+                        # check that the item returned is the one with the custom parent
+                        assert items[0]['display_id'] == issue_key
+                        batches = batches + 1
+                # we want to test that there is only one batch processed
+                assert batches == 1
+
+            def it_reprocesses_a_multiple_work_items_in_batches_and_returns_changes(self, setup):
+                fixture = setup
+                project = fixture.project
+                work_items_source = fixture.work_items_source
+                issue_template = fixture.issue_with_custom_parent
+                issue_key = issue_template['key']
+                work_item_summaries = [project.map_issue_to_work_item_data(issue_template) for issue_template in
+                                       fixture.issue_templates]
+                # create the initial set of work items
+                api.sync_work_items(work_items_source.key, work_item_summaries)
+
+                # Now add a parent path selector to the work item source
+                with db.orm_session() as session:
+                    session.add(work_items_source)
+                    work_items_source.parameters = dict(
+                        parent_path_selectors=[
+                            "(fields.issuelinks[?type.name=='Parent/Child'].outwardIssue.key)[0]"
+                        ]
+                    )
+
+                batches_with_changes = 0
+                batches_without_changes = 0
+                for items in commands.reprocess_work_items(work_items_source.key,
+                                                           attributes_to_check=['parent_source_display_id'], batch_size=1):
+                    assert len(items) <= 1
+                    if len(items) > 0:
+                        # check that the item returned is the one with the custom parent
+                        assert items[0]['display_id'] == issue_key
+                        batches_with_changes = batches_with_changes + 1
+                    else:
+                        batches_without_changes = batches_without_changes + 1
+
+                # we want to test that there are three batches, one with a change and two without
+                assert batches_with_changes == 1
+                assert batches_without_changes == 2
+
+        class TestMessagePublishing:
+
+            def it_processes_the_message_from_end_to_end_for_a_single_work_item_with_a_change(self, setup):
+                fixture = setup
+                organization_key = fixture.organization_key
+                work_items_source = fixture.work_items_source
+
+                issue_template = fixture.issue_with_custom_parent
+                work_item_summaries = [fixture.project.map_issue_to_work_item_data(issue_template)]
+                # create a single work item without a parent path selector on the work item source
+                api.sync_work_items(work_items_source.key, work_item_summaries)
+
+                with db.orm_session() as session:
+                    session.add(work_items_source)
+                    work_items_source.parameters = dict(
+                        parent_path_selectors=[
+                            "(fields.issuelinks[?type.name=='Parent/Child'].outwardIssue.key)[0]"
+                        ]
+                    )
+
+                message = fake_send(
+                    ParentPathSelectorsChanged(send=dict(
+                        organization_key=organization_key,
+                        work_items_source_key=work_items_source.key
+                    ))
                 )
-            # reprocess the work items - we expect one batch of length 0 to be yielded
-            batches = 0
-            for items in commands.reprocess_work_items(work_items_source.key, attributes_to_check=['source_display_id'],
-                                                       batch_size=100):
-                assert len(items) == 0
-                batches = batches + 1
-            # we want to test that there is only one batch processed
-            assert batches == 1
+                publisher = mock_publisher()
+                subscriber = WorkItemsTopicSubscriber(mock_channel, publisher=publisher)
+                subscriber.consumer_context = mock_consumer
 
-        def it_reprocesses_multiple_work_items_and_returns_changes(self, setup):
-            fixture = setup
-            project = fixture.project
-            work_items_source = fixture.work_items_source
-            issue_template = fixture.issue_with_custom_parent
-            issue_key = issue_template['key']
-            work_item_summaries = [project.map_issue_to_work_item_data(issue_template) for issue_template in
-                                   fixture.issue_templates]
-            # create multiple work items
-            api.sync_work_items(work_items_source.key, work_item_summaries)
+                messages = subscriber.dispatch(mock_channel, message)
+                assert len(messages) == 1
 
-            # Now add a parent path selector to the work item source
-            with db.orm_session() as session:
-                session.add(work_items_source)
-                work_items_source.parameters = dict(
-                    parent_path_selectors=[
-                        "(fields.issuelinks[?type.name=='Parent/Child'].outwardIssue.key)[0]"
-                    ]
+                publisher.assert_topic_called_with_message(WorkItemsTopic, WorkItemsUpdated, call_count=1)
+
+
+            def it_does_not_publish_a_message_when_there_are_no_changes(self, setup):
+                fixture = setup
+                organization_key = fixture.organization_key
+                work_items_source = fixture.work_items_source
+
+                issue_template = fixture.issue_with_custom_parent
+                work_item_summaries = [fixture.project.map_issue_to_work_item_data(issue_template)]
+                # create a single work item without a parent path selector on the work item source
+                api.sync_work_items(work_items_source.key, work_item_summaries)
+
+
+                message = fake_send(
+                    ParentPathSelectorsChanged(send=dict(
+                        organization_key=organization_key,
+                        work_items_source_key=work_items_source.key
+                    ))
                 )
-            # reprocess the work items - we expect one batch of length 1 to be yielded since only one
-            # item has a custom parent.
+                publisher = mock_publisher()
+                subscriber = WorkItemsTopicSubscriber(mock_channel, publisher=publisher)
+                subscriber.consumer_context = mock_consumer
 
-            batches = 0
-            for items in commands.reprocess_work_items(work_items_source.key,
-                                                       attributes_to_check=['parent_source_display_id'],
-                                                       batch_size=100):
-                if len(items) > 0:
-                    assert len(items) == 1
-                    # check that the item returned is the one with the custom parent
-                    assert items[0]['display_id'] == issue_key
-                    batches = batches + 1
-            # we want to test that there is only one batch processed
-            assert batches == 1
-
-        def it_reprocesses_a_multiple_work_items_in_batches_and_returns_changes(self, setup):
-            fixture = setup
-            project = fixture.project
-            work_items_source = fixture.work_items_source
-            issue_template = fixture.issue_with_custom_parent
-            issue_key = issue_template['key']
-            work_item_summaries = [project.map_issue_to_work_item_data(issue_template) for issue_template in
-                                   fixture.issue_templates]
-            # create the initial set of work items
-            api.sync_work_items(work_items_source.key, work_item_summaries)
-
-            # Now add a parent path selector to the work item source
-            with db.orm_session() as session:
-                session.add(work_items_source)
-                work_items_source.parameters = dict(
-                    parent_path_selectors=[
-                        "(fields.issuelinks[?type.name=='Parent/Child'].outwardIssue.key)[0]"
-                    ]
-                )
-
-            batches_with_changes = 0
-            batches_without_changes = 0
-            for items in commands.reprocess_work_items(work_items_source.key,
-                                                       attributes_to_check=['parent_source_display_id'], batch_size=1):
-                assert len(items) <= 1
-                if len(items) > 0:
-                    # check that the item returned is the one with the custom parent
-                    assert items[0]['display_id'] == issue_key
-                    batches_with_changes = batches_with_changes + 1
-                else:
-                    batches_without_changes = batches_without_changes + 1
-
-            # we want to test that there are three batches, one with a change and two without
-            assert batches_with_changes == 1
-            assert batches_without_changes == 2
-
-
-        def it_processes_the_message_from_end_to_end_for_a_single_work_item_with_a_change(self, setup):
-            fixture = setup
-            organization_key = fixture.organization_key
-            work_items_source = fixture.work_items_source
-
-            issue_template = fixture.issue_with_custom_parent
-            work_item_summaries = [fixture.project.map_issue_to_work_item_data(issue_template)]
-            # create a single work item without a parent path selector on the work item source
-            api.sync_work_items(work_items_source.key, work_item_summaries)
-
-            with db.orm_session() as session:
-                session.add(work_items_source)
-                work_items_source.parameters = dict(
-                    parent_path_selectors=[
-                        "(fields.issuelinks[?type.name=='Parent/Child'].outwardIssue.key)[0]"
-                    ]
-                )
-
-            message = fake_send(
-                ParentPathSelectorsChanged(send=dict(
-                    organization_key=organization_key,
-                    work_items_source_key=work_items_source.key
-                ))
-            )
-            publisher = mock_publisher()
-            subscriber = WorkItemsTopicSubscriber(mock_channel, publisher=publisher)
-            subscriber.consumer_context = mock_consumer
-
-            messages = subscriber.dispatch(mock_channel, message)
-            assert len(messages) == 1
-
-            publisher.assert_topic_called_with_message(WorkItemsTopic, WorkItemsUpdated, call_count=1)
-
-        def it_does_not_publish_a_message_when_there_are_no_changes(self, setup):
-            fixture = setup
-            organization_key = fixture.organization_key
-            work_items_source = fixture.work_items_source
-
-            issue_template = fixture.issue_with_custom_parent
-            work_item_summaries = [fixture.project.map_issue_to_work_item_data(issue_template)]
-            # create a single work item without a parent path selector on the work item source
-            api.sync_work_items(work_items_source.key, work_item_summaries)
-
-
-            message = fake_send(
-                ParentPathSelectorsChanged(send=dict(
-                    organization_key=organization_key,
-                    work_items_source_key=work_items_source.key
-                ))
-            )
-            publisher = mock_publisher()
-            subscriber = WorkItemsTopicSubscriber(mock_channel, publisher=publisher)
-            subscriber.consumer_context = mock_consumer
-
-            messages = subscriber.dispatch(mock_channel, message)
-            assert len(messages) == 0
-            publisher.assert_not_called()
+                messages = subscriber.dispatch(mock_channel, message)
+                assert len(messages) == 0
+                publisher.assert_not_called()

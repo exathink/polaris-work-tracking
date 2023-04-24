@@ -12,7 +12,7 @@ import logging
 import uuid
 from datetime import datetime
 from polaris.utils.collections import dict_drop
-from sqlalchemy import select, and_, func, literal, Column, Integer
+from sqlalchemy import select, and_, func, literal, Column, Integer, Boolean
 from sqlalchemy.dialects.postgresql import insert, UUID
 from sqlalchemy.exc import SQLAlchemyError
 
@@ -33,7 +33,8 @@ def sync_work_items(work_items_source_key, work_item_list, join_this=None):
             work_items_temp = db.temp_table_from(
                 work_items,
                 table_name='work_items_temp',
-                exclude_columns=[work_items.c.id, work_items.c.parent_id]
+                exclude_columns=[work_items.c.id, work_items.c.parent_id],
+                extra_columns=[Column('is_new', Boolean)]
             )
             work_items_temp.create(session.connection(), checkfirst=True)
 
@@ -45,6 +46,7 @@ def sync_work_items(work_items_source_key, work_item_list, join_this=None):
                             key=uuid.uuid4(),
                             work_items_source_id=work_items_source.id,
                             last_sync=last_sync,
+                            is_new=True,
                             **work_item
                         )
                         for work_item in work_item_list
@@ -52,29 +54,35 @@ def sync_work_items(work_items_source_key, work_item_list, join_this=None):
                 )
             )
 
-            parent_work_items = work_items.alias('parent_work_items')
-            work_items_before_insert = session.connection().execute(
-                select([*work_items_temp.columns, work_items.c.key.label('current_key'),
-                        parent_work_items.c.key.label('parent_key')]).select_from(
-                    work_items_temp.outerjoin(
-                        work_items,
-                        and_(
-                            work_items_temp.c.work_items_source_id == work_items.c.work_items_source_id,
-                            work_items_temp.c.source_id == work_items.c.source_id
-                        )
-                    ).outerjoin(
-                        parent_work_items,
-                        and_(
-                            parent_work_items.c.work_items_source_id == work_items.c.work_items_source_id,
-                            parent_work_items.c.id == work_items.c.parent_id
-                        )
+            # mark existing items in the set. We need this to properly
+            # return newly inserted vs existing items back to the
+            # caller.
+            current_items = select([
+                work_items_temp.c.source_id
+            ]).select_from(
+                work_items_temp.join(
+                    work_items,
+                    and_(
+                        work_items_temp.c.work_items_source_id == work_items.c.work_items_source_id,
+                        work_items_temp.c.source_id == work_items.c.source_id
                     )
                 )
-            ).fetchall()
+            ).alias()
 
+            existing_count = session.connection().execute(
+                work_items_temp.update().values(
+                    is_new=False
+                ).where(
+                    current_items.c.source_id == work_items_temp.c.source_id
+                )
+            ).rowcount
+            # Now  upsert work items temp into work items so that the
+            # new items are inserted and existing item attributes are updated.
+            # we need to strip out the extra columns that are not in work_items
+            work_item_columns = [column for column in work_items_temp.columns if column.name not in ['is_new']]
             upsert = insert(work_items).from_select(
-                [column.name for column in work_items_temp.columns],
-                select([work_items_temp])
+                [column.name for column in work_item_columns],
+                select(work_item_columns)
             )
 
             session.connection().execute(
@@ -98,10 +106,25 @@ def sync_work_items(work_items_source_key, work_item_list, join_this=None):
                     )
                 )
             )
+
+            # return the current state of the work_items in the list.
+            # include the is_new flag from the temp table.
+            sync_result = session.connection().execute(
+                select([work_items, work_items_temp.c.is_new]).select_from(
+                    work_items_temp.join(
+                        work_items,
+                        and_(
+                            work_items.c.work_items_source_id == work_items_source.id,
+                            work_items_temp.c.source_id == work_items.c.source_id
+                        )
+                    )
+                )
+            ).fetchall()
+
             return [
                 dict(
-                    is_new=work_item.current_key is None,
-                    key=work_item.key if work_item.current_key is None else work_item.current_key,
+                    is_new=work_item.is_new,
+                    key=work_item.key,
                     work_item_type=work_item.work_item_type,
                     display_id=work_item.source_display_id,
                     url=work_item.url,
@@ -110,7 +133,7 @@ def sync_work_items(work_items_source_key, work_item_list, join_this=None):
                     is_bug=work_item.is_bug,
                     is_epic=work_item.is_epic,
                     parent_source_display_id=work_item.parent_source_display_id,
-                    parent_key=work_item.parent_key,
+                    parent_key=None,
                     tags=work_item.tags,
                     state=work_item.source_state,
                     created_at=work_item.source_created_at,
@@ -119,7 +142,7 @@ def sync_work_items(work_items_source_key, work_item_list, join_this=None):
                     source_id=work_item.source_id,
                     commit_identifiers=work_item.commit_identifiers
                 )
-                for work_item in work_items_before_insert
+                for work_item in sync_result
             ]
 
 
@@ -437,7 +460,8 @@ def delete_work_item(work_items_source_key, work_item_data, join_this=None):
                     deleted_at=work_item.deleted_at
                 )
             else:
-                raise ProcessingException(f"Could not find work item with source id {work_item_data.get('source_display_id')}")
+                raise ProcessingException(
+                    f"Could not find work item with source id {work_item_data.get('source_display_id')}")
         else:
             raise ProcessingException(f"Could not find work items source with key f{work_items_source_key}")
 
@@ -719,7 +743,8 @@ def register_webhooks(work_items_source_key, webhook_info, join_this=None):
         return db.failure_message('Register Webhook', e)
 
 
-def update_work_items_source_parameters(connector_key, work_items_source_keys, work_items_source_parameters, join_this=None):
+def update_work_items_source_parameters(connector_key, work_items_source_keys, work_items_source_parameters,
+                                        join_this=None):
     try:
         with db.orm_session(join_this) as session:
             connector = Connector.find_by_key(session, connector_key)
@@ -732,8 +757,9 @@ def update_work_items_source_parameters(connector_key, work_items_source_keys, w
                             work_items_source.update_parameters(work_items_source_parameters)
                             updated = updated + 1
                         else:
-                            raise ProcessingException(f'The work items source {work_items_source.name} with key {work_items_source_key}'
-                                                      f'does not belong to the connector with key {connector_key}')
+                            raise ProcessingException(
+                                f'The work items source {work_items_source.name} with key {work_items_source_key}'
+                                f'does not belong to the connector with key {connector_key}')
 
         return dict(
             success=True,
