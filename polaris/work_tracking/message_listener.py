@@ -67,8 +67,7 @@ class WorkItemsTopicSubscriber(TopicSubscriber):
                 ParentPathSelectorsChanged,
                 # Commands
                 ImportWorkItem,
-                ImportWorkItems,
-                ResolveWorkItemsForEpic
+                ImportWorkItems
             ],
             publisher=publisher,
             exclusive=False
@@ -156,34 +155,6 @@ class WorkItemsTopicSubscriber(TopicSubscriber):
         elif WorkItemsUpdated.message_type == message.message_type:
             return self.process_work_items_updated(message)
 
-        elif ResolveWorkItemsForEpic.message_type == message.message_type:
-            total = 0
-            messages = []
-            for created, updated in self.process_resolve_work_items_for_epic(message):
-                if len(created) > 0:
-                    total = total + len(created)
-                    logger.info(f'{len(created)} new work_items were added to epic')
-                    created_message = WorkItemsCreated(send=dict(
-                        organization_key=message['organization_key'],
-                        work_items_source_key=message['work_items_source_key'],
-                        new_work_items=created
-                    ))
-                    self.publish(WorkItemsTopic, created_message, channel=channel)
-                    messages.append(created_message)
-
-                if len(updated) > 0:
-                    total = total + len(updated)
-                    logger.info(f'{len(updated)} work_items updated in the epic')
-                    updated_message = WorkItemsUpdated(send=dict(
-                        organization_key=message['organization_key'],
-                        work_items_source_key=message['work_items_source_key'],
-                        updated_work_items=updated
-                    ))
-                    self.publish(WorkItemsTopic, updated_message, channel=channel)
-                    messages.append(updated_message)
-
-            logger.info(f'{total} work items processed')
-            return messages
 
         elif ParentPathSelectorsChanged.message_type == message.message_type:
             return self.process_parent_path_selectors_changed(message)
@@ -323,23 +294,12 @@ class WorkItemsTopicSubscriber(TopicSubscriber):
 
     def process_work_items_created(self, message):
         response_messages = []
-        epics_imported = set()
-        epics_to_import = set()
+        parents_to_import = set()
         for work_item in message['new_work_items']:
-            if work_item['is_epic']:
-                epics_imported.add(work_item.get('display_id'))
-                response_message = ResolveWorkItemsForEpic(
-                    send=dict(
-                        organization_key=message['organization_key'],
-                        work_items_source_key=message['work_items_source_key'],
-                        epic=work_item
-                    ))
-                self.publish(WorkItemsTopic, response_message)
-                response_messages.append(response_message)
             if work_item.get('parent_source_display_id') is not None and work_item.get('parent_key') is None:
-                epics_to_import.add(work_item.get('parent_source_display_id'))
+                parents_to_import.add(work_item.get('parent_source_display_id'))
 
-        for work_item_id in epics_to_import - epics_imported:
+        for work_item_id in parents_to_import:
             response_message = ImportWorkItem(
                 send=dict(
                     organization_key=message['organization_key'],
@@ -353,23 +313,13 @@ class WorkItemsTopicSubscriber(TopicSubscriber):
 
     def process_work_items_updated(self, message):
         response_messages = []
-        epics_imported = set()
-        epics_to_import = set()
-        for work_item in message['updated_work_items']:
-            if work_item['is_epic']:
-                epics_imported.add(work_item.get('display_id'))
-                response_message = ResolveWorkItemsForEpic(
-                    send=dict(
-                        organization_key=message['organization_key'],
-                        work_items_source_key=message['work_items_source_key'],
-                        epic=work_item
-                    ))
-                self.publish(WorkItemsTopic, response_message)
-                response_messages.append(response_message)
-            if work_item.get('parent_source_display_id') is not None and work_item.get('parent_key') is None:
-                epics_to_import.add(work_item.get('parent_source_display_id'))
 
-        for work_item_id in epics_to_import - epics_imported:
+        parents_to_import = set()
+        for work_item in message['updated_work_items']:
+            if work_item.get('parent_source_display_id') is not None and work_item.get('parent_key') is None:
+                parents_to_import.add(work_item.get('parent_source_display_id'))
+
+        for work_item_id in parents_to_import:
             response_message = ImportWorkItem(
                 send=dict(
                     organization_key=message['organization_key'],
@@ -381,26 +331,7 @@ class WorkItemsTopicSubscriber(TopicSubscriber):
             response_messages.append(response_message)
         return response_messages
 
-    def process_resolve_work_items_for_epic(self, message):
-        work_items_source_key = message['work_items_source_key']
-        logger.info(f"Processing  {message.message_type}: "
-                    f" Work Items Source Key : {work_items_source_key}")
-        logger.info(f"Epic: {message['epic'].get('display_id')}")
 
-        try:
-            for work_items in commands.sync_work_items_for_epic(work_items_source_key, message['epic']):
-                created = []
-                updated = []
-                for work_item in work_items:
-                    if work_item['is_new']:
-                        created.append(work_item)
-                    else:
-                        updated.append(work_item)
-
-                yield created, updated
-
-        except Exception as exc:
-            raise_message_processing_error(message, 'Failed to resolve work items for epic', str(exc))
 
     def process_parent_path_selectors_changed(self, message):
         organization_key = message['organization_key']
