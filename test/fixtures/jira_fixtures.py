@@ -16,6 +16,7 @@ from flask import Flask
 from datetime import datetime
 from unittest.mock import patch
 from polaris.common import db
+from polaris.utils.collections import Fixture
 from polaris.common.enums import JiraWorkItemSourceType, WorkItemsSourceImportState
 from polaris.integrations.db import model as integrations
 from polaris.integrations.db.api import load_atlassian_connect_record
@@ -103,6 +104,18 @@ def jira_work_item_source_fixture(setup_work_tracking_schema, app_fixture):
         session.flush()
 
     yield work_items_source, jira_project_id, connector_key
+
+
+class WorkItemsSourceTest:
+    @pytest.fixture()
+    def setup(self, jira_work_item_source_fixture, cleanup):
+        work_items_source, jira_project_id, connector_key = jira_work_item_source_fixture
+        yield Fixture(
+            work_items_source=work_items_source,
+            project_id=jira_project_id,
+            connector_key=connector_key,
+            organization_key=organization_key
+        )
 
 
 def setup_jira_work_items(work_items_source):

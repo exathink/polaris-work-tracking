@@ -10,6 +10,7 @@
 
 import logging
 
+import polaris.work_tracking.db.model
 from polaris.common import db
 from polaris.common.enums import WorkItemsSourceImportState, TrackingReceiptState
 from polaris.utils.config import get_config_provider
@@ -49,7 +50,7 @@ def sync_work_item(token_provider, work_items_source_key, source_id):
         if work_items_source.import_state != WorkItemsSourceImportState.disabled.value:
             if getattr(work_items_source_provider, 'fetch_work_item', None):
                 for work_item in work_items_source_provider.fetch_work_item(source_id):
-                    logger.info(f'Calling sync work item for work_item {work_item}')
+
                     yield api.sync_work_item(work_items_source_key, work_item) or []
         else:
             logger.info(f'Attempted to call sync_work_item on a disabled work_item_source: {work_items_source.key}.'
@@ -76,18 +77,7 @@ def sync_work_items(token_provider, work_items_source_key):
                     f'Sync request will be ignored')
 
 
-def sync_work_items_for_epic(work_items_source_key, epic):
-    work_items_source_provider = work_items_source_factory.get_provider_impl(None, work_items_source_key)
-    work_items_source = work_items_source_provider.work_items_source
-    if work_items_source and work_items_source.import_state == WorkItemsSourceImportState.auto_update.value:
-        if hasattr(work_items_source_provider, 'fetch_work_items_for_epic') and callable(
-                work_items_source_provider.fetch_work_items_for_epic):
-            for work_items in work_items_source_provider.fetch_work_items_for_epic(epic):
-                yield api.sync_work_items_for_epic(work_items_source_key, epic, work_items) or []
-    else:
-        logger.info(
-            f'Attempted to call sync_work_items_with_epic_id on a disabled work_item_source: {work_items_source.key}.'
-            f'Sync request will be ignored')
+
 
 
 def create_work_items_source(work_items_source_input, channel=None):
@@ -108,6 +98,44 @@ def sync_work_items_sources(connector_key, tracking_receipt_key=None):
             for work_items_sources in connector.fetch_work_items_sources_to_sync():
                 yield api.sync_work_items_sources(connector, work_items_sources)
 
+"""
+Find the work items in reprocessed_work_items that have changed from the original work items in work_items_batch
+and return a list of the changed work items
+"""
+def changed_work_items(work_items_batch, reprocessed_work_items, attributes_to_check):
+    changed_items = reprocessed_work_items
+    if attributes_to_check is not None:
+        changed_items = []
+        for work_item, reprocessed_work_item in zip(work_items_batch, reprocessed_work_items):
+            if any(getattr(work_item, attr, None) != reprocessed_work_item.get(attr, None) for attr in attributes_to_check):
+                changed_items.append(reprocessed_work_item)
+
+    return changed_items
+
+
+
+def reprocess_work_items(work_items_source_key, attributes_to_check=None, batch_size=1000, join_this=None):
+    starting = None
+    while True:
+        # We always want to use a new session for each batch of work items
+        # so that a single transaction covers the fetch of the batch, the remapping of the
+        # payload, the sync of the changed items and any downstream processing triggered by the yield statement
+        # The downstream usually yields to a publish operation to the message bus, and this transaction
+        # should fail if the message publication fails.
+        with db.orm_session(join_this) as session:
+            work_items_source_provider = work_items_source_factory.get_provider_impl(None, work_items_source_key, join_this=session)
+            original_work_items, starting = WorkItemsSource.fetch_work_items_batch(work_items_source_key, batch_size, starting)
+            if len(original_work_items) > 0:
+                reprocessed_work_items = [
+                    work_items_source_provider.map_issue_to_work_item_data(work_item.api_payload)
+                    for work_item in original_work_items
+                ]
+                changed_items = changed_work_items(original_work_items, reprocessed_work_items, attributes_to_check)
+                yield api.sync_work_items(work_items_source_key, changed_items, session) or []
+
+
+        if starting is None:
+            break
 
 def register_work_items_source_webhooks(connector_key, work_items_source_key, join_this=None):
     with db.orm_session(join_this) as session:
@@ -219,34 +247,7 @@ def update_work_items_source_custom_fields(update_work_items_source_custom_field
         return db.failure_message(f"Import work item source custom fields failed", e)
 
 
-def get_epics_for_project(project, join_this=None):
-    work_items_source_epics = []
-    with db.orm_session(join_this) as session:
-        for work_items_source in project.work_items_sources:
-            epics = api.get_work_items_source_epics(work_items_source, join_this=session)
-            work_items_source_epics.append(dict(work_items_source_key=work_items_source.key, epics=epics))
-    return work_items_source_epics
 
-
-def resolve_work_items_for_project_epics(resolve_work_items_for_project_epics_input, join_this=None):
-    try:
-        with db.orm_session(join_this) as session:
-            project = Project.find_by_key(session, project_key=resolve_work_items_for_project_epics_input.project_key)
-            if project:
-                epics_to_publish = get_epics_for_project(project, join_this=session)
-                for epic_to_publish in epics_to_publish:
-                    # Publish ResolveWorkItemsForEpic
-                    for epic in epic_to_publish['epics']:
-                        publish.resolve_work_items_for_epic(organization_key=project.organization_key, \
-                                                            work_items_source_key=epic_to_publish[
-                                                                'work_items_source_key'], \
-                                                            epic=epic)
-                return success(dict(project_key=project.key))
-            else:
-                return db.failure_message(
-                    f"Project with key: {resolve_work_items_for_project_epics_input.project_key} not found")
-    except Exception as e:
-        return db.failure_message(f"Resolve work items for project epics failed", e)
 
 
 def test_work_tracking_connector(connector_key, join_this=None):

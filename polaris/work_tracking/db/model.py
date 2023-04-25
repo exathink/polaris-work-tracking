@@ -19,6 +19,7 @@ from sqlalchemy import \
     Boolean, MetaData, ForeignKey, and_, UniqueConstraint, cast, text
 
 from polaris.utils.config import get_config_provider
+from polaris.utils.collections import dict_merge
 from polaris.common.enums import WorkItemsSourceImportState
 from sqlalchemy.orm import relationship, object_session
 from sqlalchemy.sql import select, func
@@ -149,6 +150,30 @@ class WorkItemsSource(Base):
             )
         ).all()
 
+    """
+        Fetches work items for the given work items source in batches. 
+
+        You can use this to page through the work items by passing in the batch size 
+        and the starting work item id.
+
+        :param work_items_source_key: Key of the work items source
+        :param batch_size: Size of the batch
+        :param starting: Starting work item id
+        :param join_this: Session to join
+        :return: A tuple (Batch of work items, next starting work item id)
+    """
+    @classmethod
+    def fetch_work_items_batch(cls, work_items_source_key, batch_size=1000, starting=None, join_this=None):
+        with db.orm_session(join_this) as session:
+            work_items_source = cls.find_by_key(session, work_items_source_key)
+            return db.result_batch(
+                session.query(WorkItem).filter(WorkItem.work_items_source_id == work_items_source.id),
+                WorkItem.id,
+                batch_size=batch_size,
+                starting=starting,
+                desc=True
+            )
+
     @classmethod
     def populate_required_values(self, work_item_source):
         required_values_with_defaults = dict(
@@ -256,6 +281,14 @@ class WorkItemsSource(Base):
         for key, value in source_data.items():
             new_source_data[key] = value
         self.source_data = new_source_data
+
+    def update_parameters(self, work_items_source_parameters):
+        self.parameters = dict_merge(
+            dict(self.parameters),
+            work_items_source_parameters
+        )
+
+
 
 
 work_items_sources = WorkItemsSource.__table__
@@ -374,3 +407,5 @@ UniqueConstraint(work_items.c.work_items_source_id, work_items.c.source_id)
 def recreate_all(engine):
     Base.metadata.drop_all(engine)
     Base.metadata.create_all(engine)
+
+

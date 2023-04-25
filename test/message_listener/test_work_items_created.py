@@ -60,56 +60,7 @@ def new_work_items_summary():
 
 class TestJiraWorkItemsCreated:
 
-    def it_publishes_a_response_when_there_is_an_epic_in_work_items(self, new_work_items_summary, cleanup):
-        work_items = new_work_items_summary
-        message = fake_send(
-            WorkItemsCreated(
-                send=dict(
-                    organization_key=exathink_organization_key,
-                    work_items_source_key=jira_work_items_source_key,
-                    new_work_items=[
-                        dict_merge(
-                            dict_drop(work_item, ['parent_id']),
-                            dict(parent_key=None)
-                        )
-                        for work_item in work_items
-                    ]
-                )
-            )
-        )
-        publisher = mock_publisher()
-        channel = mock_channel()
 
-        result = WorkItemsTopicSubscriber(channel, publisher=publisher).dispatch(channel, message)
-        assert len(result) == len(work_items)
-        publisher.assert_topic_called_with_message(WorkItemsTopic, ResolveWorkItemsForEpic, call=0)
-        publisher.assert_topic_called_with_message(WorkItemsTopic, ResolveWorkItemsForEpic, call=1)
-        publisher.assert_topic_called_with_message(WorkItemsTopic, ResolveWorkItemsForEpic, call=2)
-        publisher.assert_topic_called_with_message(WorkItemsTopic, ResolveWorkItemsForEpic, call=3)
-        publisher.assert_topic_called_with_message(WorkItemsTopic, ResolveWorkItemsForEpic, call=4)
-
-    def it_does_not_publish_response_when_there_is_no_epic(self, new_work_items_summary, cleanup):
-        work_items = new_work_items_summary
-        message = fake_send(
-            WorkItemsCreated(
-                send=dict(
-                    organization_key=exathink_organization_key,
-                    work_items_source_key=jira_work_items_source_key,
-                    new_work_items=[
-                        dict_merge(
-                            dict_drop(work_item, ['parent_id']),
-                            dict(parent_key=None, is_epic=False)
-                        )
-                        for work_item in work_items
-                    ]
-                )
-            )
-        )
-        publisher = mock_publisher()
-        channel = mock_channel()
-
-        result = WorkItemsTopicSubscriber(channel, publisher=publisher).dispatch(channel, message)
-        assert len(result) == 0
 
     def it_publishes_import_work_item_message_when_a_missing_parent_needs_to_be_imported(self, new_work_items_summary,
                                                                                          cleanup):
@@ -136,35 +87,4 @@ class TestJiraWorkItemsCreated:
         assert len(result) == 1
         publisher.assert_topic_called_with_message(WorkItemsTopic, ImportWorkItem)
 
-    def it_publishes_import_work_item_message_only_for_epic_not_imported_within_the_batch(self, new_work_items_summary,
-                                                                                          cleanup):
-        work_items = new_work_items_summary
-        new_work_items = [
-            dict_merge(
-                dict_drop(work_item, ['parent_id']),
-                dict(parent_source_display_id='Epic-123', is_epic=False, parent_key=None, work_item_type='issue',
-                     is_bug=False)
-            )
-            for work_item in work_items
-        ]
-        new_work_items[0]['parent_source_display_id'] = None
-        new_work_items[0]['work_item_type'] = 'epic'
-        new_work_items[0]['is_epic'] = True
-        new_work_items[0]['display_id'] = 'Epic-123'
-        new_work_items[1]['parent_source_display_id'] = 'New-Epic'
-        message = fake_send(
-            WorkItemsCreated(
-                send=dict(
-                    organization_key=exathink_organization_key,
-                    work_items_source_key=jira_work_items_source_key,
-                    new_work_items=new_work_items
-                )
-            )
-        )
-        publisher = mock_publisher()
-        channel = mock_channel()
 
-        result = WorkItemsTopicSubscriber(channel, publisher=publisher).dispatch(channel, message)
-        assert len(result) == 2
-        publisher.assert_topic_called_with_message(WorkItemsTopic, ResolveWorkItemsForEpic, call=0)
-        publisher.assert_topic_called_with_message(WorkItemsTopic, ImportWorkItem, call=1)
