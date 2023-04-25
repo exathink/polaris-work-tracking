@@ -43,7 +43,7 @@ def sync_work_items(work_items_source_key, work_item_list, join_this=None):
                     for work_item in work_item_list
                 ]
             )
-        )
+        ).rowcount
 
     def mark_existing_work_items_in_temp_table(session, work_items_temp):
         # mark existing items in the set. We need this to properly
@@ -777,47 +777,7 @@ def get_imported_work_items_sources_count(connector_key, join_this=None):
         ).scalar()
 
 
-def sync_work_items_for_epic(work_items_source_key, epic, work_item_list, join_this=None):
-    # sync work items first then update parent_id
-    if len(work_item_list) > 0:
-        with db.orm_session(join_this) as session:
-            synced_work_items = sync_work_items(work_items_source_key, work_item_list, join_this=session)
-            work_items_temp = db.create_temp_table(
-                'work_items_temp_table', [
-                    Column('key', UUID(as_uuid=True), unique=True),
-                    Column('parent_id', Integer)
-                ]
-            )
-            work_items_temp.create(session.connection(), checkfirst=True)
-            epic_work_item = WorkItem.find_by_key(session, epic['key'])
-            session.connection().execute(
-                work_items_temp.insert().values(
-                    [
-                        dict(
-                            key=work_item['key'],
-                            parent_id=epic_work_item.id
-                        )
-                        for work_item in synced_work_items
-                    ]
-                )
-            )
 
-            # update work items
-            session.connection().execute(
-                work_items.update().where(
-                    work_items.c.key == work_items_temp.c.key
-                ).values(
-                    parent_id=work_items_temp.c.parent_id
-                )
-            )
-
-            # Collecting all work items inserted/updated
-            work_items_upserted = []
-            for work_item in synced_work_items:
-                work_item['parent_key'] = epic_work_item.key
-            work_items_upserted.extend(synced_work_items)
-
-            return work_items_upserted
 
 
 def get_work_items_source_epics(work_items_source, join_this=None):
