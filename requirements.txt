@@ -3,3 +3,4 @@ pytest
 argh
 pytest
 uwsgi
+jmespath

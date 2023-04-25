@@ -14,7 +14,7 @@ from polaris.messaging.messages import WorkItemsSourceCreated, ProjectImported, 
 from polaris.messaging.topics import WorkItemsTopic, ConnectorsTopic
 from polaris.messaging.utils import publish
 from polaris.work_tracking.messages import AtlassianConnectWorkItemEvent, RefreshConnectorProjects, \
-    ResolveWorkItemsForEpic, GitlabProjectEvent, TrelloBoardEvent
+    ResolveWorkItemsForEpic, GitlabProjectEvent, TrelloBoardEvent, ParentPathSelectorsChanged
 
 from polaris.integrations.publish import connector_event
 
@@ -183,6 +183,17 @@ def work_item_updated_event(organization_key, work_items_source_key, updated_wor
 
 def sync_work_items_source_command(organization_key, work_items_source_key, channel=None):
     message = ImportWorkItems(send=dict(
+        organization_key=organization_key,
+        work_items_source_key=work_items_source_key
+    ))
+    publish(
+        WorkItemsTopic,
+        message,
+        channel=channel
+    )
+
+def parent_path_selectors_changed(organization_key, work_items_source_key, channel=None):
+    message = ParentPathSelectorsChanged(send=dict(
         organization_key=organization_key,
         work_items_source_key=work_items_source_key
     ))
