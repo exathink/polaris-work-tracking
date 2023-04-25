@@ -137,7 +137,9 @@ class JiraProject(JiraWorkItemsSource):
         # see if we have configured custom path lookups - these override the default
         # mechanism for parent selection.
         if self.parent_path_selectors is not None:
-            return self.get_custom_parent_key(issue)
+            parent_link =  self.get_custom_parent_key(issue)
+            if parent_link is not None:
+                return parent_link
 
         # see if we can get the parent link directly.
         parent_link = fields.get('parent')  # We have parent in next-gen project issue fields
