@@ -152,6 +152,7 @@ class TestSyncApi(WorkItemsSourceTest):
             assert len(updated_state) == 1
             assert updated_state[0]['display_id'] == initial_state[0]['display_id']
             assert updated_state[0]['name'] == 'Updated name'
+            assert not updated_state[0]['is_new']
 
             assert db.connection().execute(
                 f"select name from work_tracking.work_items where source_display_id = '{initial_state[0]['display_id']}'").scalar() == 'Updated name'
@@ -198,13 +199,17 @@ class TestSyncApi(WorkItemsSourceTest):
                 assert db.connection().execute(
                     f"select parent_id from work_tracking.work_items where source_display_id='{child_issue['source_display_id']}'").scalar() is not None
 
-                #check that the right number of results have been returned
+                # check that the right number of results have been returned
                 assert len(initial_state) == 2
-
+                assert all([item['is_new'] for item in initial_state])
                 # check that the right parent key is being returned.
                 with db.orm_session() as session:
-                    parent_work_item = WorkItem.find_by_source_display_id(session, work_items_source_id=work_items_source.id, source_display_id=parent_issue['source_display_id'])
-                    updated_child = find(initial_state, lambda item: item['display_id'] == child_issue['source_display_id'])
+                    parent_work_item = WorkItem.find_by_source_display_id(session,
+                                                                          work_items_source_id=work_items_source.id,
+                                                                          source_display_id=parent_issue[
+                                                                              'source_display_id'])
+                    updated_child = find(initial_state,
+                                         lambda item: item['display_id'] == child_issue['source_display_id'])
                     assert updated_child['parent_key'] == str(parent_work_item.key)
 
             def it_resolves_the_parent_child_relationship_if_the_parent_arrives_before_the_child(self, setup):
@@ -220,17 +225,20 @@ class TestSyncApi(WorkItemsSourceTest):
                 initial_state = api.sync_work_items(work_items_source.key, [parent_issue])
                 next_state = api.sync_work_items(work_items_source.key, [child_issue])
 
-
                 assert len(next_state) == 1
                 updated_child = next_state[0]
 
                 assert updated_child['parent_key'] is not None
                 with db.orm_session() as session:
-                    parent_work_item = WorkItem.find_by_source_display_id(session, work_items_source_id=work_items_source.id, source_display_id=parent_issue['source_display_id'])
+                    parent_work_item = WorkItem.find_by_source_display_id(session,
+                                                                          work_items_source_id=work_items_source.id,
+                                                                          source_display_id=parent_issue[
+                                                                              'source_display_id'])
                     assert updated_child['parent_key'] == str(parent_work_item.key)
+                    assert updated_child['is_new']
 
-                assert db.connection().execute(f"select parent_id from work_tracking.work_items where source_display_id='{child_issue['source_display_id']}'").scalar() is not None
-
+                assert db.connection().execute(
+                    f"select parent_id from work_tracking.work_items where source_display_id='{child_issue['source_display_id']}'").scalar() is not None
 
             def it_resolves_the_parent_child_relationship_if_the_child_arrives_before_the_parent(self, setup):
                 fixture = setup
@@ -243,7 +251,6 @@ class TestSyncApi(WorkItemsSourceTest):
                 child_issue['parent_source_display_id'] = parent_issue['source_display_id']
                 initial_state = api.sync_work_items(work_items_source.key, [child_issue])
 
-
                 next_state = api.sync_work_items(work_items_source.key, [parent_issue])
                 assert db.connection().execute(
                     f"select parent_id from work_tracking.work_items where source_display_id='{child_issue['source_display_id']}'").scalar() is not None
@@ -252,14 +259,116 @@ class TestSyncApi(WorkItemsSourceTest):
                 # when the new parent came in.
                 assert len(next_state) == 2
 
+                updated_child = find(next_state,
+                                     lambda item: item['display_id'] == child_issue['source_display_id'])
+                assert not updated_child['is_new']
+
+                updated_parent = find(next_state,
+                                      lambda item: item['display_id'] == parent_issue['source_display_id'])
+
+                assert updated_parent['is_new']
+
                 # check that the right parent key is being returned.
                 with db.orm_session() as session:
                     parent_work_item = WorkItem.find_by_source_display_id(session,
                                                                           work_items_source_id=work_items_source.id,
                                                                           source_display_id=parent_issue[
                                                                               'source_display_id'])
-                    updated_child = find(next_state,
-                                         lambda item: item['display_id'] == child_issue['source_display_id'])
+
 
                     assert updated_child['parent_key'] == str(parent_work_item.key)
-                    assert not updated_child['is_new']
+
+
+            def it_resolves_the_parent_child_relationships_when_all_arrive_together(self, setup):
+                fixture = setup
+                project = fixture.project
+                work_items_source = fixture.work_items_source
+                issue_a = project.map_issue_to_work_item_data(fixture.issue_with_components)
+                child_issue = project.map_issue_to_work_item_data(fixture.issue_with_custom_parent)
+                issue_b = project.map_issue_to_work_item_data(fixture.issue_for_custom_parent)
+
+                # original set up is:
+                # issue_a -> child_issue
+                # issue_a -> issue_b
+                child_issue['parent_source_display_id'] = issue_a['source_display_id']
+                issue_b['parent_source_display_id'] = issue_a['source_display_id']
+
+                initial_state = api.sync_work_items(work_items_source.key, [issue_a, issue_b, child_issue])
+
+                # check that all the relationships are set up properly.
+
+                with db.orm_session() as session:
+                    item_a = WorkItem.find_by_source_display_id(session,
+                                                                work_items_source_id=work_items_source.id,
+                                                                source_display_id=issue_a[
+                                                                    'source_display_id'])
+                    item_b = WorkItem.find_by_source_display_id(session,
+                                                                work_items_source_id=work_items_source.id,
+                                                                source_display_id=issue_b[
+                                                                    'source_display_id'])
+                    child_item = WorkItem.find_by_source_display_id(session,
+                                                                    work_items_source_id=work_items_source.id,
+                                                                    source_display_id=child_issue[
+                                                                        'source_display_id'])
+
+                    assert item_b.parent == item_a
+                    assert child_item.parent == item_a
+
+                    assert find(initial_state,
+                                lambda item: item['display_id'] == issue_a['source_display_id'])['parent_key'] is None
+                    assert find(initial_state,
+                                lambda item: item['display_id'] == issue_b['source_display_id'])['parent_key'] == str(item_a.key)
+
+                    assert find(initial_state,
+                                lambda item: item['display_id'] == child_issue['source_display_id'])['parent_key'] == str(item_a.key)
+
+            def it_resolves_the_parent_child_relationships_when_all_are_existing_and_rewired(self, setup):
+                fixture = setup
+                project = fixture.project
+                work_items_source = fixture.work_items_source
+                issue_a = project.map_issue_to_work_item_data(fixture.issue_with_components)
+                child_issue = project.map_issue_to_work_item_data(fixture.issue_with_custom_parent)
+                issue_b = project.map_issue_to_work_item_data(fixture.issue_for_custom_parent)
+
+                # This is the same setup as the previous test
+                # we insert all three and create an existing hierarchy.
+
+                # issue_a -> child_issue
+                # issue_a -> issue_b
+                child_issue['parent_source_display_id'] = issue_a['source_display_id']
+                issue_b['parent_source_display_id'] = issue_a['source_display_id']
+
+                initial_state = api.sync_work_items(work_items_source.key, [issue_a, issue_b, child_issue])
+
+                # now we wire the relationship and sync again: child_issue becomes a child of issue_b instead of issue_a
+                # issue_a -> issue_b -> child_issue
+
+                issue_b['parent_source_display_id'] = issue_a['source_display_id']
+                child_issue['parent_source_display_id'] = issue_b['source_display_id']
+
+                next_state = api.sync_work_items(work_items_source.key, [issue_a, issue_b, child_issue])
+
+                with db.orm_session() as session:
+                    item_a = WorkItem.find_by_source_display_id(session,
+                                                                work_items_source_id=work_items_source.id,
+                                                                source_display_id=issue_a[
+                                                                    'source_display_id'])
+                    item_b = WorkItem.find_by_source_display_id(session,
+                                                                work_items_source_id=work_items_source.id,
+                                                                source_display_id=issue_b[
+                                                                    'source_display_id'])
+                    child_item = WorkItem.find_by_source_display_id(session,
+                                                                    work_items_source_id=work_items_source.id,
+                                                                    source_display_id=child_issue[
+                                                                        'source_display_id'])
+
+                    assert item_b.parent == item_a
+                    assert child_item.parent == item_b
+
+                    assert find(next_state,
+                                lambda item: item['display_id'] == issue_a['source_display_id'])['parent_key'] is None
+                    assert find(next_state,
+                                lambda item: item['display_id'] == issue_b['source_display_id'])['parent_key'] == str(item_a.key)
+
+                    assert find(next_state,
+                                lambda item: item['display_id'] == child_issue['source_display_id'])['parent_key'] == str(item_b.key)
