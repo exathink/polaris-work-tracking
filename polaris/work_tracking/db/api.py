@@ -495,13 +495,11 @@ use the sync_work_items method directly instead and handle the multiple result c
 @:return: A list of work items that were updated
 
 """
-def sync_work_item_returning_multiple(work_items_source_key, work_item_data, join_this=None):
+def sync_work_item(work_items_source_key, work_item_data, join_this=None):
     logger.info(f'Sync work item called for work items source {work_items_source_key}')
     return sync_work_items(work_items_source_key, [work_item_data], join_this) or []
 
-def sync_work_item(work_items_source_key, work_item_data, join_this=None):
-    logger.info(f'Sync work item called for work items source {work_items_source_key}')
-    return sync_work_items(work_items_source_key, [work_item_data], join_this)[0]
+
 
 
 def move_work_item(source_work_items_source_key, target_work_items_source_key, work_item_data, join_this=None):

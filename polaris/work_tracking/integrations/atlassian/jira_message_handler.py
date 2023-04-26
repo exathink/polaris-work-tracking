@@ -67,7 +67,7 @@ def handle_issue_moved_event(jira_connector_key, jira_event):
                 if target_work_items_source and target_work_items_source.import_state == WorkItemsSourceImportState.auto_update.value:
                     target_jira_project_source = JiraProject(target_work_items_source)
                     new_work_item_data = target_jira_project_source.map_issue_to_work_item_data(issue)
-                    new_work_item = api.sync_work_item_returning_multiple(target_work_items_source.key, new_work_item_data,
+                    new_work_item = api.sync_work_item(target_work_items_source.key, new_work_item_data,
                                                        join_this=session)[0]
                     new_work_item['organization_key'] = target_work_items_source.organization_key
                     new_work_item['work_items_source_key'] = target_work_items_source.key
@@ -96,7 +96,7 @@ def handle_issue_events_for_same_source_project(jira_connector_key, jira_event_t
                     if work_item_data:
                         work_item = {}
                         if jira_event_type in ['issue_created', 'issue_updated']:
-                            sync_result = api.sync_work_item_returning_multiple(work_items_source.key, work_item_data, join_this=session)
+                            sync_result = api.sync_work_item(work_items_source.key, work_item_data, join_this=session)
                             return dict(
                                 organization_key=work_items_source.organization_key,
                                 work_items_source_key=work_items_source.key,
