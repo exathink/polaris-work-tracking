@@ -12,7 +12,7 @@ import logging
 import uuid
 from datetime import datetime
 from polaris.utils.collections import dict_drop
-from sqlalchemy import select, and_, func, literal, Column, Integer, Boolean, UniqueConstraint
+from sqlalchemy import select, and_, or_, func, literal, Column, Integer, Boolean, UniqueConstraint
 from sqlalchemy.dialects.postgresql import insert, UUID
 from sqlalchemy.exc import SQLAlchemyError
 
@@ -25,9 +25,24 @@ from polaris.integrations.db.model import Connector
 
 logger = logging.getLogger('polaris.work_tracker.db.api')
 
+"""
+Sync work item data in the incoming list with the work items.
+New items are added and existing items are updated. 
 
+This operation returns a list of work items that were inserted and updated as result of the
+sync operation.
+
+Note that the list of work items returned may be larger than the list of work items
+that were passed in. This is because the work items returned may include work items
+whose parent or child wor items were also updated as a result of resolving new parent child 
+relationships. 
+
+@param work_items_source_key: The key of the work items source to sync with.
+@param work_item_list: The list of work items to sync.
+@:return: A list of work items that were inserted and updated as result of the sync operation.
+
+"""
 def sync_work_items(work_items_source_key, work_item_list, join_this=None):
-
     def insert_incoming_into_work_items_temp(session, work_item_list, work_items_source, work_items_temp):
         last_sync = datetime.utcnow()
         return session.connection().execute(
@@ -37,7 +52,8 @@ def sync_work_items(work_items_source_key, work_item_list, join_this=None):
                         key=uuid.uuid4(),
                         work_items_source_id=work_items_source.id,
                         last_sync=last_sync,
-                        is_new=True,
+                        is_new=True,  # we will mark existing later
+                        has_changes=True,  # we will mark unchanged later.
                         **work_item
                     )
                     for work_item in work_item_list
@@ -68,11 +84,53 @@ def sync_work_items(work_items_source_key, work_item_list, join_this=None):
             )
         ).rowcount
 
+    def mark_unchanged_work_items_in_temp_table(session, work_items_temp):
+        attributes_to_check = ['name', 'description', 'is_bug', 'work_item_type', 'is_epic', 'tags', 'url',
+                               'source_state',
+                               'source_display_id', 'api_payload', 'work_items_source_id', 'commit_identifiers',
+                               'parent_source_display_id']
+        # mark unchanged items in the set. We use this downstream to
+        # signal that there is no need to propagate this update beyond this subsystem.
+        unchanged_items = select([
+            work_items_temp.c.source_id
+        ]).select_from(
+            work_items_temp.join(
+                work_items,
+                and_(
+                    work_items_temp.c.work_items_source_id == work_items.c.work_items_source_id,
+                    work_items_temp.c.source_id == work_items.c.source_id
+                )
+            )
+        ).where(
+            and_(*[
+                or_(
+                    work_items.columns[attribute] == work_items_temp.columns[attribute],
+                    # we need this clause here because if both values are null,
+                    # postgres will not allow you to compare them with an == operator.
+                    # so we have to explictly check that both values are null.
+                    and_(
+                        work_items.columns[attribute] == None,
+                        work_items_temp.columns[attribute] == None
+                    )
+                )
+                for attribute in attributes_to_check
+            ])
+        ).alias()
+        return session.connection().execute(
+            work_items_temp.update().values(
+                has_changes=False
+            ).where(
+                unchanged_items.c.source_id == work_items_temp.c.source_id
+            )
+        ).rowcount
+
+
     def upsert_temp_table_items_into_work_items(session, work_items_temp):
         # Now  upsert work items temp into work items so that the
         # new items are inserted and existing item attributes are updated.
         # we need to strip out the extra columns that are not in work_items
-        work_item_columns = [column for column in work_items_temp.columns if column.name not in ['is_new']]
+        work_item_columns = [column for column in work_items_temp.columns if
+                             column.name not in ['is_new', 'has_changes']]
         upsert = insert(work_items).from_select(
             [column.name for column in work_item_columns],
             select(work_item_columns)
@@ -194,7 +252,6 @@ def sync_work_items(work_items_source_key, work_item_list, join_this=None):
             )
         ).rowcount
 
-
     # main body
     if len(work_item_list) > 0:
         with db.orm_session(join_this) as session:
@@ -204,7 +261,10 @@ def sync_work_items(work_items_source_key, work_item_list, join_this=None):
                 work_items,
                 table_name='work_items_temp',
                 exclude_columns=[work_items.c.id],
-                extra_columns=[Column('is_new', Boolean)]
+                extra_columns=[
+                    Column('is_new', Boolean),
+                    Column('has_changes', Boolean)
+                ]
             )
             UniqueConstraint(work_items_temp.c.source_id)
 
@@ -217,7 +277,13 @@ def sync_work_items(work_items_source_key, work_item_list, join_this=None):
 
             # step: 2 Mark new items
             existing_items = mark_existing_work_items_in_temp_table(session, work_items_temp)
-            logger.info(f"sync_work_items: there {existing_items} existing items and {len(work_item_list) - existing_items} new items")
+            logger.info(
+                f"sync_work_items: there {existing_items} existing items and {len(work_item_list) - existing_items} new items")
+
+            # step: 3 Mark unchanged items
+            unchanged = mark_unchanged_work_items_in_temp_table(session, work_items_temp)
+            logger.info(
+                f"sync_work_items: {unchanged} existing items have no changes")
 
             # step 3: parent resolution phase 1
             # this marks the parent_ids of children in the temp table with parent in work items
@@ -226,8 +292,6 @@ def sync_work_items(work_items_source_key, work_item_list, join_this=None):
                                                                                                   work_items_temp)
             logger.info(f"sync_work_items: parent resolution phase 1 - "
                         f"{incoming_parents_resolved} items in the incoming list had existing parents in  work items")
-
-
 
             # step: 4 upsert the temp table into work items
             upserts = upsert_temp_table_items_into_work_items(session, work_items_temp)
@@ -265,7 +329,9 @@ def sync_work_items(work_items_source_key, work_item_list, join_this=None):
                 select([
                     work_items,
                     parent_work_items.c.key.label('parent_key'),
-                    work_items_temp.c.is_new]
+                    work_items_temp.c.is_new,
+                    work_items_temp.c.has_changes
+                ]
                 ).distinct().select_from(
                     work_items_temp.join(
                         work_items,
@@ -282,7 +348,8 @@ def sync_work_items(work_items_source_key, work_item_list, join_this=None):
                     )
                 )
             ).fetchall()
-            logger.info(f"sync_work_items result:{len(work_item_list)} incoming items, {len(sync_result)} outgoing items")
+            logger.info(
+                f"sync_work_items result:{len(work_item_list)} incoming items, {len(sync_result)} outgoing items")
             logger.info(f"sync_work_items: {work_items_source.name} completed")
 
             return [
@@ -304,13 +371,11 @@ def sync_work_items(work_items_source_key, work_item_list, join_this=None):
                     updated_at=work_item.source_last_updated,
                     last_sync=work_item.last_sync,
                     source_id=work_item.source_id,
-                    commit_identifiers=work_item.commit_identifiers
+                    commit_identifiers=work_item.commit_identifiers,
+                    is_updated=work_item.has_changes
                 )
                 for work_item in sync_result
             ]
-
-
-
 
 
 def resolve_work_items_by_display_ids(organization_key, display_ids):
@@ -417,120 +482,26 @@ def create_work_items_source(work_items_source_input, join_this=None):
         session.add(work_item_source)
         return work_item_source
 
+"""
+Sync operation for a single work item. This now delegates fully to the sync_work_items method and 
+can be considered a convenience wrapper for that method. Note that this method
+will only the original work item that was synced, not any of the children that were synced as a side-effect. 
+If you want to directly sync a work item and get the list all of the other work items that were updated, 
+use the sync_work_items method directly instead and handle the multiple result case yourself. 
 
+@:param work_items_source_key: The key of the work items source to sync the work item for
+@:param work_item_data: The data of the work item to sync
+@:param join_this: The session to join the transaction to
+@:return: A list of work items that were updated
+
+"""
 def sync_work_item(work_items_source_key, work_item_data, join_this=None):
     logger.info(f'Sync work item called for work items source {work_items_source_key}')
-    with db.orm_session(join_this) as session:
-        work_item_key = None
-        work_items_source = WorkItemsSource.find_by_key(session, work_items_source_key)
-        parent_source_display_id = work_item_data.get('parent_source_display_id')
-        if work_items_source:
-            sync_result = dict()
-            work_item = WorkItem.find_by_source_display_id(
-                session,
-                work_items_source.id,
-                work_item_data.get('source_display_id')
-            )
-            # Find linked parent work item
-            # FIXME: Epics can be from a different work item source. But here we are setting parent ids \
-            #  only when parent is from same work item source.
-            if parent_source_display_id is None or parent_source_display_id == '':
-                work_item_data['parent_id'] = None
-            else:
-                parent_work_item = WorkItem.find_by_source_display_id(
-                    session,
-                    work_items_source.id,
-                    source_display_id=parent_source_display_id
-
-                )
-                work_item_data['parent_id'] = parent_work_item.id if parent_work_item else None
-            if not work_item:
-                work_item_key = uuid.uuid4()
-                work_item = WorkItem(
-                    key=work_item_key,
-                    last_sync=datetime.utcnow(),
-                    **work_item_data
-                )
-                work_items_source.work_items.append(work_item)
-                sync_result['is_new'] = True
-
-            else:
-                work_item_key = work_item.key
-                # work_item_data should have work_items_source_id field too
-                work_item_data['work_items_source_id'] = work_items_source.id
-                sync_result['is_updated'] = work_item.update(work_item_data)
-
-            # The reason we do this flush and refetch from the database below as follows:
-
-            # source_created and source_last_updated fields in the work_item_data come in as
-            # ISO 8601 format strings but get converted to date times on write to the db by SQLAlchemy. However
-            # the object instances that are in the session still are stored as strings. This
-            # is the value that is in work_item in the block above this.
-
-            # Sending this in-memory reference directly back out as the output of this method
-            # causes all sorts of issues as the consumers of this method expect datetimes
-            # instead of strings.
-
-            # Rather than force everyone calling the api to convert strings to datetimes or to add new
-            # constructors to manage the string to date parsing, we choose to simply
-            # load the item back from the database and let SQLAlchemy deal with the datetime
-            # conversion consistently.
-            #
-            # Probably not the most optimal way of doing this, and there may be other problems
-            # we have not anticipated with doing this, but
-            # it seems like the one with smallest impact surface area assuming ISO 8601 format strings
-            # are being input which seems likely in all the integration use cases we have.
-            # Might need to revisit if this turns out to be false.
-            # This really feels like something
-            # SQLAlchemy should handle "correctly" but for now it does not seem to.
-
-            session.flush()
-            work_item = session.connection().execute(
-                select([work_items]).where(
-                    work_items.c.key == work_item_key
-                )
-            ).fetchone()
-            if work_item:
-                if work_item.parent_id is not None:
-                    parent_key = WorkItem.find_by_key(session, key=work_item.key).parent.key
-                else:
-                    parent_key = None
-                return dict(
-                    **sync_result,
-                    **dict(
-                        key=work_item.key,
-                        work_item_type=work_item.work_item_type,
-                        display_id=work_item.source_display_id,
-                        url=work_item.url,
-                        name=work_item.name,
-                        description=work_item.description,
-                        is_bug=work_item.is_bug,
-                        is_epic=work_item.is_epic,
-                        parent_source_display_id=work_item.parent_source_display_id,
-                        parent_key=parent_key,
-                        tags=work_item.tags,
-                        state=work_item.source_state,
-                        created_at=work_item.source_created_at,
-                        updated_at=work_item.source_last_updated,
-                        last_sync=work_item.last_sync,
-                        source_id=work_item.source_id,
-                        commit_identifiers=work_item.commit_identifiers
-                    )
-                )
-            else:
-                raise ProcessingException(
-                    f'Could not load work_item after sync: '
-                    f' work_item_source_key: {work_items_source_key}'
-                    f" source_display_id: {work_item_data.get('source_display_id')}"
-                )
-        else:
-            raise ProcessingException(
-                f"Could not find work item source when syncing work item {work_item_data.get('display_id')}"
-            )
+    return sync_work_items(work_items_source_key, [work_item_data], join_this)[0]
 
 
 def insert_work_item(work_items_source_key, work_item_data, join_this=None):
-    return sync_work_item(work_items_source_key, work_item_data)
+    return sync_work_item(work_items_source_key, work_item_data, join_this)
 
 
 def update_work_item(work_items_source_key, work_item_data, join_this=None):
@@ -775,9 +746,6 @@ def get_imported_work_items_sources_count(connector_key, join_this=None):
                 )
             )
         ).scalar()
-
-
-
 
 
 def get_work_items_source_epics(work_items_source, join_this=None):
