@@ -497,19 +497,11 @@ use the sync_work_items method directly instead and handle the multiple result c
 """
 def sync_work_item_returning_multiple(work_items_source_key, work_item_data, join_this=None):
     logger.info(f'Sync work item called for work items source {work_items_source_key}')
-    return sync_work_items(work_items_source_key, [work_item_data], join_this)
+    return sync_work_items(work_items_source_key, [work_item_data], join_this) or []
 
 def sync_work_item(work_items_source_key, work_item_data, join_this=None):
     logger.info(f'Sync work item called for work items source {work_items_source_key}')
     return sync_work_items(work_items_source_key, [work_item_data], join_this)[0]
-
-
-def insert_work_item(work_items_source_key, work_item_data, join_this=None):
-    return sync_work_item_returning_multiple(work_items_source_key, work_item_data, join_this) or []
-
-
-def update_work_item(work_items_source_key, work_item_data, join_this=None):
-    return sync_work_item(work_items_source_key, work_item_data, join_this)
 
 
 def move_work_item(source_work_items_source_key, target_work_items_source_key, work_item_data, join_this=None):

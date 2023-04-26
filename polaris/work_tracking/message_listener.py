@@ -199,10 +199,13 @@ class WorkItemsTopicSubscriber(TopicSubscriber):
     def process_atlassian_connect_event(self, message):
         jira_connector_key = message['atlassian_connector_key']
         jira_event_type = message['atlassian_event_type']
+
         jira_event = json.loads(message['atlassian_event'])
+        if jira_event.get('issue_event_type_name') == 'issue_moved':
+            jira_event_type = 'issue_moved'
 
         try:
-            if jira_event_type == 'issue_created':
+            if jira_event_type in ['issue_created', 'issue_updated']:
                 result = jira_message_handler.handle_issue_events(jira_connector_key, jira_event_type,
                                                                      jira_event)
                 created = []
@@ -230,14 +233,14 @@ class WorkItemsTopicSubscriber(TopicSubscriber):
                         updated_message = WorkItemsUpdated(send=dict(
                             organization_key=organization_key,
                             work_items_source_key=work_items_source_key,
-                            new_work_items=updated
+                            updated_work_items=updated
                         ))
                         self.publish(WorkItemsTopic, updated_message)
 
 
                 return [*created, *updated]
 
-            elif jira_event_type in ['issue_updated', 'issue_deleted']:
+            elif jira_event_type in ['issue_moved', 'issue_deleted']:
                 work_item = jira_message_handler.handle_issue_events(jira_connector_key, jira_event_type,
                                                                      jira_event)
                 if work_item:

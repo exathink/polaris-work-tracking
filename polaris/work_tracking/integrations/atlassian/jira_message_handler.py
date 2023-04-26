@@ -95,15 +95,14 @@ def handle_issue_events_for_same_source_project(jira_connector_key, jira_event_t
                     work_item_data = jira_project_source.map_issue_to_work_item_data(issue)
                     if work_item_data:
                         work_item = {}
-                        if jira_event_type == 'issue_created':
-                            sync_result = api.insert_work_item(work_items_source.key, work_item_data, join_this=session)
+                        if jira_event_type in ['issue_created', 'issue_updated']:
+                            sync_result = api.sync_work_item_returning_multiple(work_items_source.key, work_item_data, join_this=session)
                             return dict(
                                 organization_key=work_items_source.organization_key,
                                 work_items_source_key=work_items_source.key,
                                 work_items=sync_result
                             )
-                        elif jira_event_type == 'issue_updated':
-                            work_item = api.update_work_item(work_items_source.key, work_item_data, join_this=session)
+
                         elif jira_event_type == 'issue_deleted':
                             work_item_data['deleted_at'] = datetime.utcnow()
                             work_item = api.delete_work_item(work_items_source.key, work_item_data, join_this=session)

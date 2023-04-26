@@ -224,7 +224,7 @@ class TestAtlassianConnectEvent:
         subscriber.consumer_context = mock_consumer
 
         message = subscriber.dispatch(mock_channel, jira_issue_updated_message)
-        assert message
+        assert len(message) == 1
         publisher.assert_topic_called_with_message(WorkItemsTopic, WorkItemsUpdated)
 
     def it_does_not_send_an_update_message_when_an_issue_is_updated_but_no_app_relevant_fields_change(
@@ -272,7 +272,7 @@ class TestAtlassianConnectEvent:
         subscriber.consumer_context = mock_consumer
 
         message = subscriber.dispatch(mock_channel, jira_issue_updated_message)
-        assert message is None
+        assert len(message) == 0
 
     def it_upserts_for_updates(self, jira_work_item_source_fixture, cleanup):
         work_items_source, jira_project_id, connector_key = jira_work_item_source_fixture
@@ -298,7 +298,7 @@ class TestAtlassianConnectEvent:
         subscriber.consumer_context = mock_consumer
 
         message = subscriber.dispatch(mock_channel, jira_issue_created_message)
-        assert message
+        assert len(message) == 1
         publisher.assert_topic_called_with_message(WorkItemsTopic, WorkItemsCreated)
 
         assert db.connection().execute(f"Select count(id) from work_tracking.work_items "
@@ -452,7 +452,7 @@ class TestAtlassianConnectEvent:
         subscriber.consumer_context = mock_consumer
 
         message = subscriber.dispatch(mock_channel, jira_issue_updated_message)
-        assert message is None
+        assert len(message) == 0
 
         assert db.connection().execute(f"Select count(id) from work_tracking.work_items "
                                        f"where name='Foobar' and "
