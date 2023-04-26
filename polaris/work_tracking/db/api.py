@@ -42,6 +42,8 @@ relationships.
 @:return: A list of work items that were inserted and updated as result of the sync operation.
 
 """
+
+
 def sync_work_items(work_items_source_key, work_item_list, join_this=None):
     def insert_incoming_into_work_items_temp(session, work_item_list, work_items_source, work_items_temp):
         last_sync = datetime.utcnow()
@@ -123,7 +125,6 @@ def sync_work_items(work_items_source_key, work_item_list, join_this=None):
                 unchanged_items.c.source_id == work_items_temp.c.source_id
             )
         ).rowcount
-
 
     def upsert_temp_table_items_into_work_items(session, work_items_temp):
         # Now  upsert work items temp into work items so that the
@@ -426,6 +427,25 @@ def resolve_work_items_by_display_ids(organization_key, display_ids):
     return resolved
 
 
+"""
+Sync operation for a single work item. This now delegates fully to the sync_work_items method and 
+can be considered a convenience wrapper for that method. Note that this method returns a
+list of work items since the sync of a single work items may return more than one work item
+if that sync results in parent/child relationships for other work items being resolved in the process. 
+
+@:param work_items_source_key: The key of the work items source to sync the work item for
+@:param work_item_data: The data of the work item to sync
+@:param join_this: The session to join the transaction to
+@:return: A list of work items that were updated
+
+"""
+
+
+def sync_work_item(work_items_source_key, work_item_data, join_this=None):
+    logger.info(f'Sync work item called for work items source {work_items_source_key}')
+    return sync_work_items(work_items_source_key, [work_item_data], join_this) or []
+
+
 def get_work_items_sources_to_sync():
     with db.create_session() as session:
         return [
@@ -484,25 +504,6 @@ def create_work_items_source(work_items_source_input, join_this=None):
         )
         session.add(work_item_source)
         return work_item_source
-
-"""
-Sync operation for a single work item. This now delegates fully to the sync_work_items method and 
-can be considered a convenience wrapper for that method. Note that this method
-will only the original work item that was synced, not any of the children that were synced as a side-effect. 
-If you want to directly sync a work item and get the list all of the other work items that were updated, 
-use the sync_work_items method directly instead and handle the multiple result case yourself. 
-
-@:param work_items_source_key: The key of the work items source to sync the work item for
-@:param work_item_data: The data of the work item to sync
-@:param join_this: The session to join the transaction to
-@:return: A list of work items that were updated
-
-"""
-def sync_work_item(work_items_source_key, work_item_data, join_this=None):
-    logger.info(f'Sync work item called for work items source {work_items_source_key}')
-    return sync_work_items(work_items_source_key, [work_item_data], join_this) or []
-
-
 
 
 def move_work_item(source_work_items_source_key, target_work_items_source_key, work_item_data, join_this=None):
