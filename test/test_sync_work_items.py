@@ -288,6 +288,7 @@ class TestSyncApi(WorkItemsSourceTest):
                 updated_child = find(next_state,
                                      lambda item: item['display_id'] == child_issue['source_display_id'])
                 assert not updated_child['is_new']
+                assert updated_child['is_updated']
 
                 updated_parent = find(next_state,
                                       lambda item: item['display_id'] == parent_issue['source_display_id'])

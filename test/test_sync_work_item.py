@@ -49,34 +49,32 @@ class TestSyncWorkItem:
         new_work_item = new_work_items_jira()[0]
         with patch(
                 'polaris.work_tracking.integrations.atlassian.jira_work_items_source.JiraProject.fetch_work_item') as fetch_work_item:
-            fetch_work_item.return_value = [new_work_item]
+            fetch_work_item.return_value = new_work_item
 
-            for result in commands.sync_work_item(token_provider, work_items_source.key,
-                                                  new_work_item['source_display_id']):
-                assert result['display_id'] == new_work_item['source_display_id']
-                assert result['is_new'] == True
-                assert result['key'] is not None
+            result = commands.sync_work_item(token_provider, work_items_source.key,
+                                                  new_work_item['source_display_id'])[0]
+            assert result['display_id'] == new_work_item['source_display_id']
+            assert result['is_new'] == True
+            assert result['key'] is not None
 
     def it_updates_work_item_that_already_exists(self, jira_work_item_source_fixture, cleanup):
         work_items_source, jira_project_id, connector_key = jira_work_item_source_fixture
         new_work_item = new_work_items_jira()[0]
         with patch(
                 'polaris.work_tracking.integrations.atlassian.jira_work_items_source.JiraProject.fetch_work_item') as fetch_work_item:
-            fetch_work_item.return_value = [new_work_item]
+            fetch_work_item.return_value = new_work_item
             # import once
-            for result in commands.sync_work_item(token_provider, work_items_source.key,
-                                                  new_work_item['source_display_id']):
-                pass
-
+            commands.sync_work_item(token_provider, work_items_source.key,
+                                                  new_work_item['source_display_id'])
             # import again after updating a relevant field
             new_work_item['source_state'] = 'In progress'
-            for result in commands.sync_work_item(token_provider, work_items_source.key,
-                                                  new_work_item['source_display_id']):
-                assert result['display_id'] == new_work_item['source_display_id']
-                assert result['is_updated'] == True
+            result = commands.sync_work_item(token_provider, work_items_source.key,
+                                                  new_work_item['source_display_id'])[0]
+            assert result['display_id'] == new_work_item['source_display_id']
+            assert result['is_updated'] == True
 
     def it_does_not_call_sync_work_item_if_its_not_defined_by_connector(self, setup_work_items, new_work_items):
         _, work_items_sources = setup_work_items
         empty_source = work_items_sources['empty']
-        for result in commands.sync_work_item(token_provider, empty_source.key, new_work_items[0]['source_display_id']):
-            assert result is None
+        result = commands.sync_work_item(token_provider, empty_source.key, new_work_items[0]['source_display_id'])
+        assert result == []

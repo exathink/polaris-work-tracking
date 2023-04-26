@@ -68,7 +68,7 @@ def handle_issue_moved_event(jira_connector_key, jira_event):
                     target_jira_project_source = JiraProject(target_work_items_source)
                     new_work_item_data = target_jira_project_source.map_issue_to_work_item_data(issue)
                     new_work_item = api.sync_work_item(target_work_items_source.key, new_work_item_data,
-                                                       join_this=session)
+                                                       join_this=session)[0]
                     new_work_item['organization_key'] = target_work_items_source.organization_key
                     new_work_item['work_items_source_key'] = target_work_items_source.key
                     return new_work_item
@@ -95,19 +95,25 @@ def handle_issue_events_for_same_source_project(jira_connector_key, jira_event_t
                     work_item_data = jira_project_source.map_issue_to_work_item_data(issue)
                     if work_item_data:
                         work_item = {}
-                        if jira_event_type == 'issue_created':
-                            work_item = api.insert_work_item(work_items_source.key, work_item_data, join_this=session)
-                        elif jira_event_type == 'issue_updated':
-                            work_item = api.update_work_item(work_items_source.key, work_item_data, join_this=session)
+                        if jira_event_type in ['issue_created', 'issue_updated']:
+                            sync_result = api.sync_work_item(work_items_source.key, work_item_data, join_this=session)
+                            return dict(
+                                organization_key=work_items_source.organization_key,
+                                work_items_source_key=work_items_source.key,
+                                work_items=sync_result
+                            )
+
                         elif jira_event_type == 'issue_deleted':
                             work_item_data['deleted_at'] = datetime.utcnow()
                             work_item = api.delete_work_item(work_items_source.key, work_item_data, join_this=session)
-
-                        work_item['organization_key'] = work_items_source.organization_key
-                        work_item['work_items_source_key'] = work_items_source.key
-                        return work_item
+                            return dict(
+                                organization_key=work_items_source.organization_key,
+                                work_items_source_key=work_items_source.key,
+                                work_items=[work_item]
+                            )
                 except Exception as exc:
                     raise ProcessingException(f"Exception {exc} caught on jira connector {jira_connector_key}: issue event {issue}")
+
 
 
 def handle_issue_events(jira_connector_key, jira_event_type, jira_event):
