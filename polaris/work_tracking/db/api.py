@@ -25,7 +25,23 @@ from polaris.integrations.db.model import Connector
 
 logger = logging.getLogger('polaris.work_tracker.db.api')
 
+"""
+Sync work item data in the incoming list with the work items.
+New items are added and existing items are updated. 
 
+This operation returns a list of work items that were inserted and updated as result of the
+sync operation.
+
+Note that the list of work items returned may be larger than the list of work items
+that were passed in. This is because the work items returned may include work items
+whose parent or child wor items were also updated as a result of resolving new parent child 
+relationships. 
+
+@param work_items_source_key: The key of the work items source to sync with.
+@param work_item_list: The list of work items to sync.
+@:return: A list of work items that were inserted and updated as result of the sync operation.
+
+"""
 def sync_work_items(work_items_source_key, work_item_list, join_this=None):
     def insert_incoming_into_work_items_temp(session, work_item_list, work_items_source, work_items_temp):
         last_sync = datetime.utcnow()
@@ -466,14 +482,26 @@ def create_work_items_source(work_items_source_input, join_this=None):
         session.add(work_item_source)
         return work_item_source
 
+"""
+Sync operation for a single work item. This now delegates fully to the sync_work_items method and 
+can be considered a convenience wrapper for that method. Note that this method
+will only the original work item that was synced, not any of the children that were synced as a side-effect. 
+If you want to directly sync a work item and get the list all of the other work items that were updated, 
+use the sync_work_items method directly instead and handle the multiple result case yourself. 
 
+@:param work_items_source_key: The key of the work items source to sync the work item for
+@:param work_item_data: The data of the work item to sync
+@:param join_this: The session to join the transaction to
+@:return: A list of work items that were updated
+
+"""
 def sync_work_item(work_items_source_key, work_item_data, join_this=None):
     logger.info(f'Sync work item called for work items source {work_items_source_key}')
     return sync_work_items(work_items_source_key, [work_item_data], join_this)[0]
 
 
 def insert_work_item(work_items_source_key, work_item_data, join_this=None):
-    return sync_work_item(work_items_source_key, work_item_data)
+    return sync_work_item(work_items_source_key, work_item_data, join_this)
 
 
 def update_work_item(work_items_source_key, work_item_data, join_this=None):
