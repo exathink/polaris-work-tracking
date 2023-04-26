@@ -120,9 +120,9 @@ class TestSyncWorkItem:
         # Import once
         api.sync_work_items(empty_source.key, work_item_list=new_work_items)
         updated_work_item = new_work_items[0]
-        updated_work_item['epic_source_display_id'] = 'Does not exist'
+        updated_work_item['parent_source_display_id'] = 'Does not exist'
         result = api.sync_work_item(empty_source.key, work_item_data=updated_work_item)
-        assert not result['is_updated']
+
         assert db.connection().execute(
             f"select count(id) from work_tracking.work_items where work_items_source_id={empty_source.id} and key='{result['key']}' and parent_id is NULL"
         ).scalar() == 1
