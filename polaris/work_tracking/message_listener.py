@@ -90,16 +90,17 @@ class WorkItemsTopicSubscriber(TopicSubscriber):
 
         elif ImportWorkItem.message_type == message.message_type:
             work_items = self.process_import_work_item(message)
-            if len(work_items) > 0:
-                work_item = work_items[0]
-                if work_item.get('is_new') == True:
+            created_messages = []
+            updated_messages = []
+            for work_item in work_items:
+                if work_item.get('is_new'):
                     created_message = WorkItemsCreated(send=dict(
                         organization_key=message['organization_key'],
                         work_items_source_key=message['work_items_source_key'],
                         new_work_items=[work_item]
                     ))
                     self.publish(WorkItemsTopic, created_message, channel=channel)
-                    return [created_message]
+                    created_messages.append(created_message)
                 else:
                     updated_message = WorkItemsUpdated(send=dict(
                         organization_key=message['organization_key'],
@@ -107,7 +108,9 @@ class WorkItemsTopicSubscriber(TopicSubscriber):
                         updated_work_items=[work_item]
                     ))
                     self.publish(WorkItemsTopic, updated_message, channel=channel)
-                    return [updated_message]
+                    updated_messages.append(updated_message)
+
+            return created_messages, updated_messages
 
 
 
@@ -164,14 +167,13 @@ class WorkItemsTopicSubscriber(TopicSubscriber):
         logger.info(f"Processing  {message.message_type}: "
                     f" Work Items Source Key : {work_items_source_key}")
         try:
-            work_item = [wi for wi in
-                         commands.sync_work_item(self.consumer_context.token_provider, work_items_source_key,
-                                                 message['source_id'])]
-            if len(work_item) > 0:
-                return work_item
-            else:
-                raise ProcessingException(f"Import work item failed. No work items were imported work item source: "
-                                          f"{work_items_source_key} source_id: {message['source_id']}")
+            work_item = commands.sync_work_item(self.consumer_context.token_provider, work_items_source_key,
+                                                 message['source_id'])
+            if len(work_item) == 0:
+                raise ProcessingException(f"Import work item for  "
+                                          f"{work_items_source_key} source_id: {message['source_id']}"
+                                          f" failed. No work items were processed.")
+            return work_item
         except Exception as exc:
             raise_message_processing_error(message, 'Failed to sync work item', str(exc))
 
@@ -197,10 +199,65 @@ class WorkItemsTopicSubscriber(TopicSubscriber):
     def process_atlassian_connect_event(self, message):
         jira_connector_key = message['atlassian_connector_key']
         jira_event_type = message['atlassian_event_type']
+
         jira_event = json.loads(message['atlassian_event'])
+        if jira_event.get('issue_event_type_name') == 'issue_moved':
+            jira_event_type = 'issue_moved'
 
         try:
-            if jira_event_type in ['issue_created', 'issue_updated', 'issue_deleted']:
+            if jira_event_type in ['issue_created', 'issue_updated']:
+                result = jira_message_handler.handle_issue_events(jira_connector_key, jira_event_type,
+                                                                     jira_event)
+                created = []
+                updated = []
+
+                if result is not None and len(result['work_items']) > 0:
+                    organization_key = result['organization_key']
+                    work_items_source_key = result['work_items_source_key']
+
+                    for work_item in result['work_items']:
+                        if work_item.get('is_new'):
+                            created.append(work_item)
+                        elif work_item.get('is_updated'):
+                            updated.append(work_item)
+
+                    if len(created) > 0:
+                        created_message = WorkItemsCreated(send=dict(
+                            organization_key=organization_key,
+                            work_items_source_key=work_items_source_key,
+                            new_work_items=created
+                        ))
+                        self.publish(WorkItemsTopic, created_message)
+
+                    if len(updated) > 0:
+                        updated_message = WorkItemsUpdated(send=dict(
+                            organization_key=organization_key,
+                            work_items_source_key=work_items_source_key,
+                            updated_work_items=updated
+                        ))
+                        self.publish(WorkItemsTopic, updated_message)
+
+
+                return [*created, *updated]
+
+            elif jira_event_type == 'issue_deleted':
+                result = jira_message_handler.handle_issue_events(jira_connector_key, jira_event_type,
+                                                                     jira_event)
+                if result is not None and len(result['work_items']) > 0:
+                    work_item = result['work_items'][0]
+                    response_message = None
+                    if work_item.get('is_deleted'):
+                        logger.info(f'work_item deleted')
+                        response_message = WorkItemDeleted(send=dict(
+                            organization_key=result['organization_key'],
+                            work_items_source_key=result['work_items_source_key'],
+                            deleted_work_item=work_item
+                        ))
+                        self.publish(WorkItemsTopic, response_message)
+
+                    return response_message
+
+            elif jira_event_type in ['issue_moved']:
                 work_item = jira_message_handler.handle_issue_events(jira_connector_key, jira_event_type,
                                                                      jira_event)
                 if work_item:

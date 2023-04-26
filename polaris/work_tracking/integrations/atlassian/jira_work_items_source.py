@@ -317,7 +317,7 @@ class JiraProject(JiraWorkItemsSource):
             else:
                 logger.error(f"Could not fetch work item with key {source_id}. Response: {response.status_code} {response.text}")
 
-            yield work_item_data
+            return work_item_data
         except Exception as exc:
             logger.error(f"Fetch work item {source_id} failed for jira project {self.work_items_source.name}")
             raise ProcessingException(f'Unexpected error when fetching work item {source_id} from jira project: {self.work_items_source.name}')
