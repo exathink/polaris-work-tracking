@@ -202,7 +202,42 @@ class WorkItemsTopicSubscriber(TopicSubscriber):
         jira_event = json.loads(message['atlassian_event'])
 
         try:
-            if jira_event_type in ['issue_created', 'issue_updated', 'issue_deleted']:
+            if jira_event_type == 'issue_created':
+                result = jira_message_handler.handle_issue_events(jira_connector_key, jira_event_type,
+                                                                     jira_event)
+                created = []
+                updated = []
+
+                if result is not None and len(result['work_items']) > 0:
+                    organization_key = result['organization_key']
+                    work_items_source_key = result['work_items_source_key']
+
+                    for work_item in result['work_items']:
+                        if work_item.get('is_new'):
+                            created.append(work_item)
+                        elif work_item.get('is_updated'):
+                            updated.append(work_item)
+
+                    if len(created) > 0:
+                        created_message = WorkItemsCreated(send=dict(
+                            organization_key=organization_key,
+                            work_items_source_key=work_items_source_key,
+                            new_work_items=created
+                        ))
+                        self.publish(WorkItemsTopic, created_message)
+
+                    if len(updated) > 0:
+                        updated_message = WorkItemsUpdated(send=dict(
+                            organization_key=organization_key,
+                            work_items_source_key=work_items_source_key,
+                            new_work_items=updated
+                        ))
+                        self.publish(WorkItemsTopic, updated_message)
+
+
+                return [*created, *updated]
+
+            elif jira_event_type in ['issue_updated', 'issue_deleted']:
                 work_item = jira_message_handler.handle_issue_events(jira_connector_key, jira_event_type,
                                                                      jira_event)
                 if work_item:

@@ -505,7 +505,7 @@ def sync_work_item(work_items_source_key, work_item_data, join_this=None):
 
 
 def insert_work_item(work_items_source_key, work_item_data, join_this=None):
-    return sync_work_item(work_items_source_key, work_item_data, join_this)
+    return sync_work_item_returning_multiple(work_items_source_key, work_item_data, join_this) or []
 
 
 def update_work_item(work_items_source_key, work_item_data, join_this=None):

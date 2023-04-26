@@ -105,7 +105,7 @@ class TestAtlassianConnectEvent:
         subscriber.consumer_context = mock_consumer
 
         message = subscriber.dispatch(mock_channel, jira_issue_created_message)
-        assert message
+        assert len(message) == 1
         publisher.assert_topic_called_with_message(WorkItemsTopic, WorkItemsCreated)
 
         assert db.connection().execute(f"Select count(id) from work_tracking.work_items "
@@ -139,7 +139,7 @@ class TestAtlassianConnectEvent:
         subscriber.consumer_context = mock_consumer
 
         message = subscriber.dispatch(mock_channel, jira_issue_created_message)
-        assert message
+        assert len(message) == 1
         publisher.assert_topic_called_with_message(WorkItemsTopic, WorkItemsCreated)
 
         parent_id = db.connection().execute(f"Select id from work_tracking.work_items "
@@ -395,7 +395,7 @@ class TestAtlassianConnectEvent:
         subscriber.consumer_context = mock_consumer
 
         message = subscriber.dispatch(mock_channel, jira_issue_created_message)
-        assert message is None
+        assert len(message) == 0
         assert db.connection().execute(f"Select count(id) from work_tracking.work_items "
                                        f"where "
                                        f"work_items_source_id={work_items_source.id} "
