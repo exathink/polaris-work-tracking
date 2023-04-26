@@ -52,7 +52,7 @@ class TestSyncWorkItem:
             fetch_work_item.return_value = new_work_item
 
             result = commands.sync_work_item(token_provider, work_items_source.key,
-                                                  new_work_item['source_display_id'])
+                                                  new_work_item['source_display_id'])[0]
             assert result['display_id'] == new_work_item['source_display_id']
             assert result['is_new'] == True
             assert result['key'] is not None
@@ -69,7 +69,7 @@ class TestSyncWorkItem:
             # import again after updating a relevant field
             new_work_item['source_state'] = 'In progress'
             result = commands.sync_work_item(token_provider, work_items_source.key,
-                                                  new_work_item['source_display_id'])
+                                                  new_work_item['source_display_id'])[0]
             assert result['display_id'] == new_work_item['source_display_id']
             assert result['is_updated'] == True
 
@@ -77,4 +77,4 @@ class TestSyncWorkItem:
         _, work_items_sources = setup_work_items
         empty_source = work_items_sources['empty']
         result = commands.sync_work_item(token_provider, empty_source.key, new_work_items[0]['source_display_id'])
-        assert result is None
+        assert result == []

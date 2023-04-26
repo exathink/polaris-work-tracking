@@ -75,8 +75,8 @@ class TestWorkItemsTopicSubscriber:
                 subscriber = WorkItemsTopicSubscriber(mock_channel, publisher=publisher)
                 subscriber.consumer_context = mock_consumer
 
-                messages = subscriber.dispatch(mock_channel, import_work_item_message)
-                assert len(messages) == 1
+                created, updated = subscriber.dispatch(mock_channel, import_work_item_message)
+                assert len(created) == 1
                 publisher.assert_topic_called_with_message(WorkItemsTopic, WorkItemsCreated)
 
         def it_raises_an_exception_if_fetch_fails(self, jira_work_item_source_fixture, cleanup):
@@ -126,7 +126,7 @@ class TestWorkItemsTopicSubscriber:
                 publisher = mock_publisher()
                 subscriber = WorkItemsTopicSubscriber(mock_channel, publisher=publisher)
                 subscriber.consumer_context = mock_consumer
-                messages = subscriber.dispatch(mock_channel, import_work_item_message)
+                created, updated = subscriber.dispatch(mock_channel, import_work_item_message)
 
-                assert len(messages) == 1
+                assert len(updated) == 1
                 publisher.assert_topic_called_with_message(WorkItemsTopic, WorkItemsUpdated)

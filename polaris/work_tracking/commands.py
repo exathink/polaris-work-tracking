@@ -47,12 +47,12 @@ def sync_work_item(token_provider, work_items_source_key, source_id):
     try:
         work_items_source_provider = work_items_source_factory.get_provider_impl(token_provider, work_items_source_key)
         work_items_source = work_items_source_provider.work_items_source
-        sync_result = None
+        sync_result = []
         if work_items_source.import_state != WorkItemsSourceImportState.disabled.value:
             if getattr(work_items_source_provider, 'fetch_work_item', None):
                 work_item_data = work_items_source_provider.fetch_work_item(source_id)
                 if work_item_data is not None:
-                    sync_result =  api.sync_work_item(work_items_source_key, work_item_data)
+                    sync_result =  api.sync_work_item_returning_multiple(work_items_source_key, work_item_data)
 
         else:
             logger.info(f'Attempted to call sync_work_item on a disabled work_item_source: {work_items_source.key}.'
