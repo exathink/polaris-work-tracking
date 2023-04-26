@@ -240,7 +240,24 @@ class WorkItemsTopicSubscriber(TopicSubscriber):
 
                 return [*created, *updated]
 
-            elif jira_event_type in ['issue_moved', 'issue_deleted']:
+            elif jira_event_type == 'issue_deleted':
+                result = jira_message_handler.handle_issue_events(jira_connector_key, jira_event_type,
+                                                                     jira_event)
+                if result is not None and len(result['work_items']) > 0:
+                    work_item = result['work_items'][0]
+                    response_message = None
+                    if work_item.get('is_deleted'):
+                        logger.info(f'work_item deleted')
+                        response_message = WorkItemDeleted(send=dict(
+                            organization_key=result['organization_key'],
+                            work_items_source_key=result['work_items_source_key'],
+                            deleted_work_item=work_item
+                        ))
+                        self.publish(WorkItemsTopic, response_message)
+
+                    return response_message
+
+            elif jira_event_type in ['issue_moved']:
                 work_item = jira_message_handler.handle_issue_events(jira_connector_key, jira_event_type,
                                                                      jira_event)
                 if work_item:

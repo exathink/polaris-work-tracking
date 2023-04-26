@@ -106,10 +106,11 @@ def handle_issue_events_for_same_source_project(jira_connector_key, jira_event_t
                         elif jira_event_type == 'issue_deleted':
                             work_item_data['deleted_at'] = datetime.utcnow()
                             work_item = api.delete_work_item(work_items_source.key, work_item_data, join_this=session)
-
-                        work_item['organization_key'] = work_items_source.organization_key
-                        work_item['work_items_source_key'] = work_items_source.key
-                        return work_item
+                            return dict(
+                                organization_key=work_items_source.organization_key,
+                                work_items_source_key=work_items_source.key,
+                                work_items=[work_item]
+                            )
                 except Exception as exc:
                     raise ProcessingException(f"Exception {exc} caught on jira connector {jira_connector_key}: issue event {issue}")
 
