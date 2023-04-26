@@ -177,6 +177,66 @@ class TestAtlassianConnectEvent:
                                        f"and source_display_id='{issue_key}' "
                                        f"and parent_id={parent_id}").scalar() == 1
 
+
+    def it_publishes_message_for_the_epic_and_the_child_when_the_epic_arrives_after_the_child(self, jira_work_item_source_fixture, cleanup):
+        work_items_source, jira_project_id, connector_key = jira_work_item_source_fixture
+        source_epic_id = "10001"
+        source_epic_key = f"PRJ-{source_epic_id}"
+        issue_type = "Epic"
+
+
+        # create another issue within the above Epic
+        issue_id = "10002"
+        issue_key = f"PRJ-{issue_id}"
+        issue_created = dict(
+            timestamp=jira_test_time_stamp(),
+            event='issue_created',
+            issue=create_issue(jira_project_id, issue_key, issue_id, epic_link=source_epic_key)
+        )
+        jira_issue_created_message = fake_send(
+            AtlassianConnectWorkItemEvent(send=dict(
+                atlassian_connector_key=connector_key,
+                atlassian_event_type='issue_created',
+                atlassian_event=json.dumps(issue_created)
+            ))
+        )
+
+        publisher = mock_publisher()
+        subscriber = WorkItemsTopicSubscriber(mock_channel(), publisher=publisher)
+        subscriber.consumer_context = mock_consumer
+
+        message = subscriber.dispatch(mock_channel, jira_issue_created_message)
+        assert message
+        publisher.assert_topic_called_with_message(WorkItemsTopic, WorkItemsCreated)
+
+
+
+        # Create the Epic
+        issue_created = dict(
+            timestamp=jira_test_time_stamp(),
+            event='issue_created',
+            issue=create_issue(jira_project_id, source_epic_key, source_epic_id, issue_type=issue_type)
+        )
+
+        jira_issue_created_message = fake_send(
+            AtlassianConnectWorkItemEvent(send=dict(
+                atlassian_connector_key=connector_key,
+                atlassian_event_type='issue_created',
+                atlassian_event=json.dumps(issue_created)
+            ))
+        )
+
+        publisher = mock_publisher()
+        subscriber = WorkItemsTopicSubscriber(mock_channel(), publisher=publisher)
+        subscriber.consumer_context = mock_consumer
+
+        message = subscriber.dispatch(mock_channel, jira_issue_created_message)
+        assert len(message) == 2
+        publisher.assert_topic_called_with_message(WorkItemsTopic, WorkItemsCreated, call=0)
+        publisher.assert_topic_called_with_message(WorkItemsTopic, WorkItemsUpdated, call=1)
+
+
+
     def it_sends_an_update_message_when_an_issue_is_updated_and_app_relevant_fields_change(
             self,
             jira_work_item_source_fixture,

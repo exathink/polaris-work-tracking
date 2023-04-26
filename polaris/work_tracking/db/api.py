@@ -227,11 +227,14 @@ def sync_work_items(work_items_source_key, work_item_list, join_this=None):
             insert(work_items_temp).from_select(
                 [
                     *[column.name for column in work_items_temp_columns],
-                    'is_new'
+                    'is_new',
+                    'has_changes'
                 ],
                 select([
                     *work_items_temp_columns,
-                    literal(False).label('is_new')
+                    literal(False).label('is_new'),
+                    literal(True).label('has_changes')
+
                 ]).select_from(
                     work_items.join(
                         children_with_newly_resolved_parents,
