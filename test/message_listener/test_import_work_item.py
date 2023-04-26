@@ -61,7 +61,7 @@ class TestWorkItemsTopicSubscriber:
             new_work_item = new_work_items_jira()[0]
             with patch(
                     'polaris.work_tracking.integrations.atlassian.jira_work_items_source.JiraProject.fetch_work_item') as fetch_work_item:
-                fetch_work_item.return_value = [new_work_item]
+                fetch_work_item.return_value = new_work_item
 
                 import_work_item_message = fake_send(
                     ImportWorkItem(send=dict(
@@ -84,7 +84,7 @@ class TestWorkItemsTopicSubscriber:
             new_work_item = new_work_items_jira()[0]
             with patch(
                     'polaris.work_tracking.integrations.atlassian.jira_work_items_source.JiraProject.fetch_work_item') as fetch_work_item:
-                fetch_work_item.return_value = []
+                fetch_work_item.return_value = None
 
                 import_work_item_message = fake_send(
                     ImportWorkItem(send=dict(
@@ -108,7 +108,7 @@ class TestWorkItemsTopicSubscriber:
             new_work_item = new_work_items_jira()[0]
             with patch(
                     'polaris.work_tracking.integrations.atlassian.jira_work_items_source.JiraProject.fetch_work_item') as fetch_work_item:
-                fetch_work_item.return_value = [new_work_item]
+                fetch_work_item.return_value = new_work_item
 
                 import_work_item_message = fake_send(
                     ImportWorkItem(send=dict(

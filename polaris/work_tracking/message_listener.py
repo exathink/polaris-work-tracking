@@ -89,25 +89,24 @@ class WorkItemsTopicSubscriber(TopicSubscriber):
             return import_messages
 
         elif ImportWorkItem.message_type == message.message_type:
-            work_items = self.process_import_work_item(message)
-            if len(work_items) > 0:
-                work_item = work_items[0]
-                if work_item.get('is_new') == True:
-                    created_message = WorkItemsCreated(send=dict(
-                        organization_key=message['organization_key'],
-                        work_items_source_key=message['work_items_source_key'],
-                        new_work_items=[work_item]
-                    ))
-                    self.publish(WorkItemsTopic, created_message, channel=channel)
-                    return [created_message]
-                else:
-                    updated_message = WorkItemsUpdated(send=dict(
-                        organization_key=message['organization_key'],
-                        work_items_source_key=message['work_items_source_key'],
-                        updated_work_items=[work_item]
-                    ))
-                    self.publish(WorkItemsTopic, updated_message, channel=channel)
-                    return [updated_message]
+            work_item = self.process_import_work_item(message)
+
+            if work_item.get('is_new'):
+                created_message = WorkItemsCreated(send=dict(
+                    organization_key=message['organization_key'],
+                    work_items_source_key=message['work_items_source_key'],
+                    new_work_items=[work_item]
+                ))
+                self.publish(WorkItemsTopic, created_message, channel=channel)
+                return [created_message]
+            else:
+                updated_message = WorkItemsUpdated(send=dict(
+                    organization_key=message['organization_key'],
+                    work_items_source_key=message['work_items_source_key'],
+                    updated_work_items=[work_item]
+                ))
+                self.publish(WorkItemsTopic, updated_message, channel=channel)
+                return [updated_message]
 
 
 
@@ -164,14 +163,13 @@ class WorkItemsTopicSubscriber(TopicSubscriber):
         logger.info(f"Processing  {message.message_type}: "
                     f" Work Items Source Key : {work_items_source_key}")
         try:
-            work_item = [wi for wi in
-                         commands.sync_work_item(self.consumer_context.token_provider, work_items_source_key,
-                                                 message['source_id'])]
-            if len(work_item) > 0:
-                return work_item
-            else:
-                raise ProcessingException(f"Import work item failed. No work items were imported work item source: "
-                                          f"{work_items_source_key} source_id: {message['source_id']}")
+            work_item = commands.sync_work_item(self.consumer_context.token_provider, work_items_source_key,
+                                                 message['source_id'])
+            if work_item is None:
+                raise ProcessingException(f"Import work item for  "
+                                          f"{work_items_source_key} source_id: {message['source_id']}"
+                                          f" failed. No work items were processed.")
+            return work_item
         except Exception as exc:
             raise_message_processing_error(message, 'Failed to sync work item', str(exc))
 
