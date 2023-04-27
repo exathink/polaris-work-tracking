@@ -61,7 +61,7 @@ class TestWorkItemsTopicSubscriber:
             new_work_item = new_work_items_jira()[0]
             with patch(
                     'polaris.work_tracking.integrations.atlassian.jira_work_items_source.JiraProject.fetch_work_item') as fetch_work_item:
-                fetch_work_item.return_value = [new_work_item]
+                fetch_work_item.return_value = new_work_item
 
                 import_work_item_message = fake_send(
                     ImportWorkItem(send=dict(
@@ -75,8 +75,8 @@ class TestWorkItemsTopicSubscriber:
                 subscriber = WorkItemsTopicSubscriber(mock_channel, publisher=publisher)
                 subscriber.consumer_context = mock_consumer
 
-                messages = subscriber.dispatch(mock_channel, import_work_item_message)
-                assert len(messages) == 1
+                created, updated = subscriber.dispatch(mock_channel, import_work_item_message)
+                assert len(created) == 1
                 publisher.assert_topic_called_with_message(WorkItemsTopic, WorkItemsCreated)
 
         def it_raises_an_exception_if_fetch_fails(self, jira_work_item_source_fixture, cleanup):
@@ -84,7 +84,7 @@ class TestWorkItemsTopicSubscriber:
             new_work_item = new_work_items_jira()[0]
             with patch(
                     'polaris.work_tracking.integrations.atlassian.jira_work_items_source.JiraProject.fetch_work_item') as fetch_work_item:
-                fetch_work_item.return_value = []
+                fetch_work_item.return_value = None
 
                 import_work_item_message = fake_send(
                     ImportWorkItem(send=dict(
@@ -108,7 +108,7 @@ class TestWorkItemsTopicSubscriber:
             new_work_item = new_work_items_jira()[0]
             with patch(
                     'polaris.work_tracking.integrations.atlassian.jira_work_items_source.JiraProject.fetch_work_item') as fetch_work_item:
-                fetch_work_item.return_value = [new_work_item]
+                fetch_work_item.return_value = new_work_item
 
                 import_work_item_message = fake_send(
                     ImportWorkItem(send=dict(
@@ -126,7 +126,7 @@ class TestWorkItemsTopicSubscriber:
                 publisher = mock_publisher()
                 subscriber = WorkItemsTopicSubscriber(mock_channel, publisher=publisher)
                 subscriber.consumer_context = mock_consumer
-                messages = subscriber.dispatch(mock_channel, import_work_item_message)
+                created, updated = subscriber.dispatch(mock_channel, import_work_item_message)
 
-                assert len(messages) == 1
+                assert len(updated) == 1
                 publisher.assert_topic_called_with_message(WorkItemsTopic, WorkItemsUpdated)

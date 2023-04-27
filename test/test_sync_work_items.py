@@ -153,6 +153,7 @@ class TestSyncApi(WorkItemsSourceTest):
             assert updated_state[0]['display_id'] == initial_state[0]['display_id']
             assert updated_state[0]['name'] == 'Updated name'
             assert not updated_state[0]['is_new']
+            assert updated_state[0]['is_updated']
 
             assert db.connection().execute(
                 f"select name from work_tracking.work_items where source_display_id = '{initial_state[0]['display_id']}'").scalar() == 'Updated name'
@@ -180,6 +181,31 @@ class TestSyncApi(WorkItemsSourceTest):
             assert len([result for result in next_state if result['is_new']]) == 2
 
             assert db.connection().execute('select count(id) from work_tracking.work_items').scalar() == 3
+
+        def it_sets_is_updated_flag_to_mark_things_that_have_actual_updates(self, setup):
+            fixture = setup
+            project = fixture.project
+            work_items_source = fixture.work_items_source
+            issue_templates = fixture.issue_templates
+
+            # fetch one issue and insert it
+            work_item_list = [
+                project.map_issue_to_work_item_data(issue_template)
+                for issue_template in issue_templates
+            ]
+
+            initial_state = api.sync_work_items(work_items_source.key, work_item_list)
+            # update one item, leave the others unchanged and process them all.
+            work_item_list[0]['name'] = 'Updated name'
+
+            # now fetch all issues and update them: so one old two new in the list
+            next_state = api.sync_work_items(work_items_source.key, work_item_list)
+
+            assert len(next_state) == 3
+            assert len([result for result in next_state if result['is_new']]) == 0
+            assert len([result for result in next_state if result['is_updated']]) == 1
+
+
 
         class TestParentChildResolution:
 
@@ -262,6 +288,7 @@ class TestSyncApi(WorkItemsSourceTest):
                 updated_child = find(next_state,
                                      lambda item: item['display_id'] == child_issue['source_display_id'])
                 assert not updated_child['is_new']
+                assert updated_child['is_updated']
 
                 updated_parent = find(next_state,
                                       lambda item: item['display_id'] == parent_issue['source_display_id'])

@@ -80,7 +80,7 @@ class TestSyncWorkItem:
         _, work_items_sources = setup_work_items
         empty_source = work_items_sources['empty']
         # Import once
-        result = api.sync_work_item(empty_source.key, work_item_data=new_work_items[0])
+        result = api.sync_work_item(empty_source.key, work_item_data=new_work_items[0])[0]
         assert result['is_new']
         assert result['name'] == new_work_items[0]['name']
         assert db.connection().execute(
@@ -94,7 +94,7 @@ class TestSyncWorkItem:
         api.sync_work_items(empty_source.key, work_item_list=new_work_items)
         updated_work_item = new_work_items[0]
         updated_work_item['source_state'] = 'closed'
-        result = api.sync_work_item(empty_source.key, work_item_data=updated_work_item)
+        result = api.sync_work_item(empty_source.key, work_item_data=updated_work_item)[0]
         assert result['is_updated']
         assert db.connection().execute(
             f"select count(id) from work_tracking.work_items where work_items_source_id={empty_source.id} and key='{result['key']}' and source_state='closed'"
@@ -108,7 +108,7 @@ class TestSyncWorkItem:
         api.sync_work_items(empty_source.key, work_item_list=new_work_items)
         updated_work_item = new_work_items[0]
         updated_work_item['parent_source_display_id'] = new_work_items[-1]['source_display_id']
-        result = api.sync_work_item(empty_source.key, work_item_data=updated_work_item)
+        result = api.sync_work_item(empty_source.key, work_item_data=updated_work_item)[0]
         assert result['is_updated']
         assert db.connection().execute(
             f"select count(id) from work_tracking.work_items where work_items_source_id={empty_source.id} and key='{result['key']}' and parent_id is not NULL"
@@ -120,9 +120,9 @@ class TestSyncWorkItem:
         # Import once
         api.sync_work_items(empty_source.key, work_item_list=new_work_items)
         updated_work_item = new_work_items[0]
-        updated_work_item['epic_source_display_id'] = 'Does not exist'
-        result = api.sync_work_item(empty_source.key, work_item_data=updated_work_item)
-        assert not result['is_updated']
+        updated_work_item['parent_source_display_id'] = 'Does not exist'
+        result = api.sync_work_item(empty_source.key, work_item_data=updated_work_item)[0]
+
         assert db.connection().execute(
             f"select count(id) from work_tracking.work_items where work_items_source_id={empty_source.id} and key='{result['key']}' and parent_id is NULL"
         ).scalar() == 1
@@ -355,6 +355,6 @@ class TestMoveWorkItem:
             moved_work_item['source_display_id'] = 'TP2-1'
             moved_work_item['commit_identifiers'] = ["TP2-1", "Tp2-1", "tp2-1"]
             result = api.sync_work_item(fixture.target_work_items_source.key,
-                                        moved_work_item)
+                                        moved_work_item)[0]
             assert result
             assert result['is_new']
