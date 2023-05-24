@@ -97,7 +97,7 @@ class JiraConnector(PolarisAtlassianConnector):
             source_id=project['id'],
             name=project['name'],
             url=project.get('url'),
-            description=project.get('description'),
+            description=f"[{project.get('key')}]: {project.get('description')}",
             custom_fields=custom_fields
         )
 
