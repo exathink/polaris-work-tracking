@@ -200,18 +200,16 @@ def sync_work_items(work_items_source_key, work_item_list, join_this=None):
             parent_work_items.c.id.label('parent_id')
         ]).select_from(
             work_items.join(
+                work_items_sources, work_items.c.work_items_source_id == work_items_sources.c.id
+            ).join(
                 work_items_temp,
-                and_(
-                    work_items.c.work_items_source_id == work_items_source.id,
-                    work_items.c.parent_source_display_id == work_items_temp.c.source_display_id
-                )
+                work_items.c.parent_source_display_id == work_items_temp.c.source_display_id
             ).join(
                 parent_work_items,
-                and_(
-                    parent_work_items.c.work_items_source_id == work_items_source.id,
-                    work_items_temp.c.key == parent_work_items.c.key
-                )
+                work_items_temp.c.key == parent_work_items.c.key
             )
+        ).where(
+            work_items_sources.c.organization_key == work_items_source.organization_key
         ).alias()
 
         # now update the parent id of these children in the work items table
@@ -246,10 +244,7 @@ def sync_work_items(work_items_source_key, work_item_list, join_this=None):
                 ]).select_from(
                     work_items.join(
                         children_with_newly_resolved_parents,
-                        and_(
-                            work_items.c.work_items_source_id == work_items_source.id,
-                            work_items.c.key == children_with_newly_resolved_parents.c.key
-                        )
+                        work_items.c.key == children_with_newly_resolved_parents.c.key
                     )
                 )
             )
@@ -357,10 +352,7 @@ def sync_work_items(work_items_source_key, work_item_list, join_this=None):
                 ).distinct().select_from(
                     work_items_temp.join(
                         work_items,
-                        and_(
-                            work_items.c.work_items_source_id == work_items_temp.c.work_items_source_id,
-                            work_items_temp.c.source_id == work_items.c.source_id
-                        )
+                        work_items_temp.c.source_id == work_items.c.source_id
                     ).outerjoin(
                         parent_work_items,
                         work_items.c.parent_id == parent_work_items.c.id
