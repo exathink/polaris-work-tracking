@@ -159,20 +159,27 @@ def sync_work_items(work_items_source_key, work_item_list, join_this=None):
             )
         ).rowcount
 
-    def resolve_children_in_temp_table_with_parents_in_work_items(session, work_items_temp):
+    def resolve_children_in_temp_table_with_parents_in_work_items(session, work_items_source, work_items_temp):
         # Resolve the parent_ids of any item in work_items_temp
         # whose parents are in work_items
         existing_parents = select([
             work_items_temp.c.key,
             work_items.c.id.label('parent_id')
         ]).select_from(
-            work_items_temp.join(
+            # we are loading all work items_sources from the parent organization
+            # here because we want to be able to link work items in one work items source to parents
+            # in another work items source.
+            work_items_sources.join(
                 work_items,
                 and_(
-                    work_items.c.work_items_source_id == work_items_temp.c.work_items_source_id,
-                    work_items_temp.c.parent_source_display_id == work_items.c.source_display_id
+                    work_items.c.work_items_source_id == work_items_sources.c.id,
+                    work_items_sources.c.organization_key == work_items_source.organization_key
                 )
+            ).join(
+                work_items_temp,
+                work_items_temp.c.parent_source_display_id == work_items.c.source_display_id
             )
+
         ).cte()
         return session.connection().execute(
             work_items_temp.update().values(
@@ -293,6 +300,7 @@ def sync_work_items(work_items_source_key, work_item_list, join_this=None):
             # this marks the parent_ids of children in the temp table with parent in work items
             # this is the case where the child arrives before the parent or with the parent
             incoming_parents_resolved = resolve_children_in_temp_table_with_parents_in_work_items(session,
+                                                                                                  work_items_source,
                                                                                                   work_items_temp)
             logger.info(f"sync_work_items: parent resolution phase 1 - "
                         f"{incoming_parents_resolved} items in the incoming list had existing parents in  work items")
@@ -315,6 +323,17 @@ def sync_work_items(work_items_source_key, work_item_list, join_this=None):
                         f" from items in the incoming list. These will be added to the resolution lists and marked as updated for"
                         f" downstream processing ")
 
+
+            # we load all the work_items in the organization as the search set for parents
+            # since we need to consider cross project parents.
+            parent_work_items = select([work_items.c.id, work_items.c.key]).select_from(
+                work_items.join(
+                    work_items_sources, work_items.c.work_items_source_id == work_items_sources.c.id
+                )
+            ).where(
+                work_items_sources.c.organization_key == work_items_source.organization_key
+            ).alias()
+
             # Return the current state of the work_items in the work_items_temp_table.
             # include the is_new flag from the temp table.
             # Since we can potentially insert new items into work_items_temp as a
@@ -328,7 +347,6 @@ def sync_work_items(work_items_source_key, work_item_list, join_this=None):
             # sync operation.
             #
             # This is the correct behavior
-            parent_work_items = work_items.alias()
             sync_result = session.connection().execute(
                 select([
                     work_items,
@@ -345,10 +363,7 @@ def sync_work_items(work_items_source_key, work_item_list, join_this=None):
                         )
                     ).outerjoin(
                         parent_work_items,
-                        and_(
-                            work_items.c.work_items_source_id == parent_work_items.c.work_items_source_id,
-                            work_items.c.parent_id == parent_work_items.c.id
-                        )
+                        work_items.c.parent_id == parent_work_items.c.id
                     )
                 )
             ).fetchall()

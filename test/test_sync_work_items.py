@@ -12,6 +12,8 @@
 from unittest.mock import patch
 import json
 import pkg_resources
+import pytest
+
 from polaris.work_tracking.integrations.atlassian.jira_work_items_source import JiraProject
 
 from polaris.utils.token_provider import get_token_provider
@@ -399,3 +401,65 @@ class TestSyncApi(WorkItemsSourceTest):
 
                     assert find(next_state,
                                 lambda item: item['display_id'] == child_issue['source_display_id'])['parent_key'] == str(item_b.key)
+
+        class TestParentChildResolutionAcrossWorkItemsSources:
+
+            @pytest.fixture
+            def setup(self, setup):
+                fixture = setup
+                cross_project_source_id="10002"
+                cross_project_wis = work_tracking.WorkItemsSource(
+                    key=uuid.uuid4(),
+                    connector_key=str(fixture.connector_key),
+                    integration_type='jira',
+                    work_items_source_type=JiraWorkItemSourceType.project.value,
+                    name='test',
+                    source_id=cross_project_source_id,
+                    parameters=dict(),
+                    account_key=account_key,
+                    organization_key=organization_key,
+                    commit_mapping_scope='organization',
+                    import_state=WorkItemsSourceImportState.auto_update.value,
+                    custom_fields=[{"id": "customfield_10014", "key": "customfield_10014", "name": "Epic Link"}]
+                )
+
+                with db.orm_session() as session:
+                    session.add(cross_project_wis)
+                    cross_project = JiraProject(cross_project_wis)
+
+                yield Fixture(
+                    parent=fixture,
+                    cross_project_wis=cross_project_wis,
+                    cross_project=cross_project
+                )
+
+            def it_syncs_parents_cross_project_when_parent_arrives_before_child(self, setup):
+                fixture = setup
+                project = fixture.project
+                work_items_source = fixture.work_items_source
+                child_issue = project.map_issue_to_work_item_data(fixture.issue_with_custom_parent)
+
+                # create parent issue in a separate project
+                cross_project = fixture.cross_project
+                cross_project_wis = fixture.cross_project_wis
+                parent_issue = cross_project.map_issue_to_work_item_data(fixture.issue_for_custom_parent)
+
+                # make the parent child relationship. in the sample data these are not related by default.
+                child_issue['parent_source_display_id'] = parent_issue['source_display_id']
+
+                #first add the parent
+                parent_state = api.sync_work_items(cross_project_wis.key, [parent_issue])
+
+                child_state = api.sync_work_items(work_items_source.key, [child_issue])
+
+                assert db.connection().execute(
+                    f"select parent_id from work_tracking.work_items where source_display_id='{child_issue['source_display_id']}'").scalar() is not None
+
+                with db.orm_session() as session:
+                    parent_work_item = WorkItem.find_by_source_display_id(session,
+                                                                          work_items_source_id=cross_project_wis.id,
+                                                                          source_display_id=parent_issue[
+                                                                              'source_display_id'])
+                    updated_child = find(child_state,
+                                         lambda item: item['display_id'] == child_issue['source_display_id'])
+                    assert updated_child['parent_key'] == str(parent_work_item.key)
