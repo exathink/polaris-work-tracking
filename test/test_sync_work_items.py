@@ -152,13 +152,13 @@ class TestSyncApi(WorkItemsSourceTest):
             updated_state = api.sync_work_items(work_items_source.key, work_item_list[0:1])
 
             assert len(updated_state) == 1
-            assert updated_state[0]['display_id'] == initial_state[0]['display_id']
+            assert updated_state[0]['display_id'] == work_item_list[0]['source_display_id']
             assert updated_state[0]['name'] == 'Updated name'
             assert not updated_state[0]['is_new']
             assert updated_state[0]['is_updated']
 
             assert db.connection().execute(
-                f"select name from work_tracking.work_items where source_display_id = '{initial_state[0]['display_id']}'").scalar() == 'Updated name'
+                f"select name from work_tracking.work_items where source_display_id = '{work_item_list[0]['source_display_id']}'").scalar() == 'Updated name'
 
         def it_processes_inserts_and_updates(self, setup):
             fixture = setup
@@ -463,7 +463,7 @@ class TestSyncApi(WorkItemsSourceTest):
                     updated_child = find(child_state,
                                          lambda item: item['display_id'] == child_issue['source_display_id'])
                     assert updated_child['parent_key'] == str(parent_work_item.key)
-
+                    assert updated_child['work_items_source_key'] == str(work_items_source.key)
 
             def it_syncs_parents_cross_project_when_child_arrives_before_parent(self, setup):
                 fixture = setup
@@ -505,3 +505,4 @@ class TestSyncApi(WorkItemsSourceTest):
                     updated_child = find(parent_state,
                                          lambda item: item['display_id'] == child_issue['source_display_id'])
                     assert updated_child['parent_key'] == str(parent_work_item.key)
+                    assert updated_child['work_items_source_key'] == str(work_items_source.key)

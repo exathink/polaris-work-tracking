@@ -345,6 +345,7 @@ def sync_work_items(work_items_source_key, work_item_list, join_this=None):
             sync_result = session.connection().execute(
                 select([
                     work_items,
+                    work_items_sources.c.key.label('work_items_source_key'),
                     parent_work_items.c.key.label('parent_key'),
                     work_items_temp.c.is_new,
                     work_items_temp.c.has_changes
@@ -353,6 +354,8 @@ def sync_work_items(work_items_source_key, work_item_list, join_this=None):
                     work_items_temp.join(
                         work_items,
                         work_items_temp.c.source_id == work_items.c.source_id
+                    ).join(
+                        work_items_sources, work_items.c.work_items_source_id == work_items_sources.c.id
                     ).outerjoin(
                         parent_work_items,
                         work_items.c.parent_id == parent_work_items.c.id
@@ -367,6 +370,7 @@ def sync_work_items(work_items_source_key, work_item_list, join_this=None):
                 dict(
                     is_new=work_item.is_new,
                     key=work_item.key,
+                    work_items_source_key=str(work_item.work_items_source_key),
                     work_item_type=work_item.work_item_type,
                     display_id=work_item.source_display_id,
                     url=work_item.url,
@@ -569,7 +573,8 @@ def move_work_item(source_work_items_source_key, target_work_items_source_key, w
                 last_sync=work_item.last_sync,
                 source_id=work_item.source_id,
                 commit_identifiers=work_item.commit_identifiers,
-                is_moved_from_current_source=work_item.is_moved_from_current_source
+                is_moved_from_current_source=work_item.is_moved_from_current_source,
+
             )
 
 
