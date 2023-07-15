@@ -40,6 +40,7 @@ class JiraProject(JiraWorkItemsSource):
         self.initial_import_days = int(self.work_items_source.parameters.get('initial_import_days', 90))
         self.sync_import_days = int(self.work_items_source.parameters.get('sync_import_days', 1))
         self.parent_path_selectors = self.work_items_source.parameters.get('parent_path_selectors')
+        self.custom_tag_mappers = self.work_items_source.parameters.get('custom_tag_mappers')
 
         self.last_updated = work_items_source.latest_work_item_update_timestamp
         self.last_updated_issue_source_id = work_items_source.most_recently_updated_work_item_source_id
@@ -112,7 +113,7 @@ class JiraProject(JiraWorkItemsSource):
                     work_item_type=mapped_type,
                     is_bug=mapped_type == JiraWorkItemType.bug.value,
                     is_epic=mapped_type == JiraWorkItemType.epic.value,
-                    tags=self.process_tags(fields, issue_type),
+                    tags=self.process_tags(issue, fields, issue_type),
                     url=issue.get('self'),
                     source_id=str(issue.get('id')),
                     source_display_id=issue.get('key'),
@@ -157,13 +158,20 @@ class JiraProject(JiraWorkItemsSource):
 
 
 
-    def process_tags(self, fields, issue_type):
+    def process_tags(self, issue, fields, issue_type):
         tags = set(fields.get('labels', []))
         if self.is_custom_type(issue_type):
             tags.add(f'custom_type:{issue_type}')
         # lift the components into tags
         for component in fields.get('components', []):
             tags.add(f"component:{component['name']}")
+
+        #apply any custom tag mappers
+        if self.custom_tag_mappers is not None:
+            for mapping in self.custom_tag_mappers:
+                if 'selector' in mapping and jmespath.search(mapping['selector'], issue) is not None:
+                    tags.add(f"custom_tag:{mapping.get('tag')}")
+
 
         return list(tags)
 
