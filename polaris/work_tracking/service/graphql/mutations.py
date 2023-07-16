@@ -493,20 +493,22 @@ class PathSelectorMappingInput(graphene.InputObjectType):
     tag = graphene.String(required=True)
 
 
-class WorkItemsSourceCustomTagMapping(graphene.InputObjectType):
+class WorkItemsSourceCustomTagMappingItem(graphene.InputObjectType):
     mapping_type = graphene.String(required=True)
     # exactly one of these should be set in the input. The lack of union types in graphene inputs
     # forces us to use this awkward pattern,
     path_selector_mapping = PathSelectorMappingInput(required=False)
 
+class WorkItemsSourceCustomTagMapping(graphene.InputObjectType):
+    custom_tag_mapping = graphene.List(
+        WorkItemsSourceCustomTagMappingItem, required=True
+    )
 
 class UpdateWorkItemsSourceCustomTagMappingInput(graphene.InputObjectType):
     organization_key = graphene.String(required=True)
     connector_key = graphene.String(required=True)
     work_items_source_keys = graphene.List(graphene.String, required=True)
-    work_items_source_custom_tag_mapping = graphene.List(
-        WorkItemsSourceCustomTagMapping, required=True
-    )
+    work_items_source_custom_tag_mapping = WorkItemsSourceCustomTagMapping(required=True)
     
 class UpdateWorkItemsSourceCustomTagMapping(graphene.Mutation):
     class Arguments:
@@ -523,10 +525,11 @@ class UpdateWorkItemsSourceCustomTagMapping(graphene.Mutation):
         work_items_source_parameters = update_work_items_source_custom_tag_mapping_input.work_items_source_custom_tag_mapping
 
         with db.orm_session() as session:
-            result = dict(success=False)
-
+            result = api.update_work_items_source_parameters(connector_key, work_items_source_keys,
+                                                             work_items_source_parameters, join_this=session)
 
 
         return UpdateWorkItemsSourceCustomTagMapping(
-            success=result['success'],
+            success=result.get('success', False),
+            updated=result.get('updated', 0)
         )

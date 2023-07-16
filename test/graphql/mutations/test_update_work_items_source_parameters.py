@@ -338,15 +338,16 @@ class TestUpdateWorkItemsSourceParameters(WorkItemsSourceTest):
                         workItemsSourceKeys=[
                             str(work_items_source.key)
                         ],
-                        workItemsSourceCustomTagMapping=[
-                            dict(
+                        workItemsSourceCustomTagMapping=dict(
+                          customTagMapping= [
+                              dict(
                                 mappingType='path-selector',
                                 pathSelectorMapping=dict(
                                     selector="((fields.issuelinks[?type.name=='Parent/Child'])[?outwardIssue.fields.issuetype.name == 'Feature'])[0]",
                                     tag="feature-item"
                                 )
-                            )
-                        ]
+                            )]
+                        )
                     )))
             assert result.get('errors') is None
             assert result['data']['updateWorkItemsSourceCustomTagMapping']['success']
@@ -355,8 +356,13 @@ class TestUpdateWorkItemsSourceParameters(WorkItemsSourceTest):
             with db.orm_session() as session:
                 source = WorkItemsSource.find_by_key(session, work_items_source.key)
                 assert source.parameters == dict(
-                    parent_path_selectors=[
-                        "(fields.issuelinks[?(type.name=='Parent/Child' && outwardIssue.fields.issuetype.name=='Feature')].outwardIssue.key)[0]"
+                    custom_tag_mapping=[
+                        dict(
+                            mapping_type='path-selector',
+                            path_selector_mapping = dict(
+                                selector="((fields.issuelinks[?type.name=='Parent/Child'])[?outwardIssue.fields.issuetype.name == 'Feature'])[0]",
+                                tag="feature-item"
+                            )
+                        )
                     ]
-
                 )
