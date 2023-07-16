@@ -14,7 +14,7 @@ from .refresh_connector_projects import RefreshConnectorProjects
 from .resolve_work_items_for_epic import ResolveWorkItemsForEpic
 from .gitlab_project_event import GitlabProjectEvent
 from .trello_board_event import TrelloBoardEvent
-from .parent_path_selectors_changed import ParentPathSelectorsChanged
+from .work_items_source_parameters_changed import ParentPathSelectorsChanged
 
 
 # Add this to the global message factory so that the messages can be deserialized on receipt.
