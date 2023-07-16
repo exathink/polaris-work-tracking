@@ -19,7 +19,6 @@ from polaris.messaging.topics import WorkItemsTopic
 from polaris.messaging.messages import ImportWorkItems
 from polaris.work_tracking.messages import ParentPathSelectorsChanged
 
-
 from polaris.work_tracking.db.model import WorkItemsSource
 from polaris.work_tracking.service.graphql import schema
 
@@ -31,7 +30,7 @@ class TestUpdateWorkItemsSourceParameters(WorkItemsSourceTest):
 
         def it_creates_the_parameters_for_the_first_time(self, setup):
             fixture = setup
-            organization_key=fixture.organization_key
+            organization_key = fixture.organization_key
             work_items_source = fixture.work_items_source
             connector_key = fixture.connector_key
 
@@ -80,7 +79,7 @@ class TestUpdateWorkItemsSourceParameters(WorkItemsSourceTest):
 
             with db.orm_session() as session:
                 session.add(work_items_source)
-                work_items_source.parameters=dict(
+                work_items_source.parameters = dict(
                     initial_import_days=180,
                     sync_import_days=7
                 )
@@ -129,7 +128,7 @@ class TestUpdateWorkItemsSourceParameters(WorkItemsSourceTest):
 
             with db.orm_session() as session:
                 session.add(work_items_source)
-                work_items_source.parameters=dict(
+                work_items_source.parameters = dict(
                     initial_import_days=180,
                     sync_import_days=7
                 )
@@ -169,7 +168,7 @@ class TestUpdateWorkItemsSourceParameters(WorkItemsSourceTest):
 
         def it_creates_the_parameters_for_the_first_time(self, setup):
             fixture = setup
-            organization_key=fixture.organization_key
+            organization_key = fixture.organization_key
             work_items_source = fixture.work_items_source
             connector_key = fixture.connector_key
 
@@ -207,20 +206,20 @@ class TestUpdateWorkItemsSourceParameters(WorkItemsSourceTest):
                 source = WorkItemsSource.find_by_key(session, work_items_source.key)
                 assert source.parameters == dict(
                     parent_path_selectors=[
-                                "(fields.issuelinks[?(type.name=='Parent/Child' && outwardIssue.fields.issuetype.name=='Feature')].outwardIssue.key)[0]"
+                        "(fields.issuelinks[?(type.name=='Parent/Child' && outwardIssue.fields.issuetype.name=='Feature')].outwardIssue.key)[0]"
                     ]
 
                 )
 
         def it_only_updates_the_parent_path_selectors(self, setup):
             fixture = setup
-            organization_key=fixture.organization_key
+            organization_key = fixture.organization_key
             work_items_source = fixture.work_items_source
             connector_key = fixture.connector_key
 
             with db.orm_session() as session:
                 session.add(work_items_source)
-                work_items_source.parameters=dict(
+                work_items_source.parameters = dict(
                     initial_import_days=180,
                     sync_import_days=7
                 )
@@ -261,20 +260,20 @@ class TestUpdateWorkItemsSourceParameters(WorkItemsSourceTest):
                     initial_import_days=180,
                     sync_import_days=7,
                     parent_path_selectors=[
-                                "(fields.issuelinks[?(type.name=='Parent/Child' && outwardIssue.fields.issuetype.name=='Feature')].outwardIssue.key)[0]"
+                        "(fields.issuelinks[?(type.name=='Parent/Child' && outwardIssue.fields.issuetype.name=='Feature')].outwardIssue.key)[0]"
                     ]
 
                 )
 
         def it_publishes_parent_path_selectors_changed_message(self, setup):
             fixture = setup
-            organization_key=fixture.organization_key
+            organization_key = fixture.organization_key
             work_items_source = fixture.work_items_source
             connector_key = fixture.connector_key
 
             with db.orm_session() as session:
                 session.add(work_items_source)
-                work_items_source.parameters=dict(
+                work_items_source.parameters = dict(
                     initial_import_days=180,
                     sync_import_days=7
                 )
@@ -310,3 +309,54 @@ class TestUpdateWorkItemsSourceParameters(WorkItemsSourceTest):
             assert result['data']['updateWorkItemsSourceParentPathSelectors']['updated'] == 1
 
             assert_topic_and_message(publish, WorkItemsTopic, ParentPathSelectorsChanged)
+
+    class TestUpdateCustomTagMapping:
+
+        def it_creates_a_selector_to_tag_mapping(self, setup):
+            fixture = setup
+            organization_key = fixture.organization_key
+            work_items_source = fixture.work_items_source
+            connector_key = fixture.connector_key
+
+            client = Client(schema)
+            mutation = """
+                mutation updateWorkItemsSourceCustomTagMapping(
+                    $updateWorkItemsSourceCustomTagMappingInput: UpdateWorkItemsSourceCustomTagMappingInput! 
+                    ) {
+                        updateWorkItemsSourceCustomTagMapping(updateWorkItemsSourceCustomTagMappingInput: $updateWorkItemsSourceCustomTagMappingInput) {
+                            success
+                            errorMessage
+                            updated
+                        }
+                    } 
+            """
+            with patch('polaris.work_tracking.publish.publish'):
+                result = client.execute(mutation, variable_values=dict(
+                    updateWorkItemsSourceCustomTagMappingInput=dict(
+                        organizationKey=organization_key,
+                        connectorKey=str(connector_key),
+                        workItemsSourceKeys=[
+                            str(work_items_source.key)
+                        ],
+                        workItemsSourceCustomTagMapping=[
+                            dict(
+                                mappingType='path-selector',
+                                pathSelectorMapping=dict(
+                                    selector="((fields.issuelinks[?type.name=='Parent/Child'])[?outwardIssue.fields.issuetype.name == 'Feature'])[0]",
+                                    tag="feature-item"
+                                )
+                            )
+                        ]
+                    )))
+            assert result.get('errors') is None
+            assert result['data']['updateWorkItemsSourceCustomTagMapping']['success']
+            assert result['data']['updateWorkItemsSourceCustomTagMapping']['updated'] == 1
+
+            with db.orm_session() as session:
+                source = WorkItemsSource.find_by_key(session, work_items_source.key)
+                assert source.parameters == dict(
+                    parent_path_selectors=[
+                        "(fields.issuelinks[?(type.name=='Parent/Child' && outwardIssue.fields.issuetype.name=='Feature')].outwardIssue.key)[0]"
+                    ]
+
+                )

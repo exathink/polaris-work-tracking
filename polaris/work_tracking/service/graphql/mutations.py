@@ -9,6 +9,7 @@
 # Author: Krishna Kumar
 
 import logging
+from enum import Enum
 
 import graphene
 
@@ -477,4 +478,55 @@ class UpdateWorkItemsSourceParentPathSelectors(graphene.Mutation):
         return UpdateWorkItemsSourceParentPathSelectors(
             success=result['success'],
             updated=result['updated']
+        )
+
+# custom tag mapping
+class CustomTagMappingType(Enum):
+    path_selector = 'path-selector'
+
+
+class PathSelectorMappingInput(graphene.InputObjectType):
+    selector = graphene.String(required=True, description="""
+                                        jmespathexpression that returns a value at a selected node in the input. 
+                                        The tag is applied if the expression returns a non-null value
+                                        """)
+    tag = graphene.String(required=True)
+
+
+class WorkItemsSourceCustomTagMapping(graphene.InputObjectType):
+    mapping_type = graphene.String(required=True)
+    # exactly one of these should be set in the input. The lack of union types in graphene inputs
+    # forces us to use this awkward pattern,
+    path_selector_mapping = PathSelectorMappingInput(required=False)
+
+
+class UpdateWorkItemsSourceCustomTagMappingInput(graphene.InputObjectType):
+    organization_key = graphene.String(required=True)
+    connector_key = graphene.String(required=True)
+    work_items_source_keys = graphene.List(graphene.String, required=True)
+    work_items_source_custom_tag_mapping = graphene.List(
+        WorkItemsSourceCustomTagMapping, required=True
+    )
+    
+class UpdateWorkItemsSourceCustomTagMapping(graphene.Mutation):
+    class Arguments:
+        update_work_items_source_custom_tag_mapping_input = UpdateWorkItemsSourceCustomTagMappingInput(required=True)
+
+    success = graphene.Boolean()
+    error_message = graphene.String()
+    updated = graphene.Int(description="The number of sources updated")
+
+    def mutate(self, info, update_work_items_source_custom_tag_mapping_input):
+        organization_key = update_work_items_source_custom_tag_mapping_input.organization_key
+        connector_key = update_work_items_source_custom_tag_mapping_input.connector_key
+        work_items_source_keys = update_work_items_source_custom_tag_mapping_input.work_items_source_keys
+        work_items_source_parameters = update_work_items_source_custom_tag_mapping_input.work_items_source_custom_tag_mapping
+
+        with db.orm_session() as session:
+            result = dict(success=False)
+
+
+
+        return UpdateWorkItemsSourceCustomTagMapping(
+            success=result['success'],
         )
