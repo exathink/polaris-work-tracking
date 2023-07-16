@@ -532,8 +532,9 @@ class TestCustomTagging:
                 session.add(work_items_source)
                 # set to the selector for any ch
                 work_items_source.parameters = dict(
-                    custom_tag_mappers=[
+                    custom_tag_mapping=[
                         dict(
+                            mapping_type='path-selector',
                             selector="((fields.issuelinks[?type.name=='Parent/Child'])[?outwardIssue.fields.issuetype.name == 'Feature'])[0]",
                             tag="feature-item"
                         )

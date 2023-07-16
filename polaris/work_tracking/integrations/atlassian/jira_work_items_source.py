@@ -17,6 +17,7 @@ from polaris.utils.collections import find
 import polaris.work_tracking.connector_factory
 from polaris.common.enums import JiraWorkItemType, JiraWorkItemSourceType
 from polaris.utils.exceptions import ProcessingException
+from polaris.work_tracking.enums import CustomTagMappingType
 
 logger = logging.getLogger('polaris.work_tracking.jira')
 
@@ -40,7 +41,7 @@ class JiraProject(JiraWorkItemsSource):
         self.initial_import_days = int(self.work_items_source.parameters.get('initial_import_days', 90))
         self.sync_import_days = int(self.work_items_source.parameters.get('sync_import_days', 1))
         self.parent_path_selectors = self.work_items_source.parameters.get('parent_path_selectors')
-        self.custom_tag_mappers = self.work_items_source.parameters.get('custom_tag_mappers')
+        self.custom_tag_mapping = self.work_items_source.parameters.get('custom_tag_mapping')
 
         self.last_updated = work_items_source.latest_work_item_update_timestamp
         self.last_updated_issue_source_id = work_items_source.most_recently_updated_work_item_source_id
@@ -167,11 +168,13 @@ class JiraProject(JiraWorkItemsSource):
             tags.add(f"component:{component['name']}")
 
         #apply any custom tag mappers
-        if self.custom_tag_mappers is not None:
-            for mapping in self.custom_tag_mappers:
-                if 'selector' in mapping and jmespath.search(mapping['selector'], issue) is not None:
-                    tags.add(f"custom_tag:{mapping.get('tag')}")
-
+        if self.custom_tag_mapping is not None:
+            for mapping in self.custom_tag_mapping:
+                if mapping.get('mapping_type') == CustomTagMappingType.path_selector.value:
+                    if 'selector' in mapping and jmespath.search(mapping['selector'], issue) is not None:
+                        tags.add(f"custom_tag:{mapping.get('tag')}")
+                else:
+                    logger.warning(f"Unknown custom tag mapping type {mapping.get('mapping_type')} found when mapping custom tags for Jira work items source")
 
         return list(tags)
 

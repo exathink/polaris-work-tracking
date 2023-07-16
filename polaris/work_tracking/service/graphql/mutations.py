@@ -9,7 +9,6 @@
 # Author: Krishna Kumar
 
 import logging
-from enum import Enum
 
 import graphene
 
@@ -480,9 +479,7 @@ class UpdateWorkItemsSourceParentPathSelectors(graphene.Mutation):
             updated=result['updated']
         )
 
-# custom tag mapping
-class CustomTagMappingType(Enum):
-    path_selector = 'path-selector'
+
 
 
 class PathSelectorMappingInput(graphene.InputObjectType):
@@ -494,6 +491,7 @@ class PathSelectorMappingInput(graphene.InputObjectType):
 
 
 class WorkItemsSourceCustomTagMappingItem(graphene.InputObjectType):
+    # The types here must be one of the values in polaris.work_tracking.enums.CustomTagMapping
     mapping_type = graphene.String(required=True)
     # exactly one of these should be set in the input. The lack of union types in graphene inputs
     # forces us to use this awkward pattern,
