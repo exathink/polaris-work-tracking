@@ -130,24 +130,36 @@ class TestCustomTagMappingChanged(WorkItemsSourceTest):
 
 
 
-        @pytest.mark.skip
+
         class TestMessagePublishing:
 
             def it_processes_the_message_from_end_to_end_for_a_single_work_item_with_a_change(self, setup):
                 fixture = setup
                 organization_key = fixture.organization_key
+                project = fixture.project
                 work_items_source = fixture.work_items_source
 
-                issue_template = fixture.issue_with_custom_parent
-                work_item_summaries = [fixture.project.map_issue_to_work_item_data(issue_template)]
-                # create a single work item without a parent path selector on the work item source
+                # Load the parent and child issue.
+                work_item_summaries = [
+                    project.map_issue_to_work_item_data(issue)
+                    for issue in fixture.issue_templates
+                ]
+
+                #
                 api.sync_work_items(work_items_source.key, work_item_summaries)
 
+                # Now add a parent path selector to the work item source. When we reprocess, this should
+                # reset the parent source id and link to the new parent.
                 with db.orm_session() as session:
                     session.add(work_items_source)
+                    # set to the selector for any ch
                     work_items_source.parameters = dict(
-                        parent_path_selectors=[
-                            "(fields.issuelinks[?type.name=='Parent/Child'].outwardIssue.key)[0]"
+                        custom_tag_mapping=[
+                            dict(
+                                mapping_type='path-selector',
+                                selector="((fields.issuelinks[?type.name=='Parent/Child'])[?outwardIssue.fields.issuetype.name == 'Feature'])[0]",
+                                tag="feature-item"
+                            )
                         ]
                     )
 
@@ -170,11 +182,16 @@ class TestCustomTagMappingChanged(WorkItemsSourceTest):
             def it_does_not_publish_a_message_when_there_are_no_changes(self, setup):
                 fixture = setup
                 organization_key = fixture.organization_key
+                project = fixture.project
                 work_items_source = fixture.work_items_source
 
-                issue_template = fixture.issue_with_custom_parent
-                work_item_summaries = [fixture.project.map_issue_to_work_item_data(issue_template)]
-                # create a single work item without a parent path selector on the work item source
+                # Load the parent and child issue.
+                work_item_summaries = [
+                    project.map_issue_to_work_item_data(issue)
+                    for issue in fixture.issue_templates
+                ]
+
+                #
                 api.sync_work_items(work_items_source.key, work_item_summaries)
 
 
