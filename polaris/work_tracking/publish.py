@@ -17,6 +17,8 @@ from polaris.work_tracking.messages import AtlassianConnectWorkItemEvent, Refres
     ResolveWorkItemsForEpic, GitlabProjectEvent, TrelloBoardEvent, ParentPathSelectorsChanged
 
 from polaris.integrations.publish import connector_event
+from polaris.work_tracking.messages.work_items_source_parameters_changed import CustomTagMappingChanged
+
 
 def work_items_source_created(work_items_source, channel=None):
     message = WorkItemsSourceCreated(
@@ -194,6 +196,17 @@ def sync_work_items_source_command(organization_key, work_items_source_key, chan
 
 def parent_path_selectors_changed(organization_key, work_items_source_key, channel=None):
     message = ParentPathSelectorsChanged(send=dict(
+        organization_key=organization_key,
+        work_items_source_key=work_items_source_key
+    ))
+    publish(
+        WorkItemsTopic,
+        message,
+        channel=channel
+    )
+
+def custom_tag_mapping_changed(organization_key, work_items_source_key, channel=None):
+    message = CustomTagMappingChanged(send=dict(
         organization_key=organization_key,
         work_items_source_key=work_items_source_key
     ))

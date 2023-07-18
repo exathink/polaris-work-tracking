@@ -21,3 +21,9 @@ class ParentPathSelectorsChanged(Message):
     organization_key = fields.String(required=True)
     work_items_source_key = fields.String(required=True)
 
+
+class CustomTagMappingChanged(Message):
+    message_type = 'work_items_sources.custom_tag_mapping_changed'
+
+    organization_key = fields.String(required=True)
+    work_items_source_key = fields.String(required=True)
