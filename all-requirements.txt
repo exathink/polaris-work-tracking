@@ -44,7 +44,7 @@ marshmallow==2.21.0
 packaging==21.3
 passlib==1.7.4
 pika==0.12.0
-pluggy==1.0.0
+pluggy==1.2.0
 polaris-auth-db @ file:///project/polaris-flask/polaris-auth-db
 polaris-common-db @ file:///project/polaris-common-db
 polaris-flask @ file:///project/polaris-flask
