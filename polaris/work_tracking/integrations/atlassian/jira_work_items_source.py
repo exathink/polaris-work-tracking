@@ -171,8 +171,10 @@ class JiraProject(JiraWorkItemsSource):
         if self.custom_tag_mapping is not None:
             for mapping in self.custom_tag_mapping:
                 if mapping.get('mapping_type') == CustomTagMappingType.path_selector.value:
-                    if 'selector' in mapping and jmespath.search(mapping['selector'], issue) is not None:
-                        tags.add(f"custom_tag:{mapping.get('tag')}")
+                    path_selector_mapping = mapping.get('path_selector_mapping')
+                    if path_selector_mapping is not None:
+                        if 'selector' in path_selector_mapping and jmespath.search(path_selector_mapping['selector'], issue) is not None:
+                            tags.add(f"custom_tag:{path_selector_mapping.get('tag')}")
                 else:
                     logger.warning(f"Unknown custom tag mapping type {mapping.get('mapping_type')} found when mapping custom tags for Jira work items source")
 

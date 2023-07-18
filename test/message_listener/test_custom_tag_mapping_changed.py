@@ -113,8 +113,10 @@ class TestCustomTagMappingChanged(WorkItemsSourceTest):
                         custom_tag_mapping=[
                             dict(
                                 mapping_type='path-selector',
-                                selector="((fields.issuelinks[?type.name=='Parent/Child'])[?outwardIssue.fields.issuetype.name == 'Feature'])[0]",
-                                tag="feature-item"
+                                path_selector_mapping=dict(
+                                    selector="((fields.issuelinks[?type.name=='Parent/Child'])[?outwardIssue.fields.issuetype.name == 'Feature'])[0]",
+                                    tag="feature-item"
+                                )
                             )
                         ]
                     )
@@ -157,8 +159,10 @@ class TestCustomTagMappingChanged(WorkItemsSourceTest):
                         custom_tag_mapping=[
                             dict(
                                 mapping_type='path-selector',
-                                selector="((fields.issuelinks[?type.name=='Parent/Child'])[?outwardIssue.fields.issuetype.name == 'Feature'])[0]",
-                                tag="feature-item"
+                                path_selector_mapping=dict(
+                                    selector="((fields.issuelinks[?type.name=='Parent/Child'])[?outwardIssue.fields.issuetype.name == 'Feature'])[0]",
+                                    tag="feature-item"
+                                )
                             )
                         ]
                     )
