@@ -17,6 +17,7 @@ from polaris.utils.collections import find
 import polaris.work_tracking.connector_factory
 from polaris.common.enums import JiraWorkItemType, JiraWorkItemSourceType
 from polaris.utils.exceptions import ProcessingException
+from polaris.work_tracking.enums import CustomTagMappingType
 
 logger = logging.getLogger('polaris.work_tracking.jira')
 
@@ -40,6 +41,7 @@ class JiraProject(JiraWorkItemsSource):
         self.initial_import_days = int(self.work_items_source.parameters.get('initial_import_days', 90))
         self.sync_import_days = int(self.work_items_source.parameters.get('sync_import_days', 1))
         self.parent_path_selectors = self.work_items_source.parameters.get('parent_path_selectors')
+        self.custom_tag_mapping = self.work_items_source.parameters.get('custom_tag_mapping')
 
         self.last_updated = work_items_source.latest_work_item_update_timestamp
         self.last_updated_issue_source_id = work_items_source.most_recently_updated_work_item_source_id
@@ -112,7 +114,7 @@ class JiraProject(JiraWorkItemsSource):
                     work_item_type=mapped_type,
                     is_bug=mapped_type == JiraWorkItemType.bug.value,
                     is_epic=mapped_type == JiraWorkItemType.epic.value,
-                    tags=self.process_tags(fields, issue_type),
+                    tags=self.process_tags(issue, fields, issue_type),
                     url=issue.get('self'),
                     source_id=str(issue.get('id')),
                     source_display_id=issue.get('key'),
@@ -157,13 +159,24 @@ class JiraProject(JiraWorkItemsSource):
 
 
 
-    def process_tags(self, fields, issue_type):
+    def process_tags(self, issue, fields, issue_type):
         tags = set(fields.get('labels', []))
         if self.is_custom_type(issue_type):
             tags.add(f'custom_type:{issue_type}')
         # lift the components into tags
         for component in fields.get('components', []):
             tags.add(f"component:{component['name']}")
+
+        #apply any custom tag mappers
+        if self.custom_tag_mapping is not None:
+            for mapping in self.custom_tag_mapping:
+                if mapping.get('mapping_type') == CustomTagMappingType.path_selector.value:
+                    path_selector_mapping = mapping.get('path_selector_mapping')
+                    if path_selector_mapping is not None:
+                        if 'selector' in path_selector_mapping and jmespath.search(path_selector_mapping['selector'], issue) is not None:
+                            tags.add(f"custom_tag:{path_selector_mapping.get('tag')}")
+                else:
+                    logger.warning(f"Unknown custom tag mapping type {mapping.get('mapping_type')} found when mapping custom tags for Jira work items source")
 
         return list(tags)
 
