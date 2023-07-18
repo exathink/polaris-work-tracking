@@ -317,6 +317,7 @@ class WorkItem(Base):
     url = Column(String, nullable=True)
     source_state = Column(String, nullable=False)
     source_display_id = Column(String, nullable=False)
+    priority = Column(String, nullable=True)
 
     # timestamps for synchronization
     source_created_at = Column(DateTime, nullable=False)
