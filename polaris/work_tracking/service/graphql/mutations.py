@@ -478,3 +478,59 @@ class UpdateWorkItemsSourceParentPathSelectors(graphene.Mutation):
             success=result['success'],
             updated=result['updated']
         )
+
+
+
+
+class PathSelectorMappingInput(graphene.InputObjectType):
+    selector = graphene.String(required=True, description="""
+                                        jmespathexpression that returns a value at a selected node in the input. 
+                                        The tag is applied if the expression returns a non-null value
+                                        """)
+    tag = graphene.String(required=True)
+
+
+class WorkItemsSourceCustomTagMappingItem(graphene.InputObjectType):
+    # The types here must be one of the values in polaris.work_tracking.enums.CustomTagMapping
+    mapping_type = graphene.String(required=True)
+    # exactly one of these should be set in the input. The lack of union types in graphene inputs
+    # forces us to use this awkward pattern,
+    path_selector_mapping = PathSelectorMappingInput(required=False)
+
+class WorkItemsSourceCustomTagMapping(graphene.InputObjectType):
+    custom_tag_mapping = graphene.List(
+        WorkItemsSourceCustomTagMappingItem, required=True
+    )
+
+class UpdateWorkItemsSourceCustomTagMappingInput(graphene.InputObjectType):
+    organization_key = graphene.String(required=True)
+    connector_key = graphene.String(required=True)
+    work_items_source_keys = graphene.List(graphene.String, required=True)
+    work_items_source_custom_tag_mapping = WorkItemsSourceCustomTagMapping(required=True)
+    
+class UpdateWorkItemsSourceCustomTagMapping(graphene.Mutation):
+    class Arguments:
+        update_work_items_source_custom_tag_mapping_input = UpdateWorkItemsSourceCustomTagMappingInput(required=True)
+
+    success = graphene.Boolean()
+    error_message = graphene.String()
+    updated = graphene.Int(description="The number of sources updated")
+
+    def mutate(self, info, update_work_items_source_custom_tag_mapping_input):
+        organization_key = update_work_items_source_custom_tag_mapping_input.organization_key
+        connector_key = update_work_items_source_custom_tag_mapping_input.connector_key
+        work_items_source_keys = update_work_items_source_custom_tag_mapping_input.work_items_source_keys
+        work_items_source_parameters = update_work_items_source_custom_tag_mapping_input.work_items_source_custom_tag_mapping
+
+        with db.orm_session() as session:
+            result = api.update_work_items_source_parameters(connector_key, work_items_source_keys,
+                                                             work_items_source_parameters, join_this=session)
+            if result.get('success'):
+                for work_items_source_key in work_items_source_keys:
+                    publish.custom_tag_mapping_changed(organization_key, work_items_source_key)
+
+
+        return UpdateWorkItemsSourceCustomTagMapping(
+            success=result.get('success', False),
+            updated=result.get('updated', 0)
+        )

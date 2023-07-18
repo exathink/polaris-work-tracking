@@ -507,3 +507,43 @@ class TestCustomParentMapping:
             mapped_data = project.map_issue_to_work_item_data(fixture.jira_issue)
 
             assert mapped_data['parent_source_display_id'] == "MM-5485"
+
+class TestCustomTagging:
+    class TestCustomTagFromParentType:
+        @pytest.fixture()
+        def setup(self, jira_work_item_source_fixture, cleanup):
+            work_items_source, _, _ = jira_work_item_source_fixture
+
+            # this payload contains an issue with a custom parent link specified by a custom link in the
+            # issue payload.
+            jira_api_issue_with_components = json.loads(
+                pkg_resources.resource_string(__name__, 'data/jira_payload_with_feature_parent.json'))
+
+            yield Fixture(
+                jira_issue=jira_api_issue_with_components,
+                work_items_source=work_items_source
+            )
+
+        def it_adds_a_custom_tag_when_the_parent_is_a_feature(self, setup):
+            fixture = setup
+
+            work_items_source = fixture.work_items_source
+            with db.orm_session() as session:
+                session.add(work_items_source)
+                # set to the selector for any ch
+                work_items_source.parameters = dict(
+                    custom_tag_mapping=[
+                        dict(
+                            mapping_type='path-selector',
+                            path_selector_mapping=dict(
+                                selector="((fields.issuelinks[?type.name=='Parent/Child'])[?outwardIssue.fields.issuetype.name == 'Feature'])[0]",
+                                tag="feature-item"
+                            )
+                        )
+                    ]
+                )
+                project = JiraProject(work_items_source)
+
+            mapped_data = project.map_issue_to_work_item_data(fixture.jira_issue)
+
+            assert 'custom_tag:feature-item' in mapped_data['tags']
