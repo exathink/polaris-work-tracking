@@ -387,7 +387,9 @@ def sync_work_items(work_items_source_key, work_item_list, join_this=None):
                     last_sync=work_item.last_sync,
                     source_id=work_item.source_id,
                     commit_identifiers=work_item.commit_identifiers,
-                    is_updated=work_item.has_changes
+                    is_updated=work_item.has_changes,
+                    priority=work_item.priority
+
                 )
                 for work_item in sync_result
             ]
