@@ -1,0 +1,770 @@
+{
+  "id": "177732",
+  "key": "TRACNG-6356",
+  "self": "https://fourkites.atlassian.net/rest/api/2/177732",
+  "fields": {
+    "votes": {
+      "self": "https://fourkites.atlassian.net/rest/api/2/issue/TRACNG-6356/votes",
+      "votes": 0,
+      "hasVoted": false
+    },
+    "labels": [
+      "90To300Days",
+      "Trac_Team2"
+    ],
+    "status": {
+      "id": "10003",
+      "name": "Released",
+      "self": "https://fourkites.atlassian.net/rest/api/2/status/10003",
+      "iconUrl": "https://fourkites.atlassian.net/images/icons/statuses/generic.png",
+      "statusCategory": {
+        "id": 3,
+        "key": "done",
+        "name": "Complete",
+        "self": "https://fourkites.atlassian.net/rest/api/2/statuscategory/3",
+        "colorName": "green"
+      }
+    },
+    "created": "2022-12-28T13:44:32.032-0600",
+    "creator": {
+      "self": "https://fourkites.atlassian.net/rest/api/2/user?accountId=6101866d3900e600709907c5",
+      "active": true,
+      "timeZone": "America/Chicago",
+      "accountId": "6101866d3900e600709907c5",
+      "avatarUrls": {
+        "16x16": "https://secure.gravatar.com/avatar/ddcfc568fd14452ccd187e7189286a6f?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FAH-1.png",
+        "24x24": "https://secure.gravatar.com/avatar/ddcfc568fd14452ccd187e7189286a6f?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FAH-1.png",
+        "32x32": "https://secure.gravatar.com/avatar/ddcfc568fd14452ccd187e7189286a6f?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FAH-1.png",
+        "48x48": "https://secure.gravatar.com/avatar/ddcfc568fd14452ccd187e7189286a6f?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FAH-1.png"
+      },
+      "accountType": "atlassian",
+      "displayName": "Azsante Hawkins"
+    },
+    "duedate": null,
+    "project": {
+      "id": "11740",
+      "key": "TRACNG",
+      "name": "Tracking_NG",
+      "self": "https://fourkites.atlassian.net/rest/api/2/project/11740",
+      "avatarUrls": {
+        "16x16": "https://fourkites.atlassian.net/rest/api/2/universal_avatar/view/type/project/avatar/11525?size=xsmall",
+        "24x24": "https://fourkites.atlassian.net/rest/api/2/universal_avatar/view/type/project/avatar/11525?size=small",
+        "32x32": "https://fourkites.atlassian.net/rest/api/2/universal_avatar/view/type/project/avatar/11525?size=medium",
+        "48x48": "https://fourkites.atlassian.net/rest/api/2/universal_avatar/view/type/project/avatar/11525"
+      },
+      "simplified": false,
+      "projectTypeKey": "software"
+    },
+    "summary": "Schneider Logistics Inc having issues with Fast Track",
+    "updated": "2023-05-25T02:39:56.584-0500",
+    "watches": {
+      "self": "https://fourkites.atlassian.net/rest/api/2/issue/TRACNG-6356/watchers",
+      "isWatching": false,
+      "watchCount": 8
+    },
+    "assignee": {
+      "self": "https://fourkites.atlassian.net/rest/api/2/user?accountId=6101866d3900e600709907c5",
+      "active": true,
+      "timeZone": "America/Chicago",
+      "accountId": "6101866d3900e600709907c5",
+      "avatarUrls": {
+        "16x16": "https://secure.gravatar.com/avatar/ddcfc568fd14452ccd187e7189286a6f?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FAH-1.png",
+        "24x24": "https://secure.gravatar.com/avatar/ddcfc568fd14452ccd187e7189286a6f?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FAH-1.png",
+        "32x32": "https://secure.gravatar.com/avatar/ddcfc568fd14452ccd187e7189286a6f?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FAH-1.png",
+        "48x48": "https://secure.gravatar.com/avatar/ddcfc568fd14452ccd187e7189286a6f?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FAH-1.png"
+      },
+      "accountType": "atlassian",
+      "displayName": "Azsante Hawkins"
+    },
+    "priority": {
+      "id": "10000",
+      "name": "P3",
+      "self": "https://fourkites.atlassian.net/rest/api/2/priority/10000",
+      "iconUrl": "https://fourkites.atlassian.net/images/icons/priorities/low.svg"
+    },
+    "progress": {
+      "total": 3600,
+      "percent": 100,
+      "progress": 3600
+    },
+    "reporter": {
+      "self": "https://fourkites.atlassian.net/rest/api/2/user?accountId=6101866d3900e600709907c5",
+      "active": true,
+      "timeZone": "America/Chicago",
+      "accountId": "6101866d3900e600709907c5",
+      "avatarUrls": {
+        "16x16": "https://secure.gravatar.com/avatar/ddcfc568fd14452ccd187e7189286a6f?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FAH-1.png",
+        "24x24": "https://secure.gravatar.com/avatar/ddcfc568fd14452ccd187e7189286a6f?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FAH-1.png",
+        "32x32": "https://secure.gravatar.com/avatar/ddcfc568fd14452ccd187e7189286a6f?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FAH-1.png",
+        "48x48": "https://secure.gravatar.com/avatar/ddcfc568fd14452ccd187e7189286a6f?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FAH-1.png"
+      },
+      "accountType": "atlassian",
+      "displayName": "Azsante Hawkins"
+    },
+    "security": null,
+    "subtasks": [],
+    "versions": [],
+    "issuetype": {
+      "id": "10202",
+      "name": "Bug",
+      "self": "https://fourkites.atlassian.net/rest/api/2/issuetype/10202",
+      "iconUrl": "https://fourkites.atlassian.net/rest/api/2/universal_avatar/view/type/issuetype/avatar/10303?size=medium",
+      "subtask": false,
+      "avatarId": 10303,
+      "description": "A problem which impairs or prevents the functions of the product.",
+      "hierarchyLevel": 0
+    },
+    "timespent": 3600,
+    "workratio": -1,
+    "attachment": [
+      {
+        "id": "171334",
+        "self": "https://fourkites.atlassian.net/rest/api/2/attachment/171334",
+        "size": 985547,
+        "author": {
+          "self": "https://fourkites.atlassian.net/rest/api/2/user?accountId=6101866d3900e600709907c5",
+          "active": true,
+          "timeZone": "America/Chicago",
+          "accountId": "6101866d3900e600709907c5",
+          "avatarUrls": {
+            "16x16": "https://secure.gravatar.com/avatar/ddcfc568fd14452ccd187e7189286a6f?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FAH-1.png",
+            "24x24": "https://secure.gravatar.com/avatar/ddcfc568fd14452ccd187e7189286a6f?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FAH-1.png",
+            "32x32": "https://secure.gravatar.com/avatar/ddcfc568fd14452ccd187e7189286a6f?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FAH-1.png",
+            "48x48": "https://secure.gravatar.com/avatar/ddcfc568fd14452ccd187e7189286a6f?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FAH-1.png"
+          },
+          "accountType": "atlassian",
+          "displayName": "Azsante Hawkins"
+        },
+        "content": "https://fourkites.atlassian.net/rest/api/2/attachment/content/171334",
+        "created": "2022-12-28T13:36:15.206-0600",
+        "filename": "Screen Shot 2022-12-28 at 1.34.35 PM.png",
+        "mimeType": "image/png",
+        "thumbnail": "https://fourkites.atlassian.net/rest/api/2/attachment/thumbnail/171334"
+      },
+      {
+        "id": "171333",
+        "self": "https://fourkites.atlassian.net/rest/api/2/attachment/171333",
+        "size": 283959,
+        "author": {
+          "self": "https://fourkites.atlassian.net/rest/api/2/user?accountId=6101866d3900e600709907c5",
+          "active": true,
+          "timeZone": "America/Chicago",
+          "accountId": "6101866d3900e600709907c5",
+          "avatarUrls": {
+            "16x16": "https://secure.gravatar.com/avatar/ddcfc568fd14452ccd187e7189286a6f?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FAH-1.png",
+            "24x24": "https://secure.gravatar.com/avatar/ddcfc568fd14452ccd187e7189286a6f?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FAH-1.png",
+            "32x32": "https://secure.gravatar.com/avatar/ddcfc568fd14452ccd187e7189286a6f?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FAH-1.png",
+            "48x48": "https://secure.gravatar.com/avatar/ddcfc568fd14452ccd187e7189286a6f?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FAH-1.png"
+          },
+          "accountType": "atlassian",
+          "displayName": "Azsante Hawkins"
+        },
+        "content": "https://fourkites.atlassian.net/rest/api/2/attachment/content/171333",
+        "created": "2022-12-28T13:36:23.023-0600",
+        "filename": "Screen Shot 2022-12-28 at 1.35.44 PM.png",
+        "mimeType": "image/png",
+        "thumbnail": "https://fourkites.atlassian.net/rest/api/2/attachment/thumbnail/171333"
+      },
+      {
+        "id": "178477",
+        "self": "https://fourkites.atlassian.net/rest/api/2/attachment/178477",
+        "size": 464271,
+        "author": {
+          "self": "https://fourkites.atlassian.net/rest/api/2/user?accountId=5aecb2faba41192e23d89351",
+          "active": true,
+          "timeZone": "America/Chicago",
+          "accountId": "5aecb2faba41192e23d89351",
+          "avatarUrls": {
+            "16x16": "https://avatar-management--avatars.us-west-2.prod.public.atl-paas.net/initials/SP-2.png",
+            "24x24": "https://avatar-management--avatars.us-west-2.prod.public.atl-paas.net/initials/SP-2.png",
+            "32x32": "https://avatar-management--avatars.us-west-2.prod.public.atl-paas.net/initials/SP-2.png",
+            "48x48": "https://avatar-management--avatars.us-west-2.prod.public.atl-paas.net/initials/SP-2.png"
+          },
+          "accountType": "atlassian",
+          "displayName": "Suriyalakshmi Palani"
+        },
+        "content": "https://fourkites.atlassian.net/rest/api/2/attachment/content/178477",
+        "created": "2023-03-20T02:18:31.878-0500",
+        "filename": "Screenshot 2023-03-20 at 12.34.27 PM.png",
+        "mimeType": "image/png",
+        "thumbnail": "https://fourkites.atlassian.net/rest/api/2/attachment/thumbnail/178477"
+      },
+      {
+        "id": "178476",
+        "self": "https://fourkites.atlassian.net/rest/api/2/attachment/178476",
+        "size": 148825,
+        "author": {
+          "self": "https://fourkites.atlassian.net/rest/api/2/user?accountId=5aecb2faba41192e23d89351",
+          "active": true,
+          "timeZone": "America/Chicago",
+          "accountId": "5aecb2faba41192e23d89351",
+          "avatarUrls": {
+            "16x16": "https://avatar-management--avatars.us-west-2.prod.public.atl-paas.net/initials/SP-2.png",
+            "24x24": "https://avatar-management--avatars.us-west-2.prod.public.atl-paas.net/initials/SP-2.png",
+            "32x32": "https://avatar-management--avatars.us-west-2.prod.public.atl-paas.net/initials/SP-2.png",
+            "48x48": "https://avatar-management--avatars.us-west-2.prod.public.atl-paas.net/initials/SP-2.png"
+          },
+          "accountType": "atlassian",
+          "displayName": "Suriyalakshmi Palani"
+        },
+        "content": "https://fourkites.atlassian.net/rest/api/2/attachment/content/178476",
+        "created": "2023-03-20T02:18:31.319-0500",
+        "filename": "Screenshot 2023-03-20 at 12.37.32 PM.png",
+        "mimeType": "image/png",
+        "thumbnail": "https://fourkites.atlassian.net/rest/api/2/attachment/thumbnail/178476"
+      },
+      {
+        "id": "178478",
+        "self": "https://fourkites.atlassian.net/rest/api/2/attachment/178478",
+        "size": 376394,
+        "author": {
+          "self": "https://fourkites.atlassian.net/rest/api/2/user?accountId=5aecb2faba41192e23d89351",
+          "active": true,
+          "timeZone": "America/Chicago",
+          "accountId": "5aecb2faba41192e23d89351",
+          "avatarUrls": {
+            "16x16": "https://avatar-management--avatars.us-west-2.prod.public.atl-paas.net/initials/SP-2.png",
+            "24x24": "https://avatar-management--avatars.us-west-2.prod.public.atl-paas.net/initials/SP-2.png",
+            "32x32": "https://avatar-management--avatars.us-west-2.prod.public.atl-paas.net/initials/SP-2.png",
+            "48x48": "https://avatar-management--avatars.us-west-2.prod.public.atl-paas.net/initials/SP-2.png"
+          },
+          "accountType": "atlassian",
+          "displayName": "Suriyalakshmi Palani"
+        },
+        "content": "https://fourkites.atlassian.net/rest/api/2/attachment/content/178478",
+        "created": "2023-03-20T02:24:37.675-0500",
+        "filename": "Screenshot 2023-03-20 at 12.53.25 PM.png",
+        "mimeType": "image/png",
+        "thumbnail": "https://fourkites.atlassian.net/rest/api/2/attachment/thumbnail/178478"
+      },
+      {
+        "id": "183617",
+        "self": "https://fourkites.atlassian.net/rest/api/2/attachment/183617",
+        "size": 274113,
+        "author": {
+          "self": "https://fourkites.atlassian.net/rest/api/2/user?accountId=60ebd010f314ff006a3a9a97",
+          "active": true,
+          "timeZone": "America/Chicago",
+          "accountId": "60ebd010f314ff006a3a9a97",
+          "avatarUrls": {
+            "16x16": "https://secure.gravatar.com/avatar/80576610db3dc0971ca187785e014f3d?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FRS-3.png",
+            "24x24": "https://secure.gravatar.com/avatar/80576610db3dc0971ca187785e014f3d?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FRS-3.png",
+            "32x32": "https://secure.gravatar.com/avatar/80576610db3dc0971ca187785e014f3d?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FRS-3.png",
+            "48x48": "https://secure.gravatar.com/avatar/80576610db3dc0971ca187785e014f3d?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FRS-3.png"
+          },
+          "accountType": "atlassian",
+          "displayName": "Ritik Sharma"
+        },
+        "content": "https://fourkites.atlassian.net/rest/api/2/attachment/content/183617",
+        "created": "2023-05-25T02:20:51.050-0500",
+        "filename": "Screenshot 2023-05-25 at 12.50.27 PM.png",
+        "mimeType": "image/png",
+        "thumbnail": "https://fourkites.atlassian.net/rest/api/2/attachment/thumbnail/183617"
+      }
+    ],
+    "components": [],
+    "issuelinks": [
+      {
+        "id": "161288",
+        "self": "https://fourkites.atlassian.net/rest/api/2/issueLink/161288",
+        "type": {
+          "id": "10408",
+          "name": "Achieves",
+          "self": "https://fourkites.atlassian.net/rest/api/2/issueLinkType/10408",
+          "inward": "is achieved by",
+          "outward": "achieves"
+        },
+        "outwardIssue": {
+          "id": "197034",
+          "key": "TRACNG-6442",
+          "self": "https://fourkites.atlassian.net/rest/api/2/issue/197034",
+          "fields": {
+            "status": {
+              "id": "11446",
+              "name": "In Code Review",
+              "self": "https://fourkites.atlassian.net/rest/api/2/status/11446",
+              "iconUrl": "https://fourkites.atlassian.net/",
+              "description": "This status is managed internally by Jira Software",
+              "statusCategory": {
+                "id": 4,
+                "key": "indeterminate",
+                "name": "In Progress",
+                "self": "https://fourkites.atlassian.net/rest/api/2/statuscategory/4",
+                "colorName": "yellow"
+              }
+            },
+            "summary": "Implementation of updated address in Fasttrack DB",
+            "priority": {
+              "id": "10000",
+              "name": "P3",
+              "self": "https://fourkites.atlassian.net/rest/api/2/priority/10000",
+              "iconUrl": "https://fourkites.atlassian.net/images/icons/priorities/low.svg"
+            },
+            "issuetype": {
+              "id": "10100",
+              "name": "Story",
+              "self": "https://fourkites.atlassian.net/rest/api/2/issuetype/10100",
+              "iconUrl": "https://fourkites.atlassian.net/images/icons/issuetypes/story.svg",
+              "subtask": false,
+              "description": "Created by Jira Agile - do not edit or delete. Issue type for a user story.",
+              "hierarchyLevel": 0
+            }
+          }
+        }
+      }
+    ],
+    "lastViewed": "2023-05-31T01:12:16.437-0500",
+    "resolution": {
+      "id": "10000",
+      "name": "Done",
+      "self": "https://fourkites.atlassian.net/rest/api/2/resolution/10000",
+      "description": "Work has been completed on this issue."
+    },
+    "description": "Schneider Logistics Inc\n\nAddress- Dupont\n\nissue- Dupont fast track is still reading as The Dow Chemical Company \n\nexpected result- Dupont fast track will read as Dupont instead of The Dow Chemical Company\n\nactual result- Dupont fast track reads as The Dow Chemical Company \n\nTeam Schneider Logistics Inc QR code for Dupont is reading as “Dow” instead of “Dupont”. They made changes to ensure it would read as Dupont and it still reads as “Dow”. Could we take a look at this to see why this is happening? I have attached screenshots showing Dupont Address and Fast Track that reads as “Dow” when I went to it.  ",
+    "environment": null,
+    "fixVersions": [],
+    "timeestimate": 0,
+    "timetracking": {
+      "timeSpent": "1h",
+      "timeSpentSeconds": 3600,
+      "remainingEstimate": "0m",
+      "remainingEstimateSeconds": 0
+    },
+    "resolutiondate": "2023-05-25T02:39:56.312-0500",
+    "issuerestriction": {
+      "shouldDisplay": false,
+      "issuerestrictions": {}
+    },
+    "aggregateprogress": {
+      "total": 3600,
+      "percent": 100,
+      "progress": 3600
+    },
+    "customfield_10000": "2023-01-03T08:44:22.463-0600",
+    "customfield_10001": "1_*:*_1_*:*_661809334_*|*_11657_*:*_1_*:*_4844_*|*_12081_*:*_1_*:*_5702742110_*|*_10700_*:*_1_*:*_2060_*|*_10601_*:*_1_*:*_2960_*|*_10101_*:*_1_*:*_23607_*|*_11445_*:*_1_*:*_4110_*|*_10003_*:*_1_*:*_0_*|*_11656_*:*_1_*:*_3446_*|*_11458_*:*_1_*:*_863120_*|*_10501_*:*_1_*:*_2645_*|*_11655_*:*_1_*:*_6378266083",
+    "customfield_10002": "1|hzdmpa:x",
+    "customfield_10003": null,
+    "customfield_10007": [
+      {
+        "id": 2901,
+        "goal": "",
+        "name": "TRAC_Y23_Apr_Sp2_Ending2May",
+        "state": "closed",
+        "boardId": 273,
+        "endDate": "2023-05-02T04:52:00.000Z",
+        "startDate": "2023-04-19T11:43:28.820Z",
+        "completeDate": "2023-05-05T04:30:35.052Z"
+      },
+      {
+        "id": 2902,
+        "goal": "",
+        "name": "TRAC_Y23_May_Sp1_Ending16May",
+        "state": "closed",
+        "boardId": 273,
+        "endDate": "2023-05-16T04:52:00.000Z",
+        "startDate": "2023-05-04T04:31:13.868Z",
+        "completeDate": "2023-05-17T10:55:38.811Z"
+      },
+      {
+        "id": 2903,
+        "goal": "",
+        "name": "TRAC_Y23_May_Sp2_Ending30May",
+        "state": "active",
+        "boardId": 273,
+        "endDate": "2023-05-30T04:52:00.000Z",
+        "startDate": "2023-05-17T10:55:56.191Z"
+      }
+    ],
+    "customfield_10009": null,
+    "customfield_10010": null,
+    "customfield_10011": 4.0,
+    "customfield_10100": null,
+    "customfield_10200": null,
+    "customfield_10300": {
+      "showField": false,
+      "nonEditableReason": {
+        "reason": "PLUGIN_LICENSE_ERROR",
+        "message": "The Parent Link is only available to Jira Premium users."
+      },
+      "hasEpicLinkFieldDependency": false
+    },
+    "customfield_10400": "{}",
+    "customfield_10500": null,
+    "customfield_10501": null,
+    "customfield_10600": null,
+    "customfield_10700": null,
+    "customfield_10701": [],
+    "customfield_10702": null,
+    "customfield_10703": null,
+    "customfield_10800": null,
+    "customfield_10801": {
+      "errorMessage": "The service project you are trying to view does not exist.",
+      "i18nErrorMessage": {
+        "i18nKey": "sd.jsm.agent.servicedesk.error.servicedesk.missing",
+        "parameters": []
+      }
+    },
+    "customfield_10802": {
+      "errorMessage": "The service project you are trying to view does not exist.",
+      "i18nErrorMessage": {
+        "i18nKey": "sd.jsm.agent.servicedesk.error.servicedesk.missing",
+        "parameters": []
+      }
+    },
+    "customfield_10900": null,
+    "customfield_11000": null,
+    "customfield_11004": null,
+    "customfield_11005": null,
+    "customfield_11100": null,
+    "customfield_11200": null,
+    "customfield_11300": null,
+    "customfield_11301": null,
+    "customfield_11401": null,
+    "customfield_11402": "Developer notes on technical approach, limitations, and other internal engineering items go here.",
+    "customfield_11403": null,
+    "customfield_11405": null,
+    "customfield_11407": null,
+    "customfield_11408": null,
+    "customfield_11411": null,
+    "customfield_11412": null,
+    "customfield_11413": null,
+    "customfield_11414": null,
+    "customfield_11415": null,
+    "customfield_11417": null,
+    "customfield_11418": [
+      "01278549"
+    ],
+    "customfield_11419": null,
+    "customfield_11420": null,
+    "customfield_11421": [
+      "schneider-logistics-inc"
+    ],
+    "customfield_11422": null,
+    "customfield_11423": null,
+    "customfield_11424": null,
+    "customfield_11425": null,
+    "customfield_11427": null,
+    "customfield_11429": null,
+    "customfield_11430": null,
+    "customfield_11431": null,
+    "customfield_11432": null,
+    "customfield_11433": null,
+    "customfield_11434": null,
+    "customfield_11436": {
+      "id": "10528",
+      "self": "https://fourkites.atlassian.net/rest/api/2/customFieldOption/10528",
+      "value": "No"
+    },
+    "customfield_11437": null,
+    "customfield_11438": null,
+    "customfield_11439": null,
+    "customfield_11441": null,
+    "customfield_11442": null,
+    "customfield_11443": null,
+    "customfield_11445": null,
+    "customfield_11447": null,
+    "customfield_11449": null,
+    "customfield_11450": null,
+    "customfield_11451": null,
+    "customfield_11452": null,
+    "customfield_11453": null,
+    "customfield_11454": null,
+    "customfield_11455": null,
+    "customfield_11457": null,
+    "customfield_11458": null,
+    "customfield_11463": null,
+    "customfield_11464": null,
+    "customfield_11465": null,
+    "customfield_11466": null,
+    "customfield_11469": null,
+    "customfield_11470": null,
+    "customfield_11471": null,
+    "customfield_11472": null,
+    "customfield_11473": null,
+    "customfield_11475": null,
+    "customfield_11479": null,
+    "customfield_11480": null,
+    "customfield_11481": null,
+    "customfield_11482": null,
+    "customfield_11485": null,
+    "customfield_11490": null,
+    "customfield_11491": null,
+    "customfield_11492": null,
+    "customfield_11493": null,
+    "customfield_11494": null,
+    "customfield_11495": null,
+    "customfield_11496": null,
+    "customfield_11497": null,
+    "customfield_11498": null,
+    "customfield_11499": null,
+    "customfield_11500": null,
+    "customfield_11501": "Whenever FastTrack creates facility, it will take address details that is currently present in the address table. Update in address table  after facility creation won’t reflect in FastTrack. The same case happened here.",
+    "customfield_11502": null,
+    "customfield_11503": {
+      "errorMessage": "The service project you are trying to view does not exist.",
+      "i18nErrorMessage": {
+        "i18nKey": "sd.jsm.agent.servicedesk.error.servicedesk.missing",
+        "parameters": []
+      }
+    },
+    "customfield_11504": null,
+    "customfield_11505": null,
+    "customfield_11506": null,
+    "customfield_11507": null,
+    "customfield_11509": null,
+    "customfield_11510": null,
+    "customfield_11511": null,
+    "customfield_11512": null,
+    "customfield_11513": null,
+    "customfield_11514": null,
+    "customfield_11515": null,
+    "customfield_11516": null,
+    "customfield_11523": null,
+    "customfield_11524": null,
+    "customfield_11526": [
+      {
+        "id": "11002",
+        "self": "https://fourkites.atlassian.net/rest/api/2/customFieldOption/11002",
+        "value": "Design/Implementation miss"
+      }
+    ],
+    "customfield_11528": null,
+    "customfield_11535": null,
+    "customfield_11536": null,
+    "customfield_11537": null,
+    "customfield_11539": "",
+    "customfield_11540": 0.0,
+    "customfield_11541": null,
+    "customfield_11542": null,
+    "customfield_11544": null,
+    "customfield_11545": {
+      "id": "11106",
+      "self": "https://fourkites.atlassian.net/rest/api/2/customFieldOption/11106",
+      "value": "Accuracy improvement"
+    },
+    "customfield_11555": null,
+    "customfield_11557": null,
+    "customfield_11558": null,
+    "customfield_11559": null,
+    "customfield_11560": null,
+    "customfield_11566": null,
+    "customfield_11567": null,
+    "customfield_11568": null,
+    "customfield_11580": null,
+    "customfield_11581": {
+      "id": "11311",
+      "self": "https://fourkites.atlassian.net/rest/api/2/customFieldOption/11311",
+      "value": "No"
+    },
+    "customfield_11584": null,
+    "customfield_11585": null,
+    "customfield_11586": null,
+    "customfield_11587": null,
+    "customfield_11588": null,
+    "customfield_11589": null,
+    "customfield_11590": {
+      "id": "11332",
+      "self": "https://fourkites.atlassian.net/rest/api/2/customFieldOption/11332",
+      "child": {
+        "id": "11899",
+        "self": "https://fourkites.atlassian.net/rest/api/2/customFieldOption/11899",
+        "value": "Geo Service"
+      },
+      "value": "ADM"
+    },
+    "customfield_11593": null,
+    "customfield_11594": null,
+    "customfield_11595": null,
+    "customfield_11597": null,
+    "customfield_11606": null,
+    "customfield_11611": null,
+    "customfield_11612": null,
+    "customfield_11613": null,
+    "customfield_11614": null,
+    "customfield_11615": null,
+    "customfield_11616": null,
+    "customfield_11617": null,
+    "customfield_11618": null,
+    "customfield_11619": null,
+    "customfield_11620": null,
+    "customfield_11621": {
+      "errorMessage": "The service project you are trying to view does not exist.",
+      "i18nErrorMessage": {
+        "i18nKey": "sd.jsm.agent.servicedesk.error.servicedesk.missing",
+        "parameters": []
+      }
+    },
+    "customfield_11622": null,
+    "customfield_11625": null,
+    "customfield_11628": null,
+    "customfield_11629": null,
+    "customfield_11637": null,
+    "customfield_11640": null,
+    "customfield_11642": null,
+    "customfield_11643": null,
+    "customfield_11644": null,
+    "customfield_11646": null,
+    "customfield_11647": null,
+    "customfield_11649": null,
+    "customfield_11650": null,
+    "customfield_11651": null,
+    "customfield_11652": null,
+    "customfield_11653": null,
+    "customfield_11654": null,
+    "customfield_11655": null,
+    "customfield_11656": null,
+    "customfield_11657": null,
+    "customfield_11658": null,
+    "customfield_11659": null,
+    "customfield_11660": null,
+    "customfield_11661": null,
+    "customfield_11662": null,
+    "customfield_11666": null,
+    "customfield_11667": null,
+    "customfield_11668": null,
+    "customfield_11669": null,
+    "customfield_11670": null,
+    "customfield_11671": null,
+    "customfield_11672": null,
+    "customfield_11673": null,
+    "customfield_11674": {
+      "id": "12746",
+      "self": "https://fourkites.atlassian.net/rest/api/2/customFieldOption/12746",
+      "value": "Employee"
+    },
+    "customfield_11675": {
+      "id": "12748",
+      "self": "https://fourkites.atlassian.net/rest/api/2/customFieldOption/12748",
+      "value": "Yes"
+    },
+    "customfield_11676": null,
+    "customfield_11677": null,
+    "customfield_11678": null,
+    "customfield_11679": null,
+    "customfield_11680": null,
+    "customfield_11682": null,
+    "customfield_11683": null,
+    "customfield_11684": null,
+    "customfield_11685": null,
+    "customfield_11686": null,
+    "customfield_11687": null,
+    "customfield_11688": null,
+    "customfield_11689": null,
+    "customfield_11690": null,
+    "customfield_11691": null,
+    "customfield_11692": null,
+    "customfield_11693": null,
+    "customfield_11694": null,
+    "customfield_11695": null,
+    "customfield_11696": null,
+    "customfield_11697": null,
+    "customfield_11698": null,
+    "customfield_11699": null,
+    "customfield_11700": null,
+    "customfield_11701": null,
+    "customfield_11702": null,
+    "customfield_11703": null,
+    "customfield_11704": null,
+    "customfield_11705": null,
+    "customfield_11708": [],
+    "customfield_11709": null,
+    "customfield_11710": null,
+    "customfield_11711": null,
+    "customfield_11713": null,
+    "customfield_11714": null,
+    "customfield_11715": null,
+    "customfield_11716": null,
+    "customfield_11717": null,
+    "customfield_11718": null,
+    "customfield_11719": null,
+    "customfield_11720": null,
+    "customfield_11721": null,
+    "customfield_11722": null,
+    "customfield_11724": null,
+    "customfield_11725": null,
+    "customfield_11732": null,
+    "customfield_11733": null,
+    "customfield_11734": null,
+    "customfield_11735": null,
+    "customfield_11736": null,
+    "customfield_11737": null,
+    "customfield_11738": null,
+    "customfield_11739": null,
+    "customfield_11740": null,
+    "customfield_11741": null,
+    "customfield_11742": null,
+    "customfield_11743": null,
+    "customfield_11746": null,
+    "customfield_11747": null,
+    "customfield_11748": null,
+    "customfield_11749": null,
+    "customfield_11750": null,
+    "customfield_11751": null,
+    "customfield_11752": null,
+    "customfield_11753": null,
+    "customfield_11754": null,
+    "customfield_11755": null,
+    "customfield_11756": null,
+    "customfield_11757": null,
+    "customfield_11758": 90.0,
+    "customfield_11759": null,
+    "customfield_11760": null,
+    "customfield_11761": "2023-05-25T02:20:00.000-0500",
+    "customfield_11762": null,
+    "customfield_11763": "2023-10-24T14:44:00.000-0500",
+    "customfield_11764": "2023-03-23T13:31:00.000-0500",
+    "customfield_11765": "2023-03-02T12:32:00.000-0600",
+    "customfield_11766": "2023-02-09T12:32:00.000-0600",
+    "customfield_11767": null,
+    "customfield_12786": null,
+    "customfield_12790": null,
+    "customfield_12791": null,
+    "customfield_12792": null,
+    "customfield_12793": null,
+    "customfield_12794": null,
+    "customfield_12795": "2022-12-29T13:44:00.000-0600",
+    "customfield_12796": null,
+    "customfield_12797": null,
+    "customfield_12798": null,
+    "customfield_12800": null,
+    "customfield_12802": null,
+    "customfield_12810": null,
+    "customfield_12811": null,
+    "customfield_12813": {
+      "choice": [
+        {
+          "label": "Core Tracking",
+          "value": 1684316240654,
+          "children": [
+            {
+              "label": "Fast Track",
+              "value": 1684316731772,
+              "children": [
+                {
+                  "label": "Stop Address",
+                  "value": 1684316751766,
+                  "children": []
+                }
+              ]
+            }
+          ]
+        }
+      ],
+      "isMultiple": false
+    },
+    "customfield_12816": null,
+    "customfield_12820": null,
+    "customfield_12821": null,
+    "customfield_12822": null,
+    "customfield_12824": null,
+    "customfield_12825": null,
+    "customfield_12826": null,
+    "customfield_12827": null,
+    "customfield_12828": null,
+    "aggregatetimespent": 3600,
+    "timeoriginalestimate": null,
+    "aggregatetimeestimate": 0,
+    "statuscategorychangedate": "2023-05-25T02:39:56.322-0500",
+    "aggregatetimeoriginalestimate": null
+  }
+}
