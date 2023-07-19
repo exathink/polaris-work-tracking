@@ -10,6 +10,7 @@
 import json
 import pkg_resources
 from polaris.utils.collections import Fixture
+from polaris.work_tracking.enums import CustomTagMappingType
 from .fixtures.jira_fixtures import *
 from polaris.work_tracking.integrations.atlassian.jira_work_items_source import JiraProject
 from polaris.common import db
@@ -407,7 +408,7 @@ class TestCustomParentMapping:
 
             mapped_data = project.map_issue_to_work_item_data(fixture.jira_issue)
 
-            assert mapped_data['parent_source_display_id'] in [ "MM-5484" , "MM-5485"]
+            assert mapped_data['parent_source_display_id'] in ["MM-5484", "MM-5485"]
 
         def it_returns_the_custom_parent_source_id_for_features_only(self, setup):
             fixture = setup
@@ -489,8 +490,8 @@ class TestCustomParentMapping:
 
             assert mapped_data['parent_source_display_id'] == "PP-428"
 
-
-        def it_overrides_the_default_and_returns_the_custom_parent_when_the_custom_type_mapping_is_specified(self, setup):
+        def it_overrides_the_default_and_returns_the_custom_parent_when_the_custom_type_mapping_is_specified(self,
+                                                                                                             setup):
             fixture = setup
 
             work_items_source = fixture.work_items_source
@@ -507,6 +508,7 @@ class TestCustomParentMapping:
             mapped_data = project.map_issue_to_work_item_data(fixture.jira_issue)
 
             assert mapped_data['parent_source_display_id'] == "MM-5485"
+
 
 class TestCustomTagging:
     class TestCustomTagFromParentType:
@@ -534,7 +536,7 @@ class TestCustomTagging:
                 work_items_source.parameters = dict(
                     custom_tag_mapping=[
                         dict(
-                            mapping_type='path-selector',
+                            mapping_type=CustomTagMappingType.path_selector.value,
                             path_selector_mapping=dict(
                                 selector="((fields.issuelinks[?type.name=='Parent/Child'])[?outwardIssue.fields.issuetype.name == 'Feature'])[0]",
                                 tag="feature-item"
@@ -547,3 +549,108 @@ class TestCustomTagging:
             mapped_data = project.map_issue_to_work_item_data(fixture.jira_issue)
 
             assert 'custom_tag:feature-item' in mapped_data['tags']
+
+    class TestCustomTagFromCustomField:
+        @pytest.fixture()
+        def setup(self, jira_work_item_source_fixture, cleanup):
+            work_items_source, _, _ = jira_work_item_source_fixture
+
+            # this payload contains an issue with a custom parent link specified by a custom link in the
+            # issue payload.
+            jira_api_issue_with_components = json.loads(
+                pkg_resources.resource_string(__name__, 'data/jira_payload_with_custom_field_populated.json'))
+
+            yield Fixture(
+                jira_issue=jira_api_issue_with_components,
+                work_items_source=work_items_source
+            )
+
+        def it_adds_a_custom_tag_when_the_custom_field_is_populated(self, setup):
+            fixture = setup
+
+            work_items_source = fixture.work_items_source
+            with db.orm_session() as session:
+                session.add(work_items_source)
+                work_items_source.custom_fields.append(
+                    dict(
+                        id="customfield_11418",
+                        name="Associated Case (SF)",
+                    )
+                )
+                # set to the selector for any ch
+                work_items_source.parameters = dict(
+                    custom_tag_mapping=[
+                        dict(
+                            mapping_type=CustomTagMappingType.custom_field_populated.value,
+                            custom_field_mapping=dict(
+                                field_name="Associated Case (SF)",
+                                tag="support-item"
+                            )
+                        )
+                    ]
+                )
+                project = JiraProject(work_items_source)
+
+            mapped_data = project.map_issue_to_work_item_data(fixture.jira_issue)
+
+            assert 'custom_tag:support-item' in mapped_data['tags']
+
+        def it_does_not_add_a_custom_tag_when_the_custom_field_is_not_populated(self, setup):
+            fixture = setup
+
+            work_items_source = fixture.work_items_source
+            with db.orm_session() as session:
+                session.add(work_items_source)
+                work_items_source.custom_fields.append(
+                    dict(
+                        id="customfield_11422",
+                        name="Null Field",
+                    )
+                )
+                # set to the selector for any ch
+                work_items_source.parameters = dict(
+                    custom_tag_mapping=[
+                        dict(
+                            mapping_type=CustomTagMappingType.custom_field_populated.value,
+                            custom_field_mapping=dict(
+                                field_name="Null Field",
+                                tag="support-item"
+                            )
+                        )
+                    ]
+                )
+                project = JiraProject(work_items_source)
+
+            mapped_data = project.map_issue_to_work_item_data(fixture.jira_issue)
+
+            assert 'custom_tag:support-item' not in mapped_data['tags']
+
+        def it_does_not_add_a_custom_tag_when_the_custom_field_does_not_exist(self, setup):
+            fixture = setup
+
+            work_items_source = fixture.work_items_source
+            with db.orm_session() as session:
+                session.add(work_items_source)
+                work_items_source.custom_fields.append(
+                    dict(
+                        id="customfield_nonexistent",
+                        name="Non Existent Field",
+                    )
+                )
+                # set to the selector for any ch
+                work_items_source.parameters = dict(
+                    custom_tag_mapping=[
+                        dict(
+                            mapping_type=CustomTagMappingType.custom_field_populated.value,
+                            custom_field_mapping=dict(
+                                field_name="Non Existent Field",
+                                tag="support-item"
+                            )
+                        )
+                    ]
+                )
+                project = JiraProject(work_items_source)
+
+            mapped_data = project.map_issue_to_work_item_data(fixture.jira_issue)
+
+            assert 'custom_tag:support-item' not in mapped_data['tags']
