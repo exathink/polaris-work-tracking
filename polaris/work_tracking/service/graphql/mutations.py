@@ -487,8 +487,14 @@ class PathSelectorMappingInput(graphene.InputObjectType):
                                         jmespathexpression that returns a value at a selected node in the input. 
                                         The tag is applied if the expression returns a non-null value
                                         """)
-    tag = graphene.String(required=True)
+    tag = graphene.String(required=True, description="A tag of the form custom_tag:<tag> will be added to the tags")
 
+class CustomFieldMappingInput(graphene.InputObjectType):
+    field_name = graphene.String(required=True, description="""
+                                        Name of the custom field. Must match exactly in the 
+                                        associated meta data for custom fields
+                                        """)
+    tag = graphene.String(required=True, description="A tag of the form custom_tag:<tag> will be added to the tags")
 
 class WorkItemsSourceCustomTagMappingItem(graphene.InputObjectType):
     # The types here must be one of the values in polaris.work_tracking.enums.CustomTagMapping
@@ -496,6 +502,7 @@ class WorkItemsSourceCustomTagMappingItem(graphene.InputObjectType):
     # exactly one of these should be set in the input. The lack of union types in graphene inputs
     # forces us to use this awkward pattern,
     path_selector_mapping = PathSelectorMappingInput(required=False)
+    custom_field_mapping = CustomFieldMappingInput(required=False)
 
 class WorkItemsSourceCustomTagMapping(graphene.InputObjectType):
     custom_tag_mapping = graphene.List(

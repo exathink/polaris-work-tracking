@@ -17,6 +17,7 @@ from polaris.common import db
 from polaris.messaging.test_utils import assert_topic_and_message
 from polaris.messaging.topics import WorkItemsTopic
 from polaris.messaging.messages import ImportWorkItems
+from polaris.work_tracking.enums import CustomTagMappingType
 from polaris.work_tracking.messages import ParentPathSelectorsChanged
 
 from polaris.work_tracking.db.model import WorkItemsSource
@@ -363,6 +364,61 @@ class TestUpdateWorkItemsSourceParameters(WorkItemsSourceTest):
                             path_selector_mapping = dict(
                                 selector="((fields.issuelinks[?type.name=='Parent/Child'])[?outwardIssue.fields.issuetype.name == 'Feature'])[0]",
                                 tag="feature-item"
+                            )
+                        )
+                    ]
+                )
+
+        def it_creates_a_custom_field_populated_mapping(self, setup):
+            fixture = setup
+            organization_key = fixture.organization_key
+            work_items_source = fixture.work_items_source
+            connector_key = fixture.connector_key
+
+            client = Client(schema)
+            mutation = """
+                mutation updateWorkItemsSourceCustomTagMapping(
+                    $updateWorkItemsSourceCustomTagMappingInput: UpdateWorkItemsSourceCustomTagMappingInput! 
+                    ) {
+                        updateWorkItemsSourceCustomTagMapping(updateWorkItemsSourceCustomTagMappingInput: $updateWorkItemsSourceCustomTagMappingInput) {
+                            success
+                            errorMessage
+                            updated
+                        }
+                    } 
+            """
+            with patch('polaris.work_tracking.publish.publish'):
+                result = client.execute(mutation, variable_values=dict(
+                    updateWorkItemsSourceCustomTagMappingInput=dict(
+                        organizationKey=organization_key,
+                        connectorKey=str(connector_key),
+                        workItemsSourceKeys=[
+                            str(work_items_source.key)
+                        ],
+                        workItemsSourceCustomTagMapping=dict(
+                          customTagMapping= [
+                              dict(
+                                mappingType=CustomTagMappingType.custom_field_populated.value,
+                                customFieldMapping=dict(
+                                    fieldName="Associated Case (SF)",
+                                    tag="support-item"
+                                )
+                            )]
+                        )
+                    )))
+            assert result.get('errors') is None
+            assert result['data']['updateWorkItemsSourceCustomTagMapping']['success']
+            assert result['data']['updateWorkItemsSourceCustomTagMapping']['updated'] == 1
+
+            with db.orm_session() as session:
+                source = WorkItemsSource.find_by_key(session, work_items_source.key)
+                assert source.parameters == dict(
+                    custom_tag_mapping=[
+                        dict(
+                            mapping_type=CustomTagMappingType.custom_field_populated.value,
+                            custom_field_mapping = dict(
+                                field_name="Associated Case (SF)",
+                                tag="support-item"
                             )
                         )
                     ]
