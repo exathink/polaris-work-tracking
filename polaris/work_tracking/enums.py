@@ -13,3 +13,4 @@ from enum import Enum
 # Author: Krishna Kumar
 class CustomTagMappingType(Enum):
     path_selector = 'path-selector'
+    custom_field_populated = 'custom-field-populated'

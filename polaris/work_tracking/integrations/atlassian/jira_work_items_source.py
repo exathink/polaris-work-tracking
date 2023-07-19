@@ -155,17 +155,36 @@ class JiraProject(JiraWorkItemsSource):
             if parent_link_custom_field in fields:
                 return fields.get(parent_link_custom_field)
 
-
-
-
-
     def process_tags(self, issue, fields, issue_type):
-        def map_path_selector_tags(issue, mapping, tags):
-            path_selector_mapping = mapping.get('path_selector_mapping')
-            if path_selector_mapping is not None:
-                if 'selector' in path_selector_mapping and jmespath.search(path_selector_mapping['selector'],
-                                                                           issue) is not None:
-                    tags.add(f"custom_tag:{path_selector_mapping.get('tag')}")
+        def apply_custom_tags(issue, tags):
+            def map_path_selector_tag(issue, mapping, tags):
+                path_selector_mapping = mapping.get('path_selector_mapping')
+                if path_selector_mapping is not None:
+                    if 'selector' in path_selector_mapping and jmespath.search(path_selector_mapping['selector'],
+                                                                               issue) is not None:
+                        tags.add(f"custom_tag:{path_selector_mapping.get('tag')}")
+
+            def map_custom_field_populated_tag(issue, mapping, tags):
+                custom_field_mapping = mapping.get('custom_field_mapping')
+                if custom_field_mapping is not None:
+                    if 'field_name' in custom_field_mapping:
+                        field = find(self.work_items_source.custom_fields,
+                                     lambda field: field['name'] == custom_field_mapping['field_name'])
+                        if field is not None and 'id' in field:
+                            value = issue['fields'].get(field['id'])
+                            if value is not None:
+                                tags.add(f"custom_tag:{custom_field_mapping.get('tag')}")
+
+            if self.custom_tag_mapping is not None:
+                for mapping in self.custom_tag_mapping:
+                    if mapping.get('mapping_type') == CustomTagMappingType.path_selector.value:
+                        map_path_selector_tag(issue, mapping, tags)
+                    elif mapping.get('mapping_type') == CustomTagMappingType.custom_field_populated.value:
+                        map_custom_field_populated_tag(issue, mapping, tags)
+
+                    else:
+                        logger.warning(
+                            f"Unknown custom tag mapping type {mapping.get('mapping_type')} found when mapping custom tags for Jira work items source")
 
         tags = set(fields.get('labels', []))
         if self.is_custom_type(issue_type):
@@ -175,12 +194,7 @@ class JiraProject(JiraWorkItemsSource):
             tags.add(f"component:{component['name']}")
 
         #apply any custom tag mappers
-        if self.custom_tag_mapping is not None:
-            for mapping in self.custom_tag_mapping:
-                if mapping.get('mapping_type') == CustomTagMappingType.path_selector.value:
-                    map_path_selector_tags(issue, mapping, tags)
-                else:
-                    logger.warning(f"Unknown custom tag mapping type {mapping.get('mapping_type')} found when mapping custom tags for Jira work items source")
+        apply_custom_tags(issue, tags)
 
         return list(tags)
 
