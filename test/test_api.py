@@ -128,10 +128,11 @@ class TestSyncWorkItem:
         api.sync_work_items(empty_source.key, work_item_list=new_work_items)
         updated_work_item = new_work_items[0]
         updated_work_item['source_state'] = 'closed'
+        updated_work_item['priority'] = 'Medium'
         result = api.sync_work_item(empty_source.key, work_item_data=updated_work_item)[0]
         assert result['is_updated']
         assert db.connection().execute(
-            f"select count(id) from work_tracking.work_items where work_items_source_id={empty_source.id} and key='{result['key']}' and source_state='closed'"
+            f"select count(id) from work_tracking.work_items where work_items_source_id={empty_source.id} and key='{result['key']}' and source_state='closed' and priority='Medium'"
         ).scalar() == 1
 
     def it_updates_epic_id_when_epic_work_item_exists(self, setup_work_items, new_work_items):
@@ -142,10 +143,11 @@ class TestSyncWorkItem:
         api.sync_work_items(empty_source.key, work_item_list=new_work_items)
         updated_work_item = new_work_items[0]
         updated_work_item['parent_source_display_id'] = new_work_items[-1]['source_display_id']
+        updated_work_item['priority'] = 'Medium'
         result = api.sync_work_item(empty_source.key, work_item_data=updated_work_item)[0]
         assert result['is_updated']
         assert db.connection().execute(
-            f"select count(id) from work_tracking.work_items where work_items_source_id={empty_source.id} and key='{result['key']}' and parent_id is not NULL"
+            f"select count(id) from work_tracking.work_items where work_items_source_id={empty_source.id} and key='{result['key']}' and parent_id is not NULL and priority = 'Medium'"
         ).scalar() == 1
 
     def it_does_not_update_epic_id_when_epic_work_item_does_not_exist(self, setup_work_items, new_work_items):
