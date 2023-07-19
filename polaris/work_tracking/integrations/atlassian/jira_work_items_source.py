@@ -160,6 +160,13 @@ class JiraProject(JiraWorkItemsSource):
 
 
     def process_tags(self, issue, fields, issue_type):
+        def map_path_selector_tags(issue, mapping, tags):
+            path_selector_mapping = mapping.get('path_selector_mapping')
+            if path_selector_mapping is not None:
+                if 'selector' in path_selector_mapping and jmespath.search(path_selector_mapping['selector'],
+                                                                           issue) is not None:
+                    tags.add(f"custom_tag:{path_selector_mapping.get('tag')}")
+
         tags = set(fields.get('labels', []))
         if self.is_custom_type(issue_type):
             tags.add(f'custom_type:{issue_type}')
@@ -171,14 +178,13 @@ class JiraProject(JiraWorkItemsSource):
         if self.custom_tag_mapping is not None:
             for mapping in self.custom_tag_mapping:
                 if mapping.get('mapping_type') == CustomTagMappingType.path_selector.value:
-                    path_selector_mapping = mapping.get('path_selector_mapping')
-                    if path_selector_mapping is not None:
-                        if 'selector' in path_selector_mapping and jmespath.search(path_selector_mapping['selector'], issue) is not None:
-                            tags.add(f"custom_tag:{path_selector_mapping.get('tag')}")
+                    map_path_selector_tags(issue, mapping, tags)
                 else:
                     logger.warning(f"Unknown custom tag mapping type {mapping.get('mapping_type')} found when mapping custom tags for Jira work items source")
 
         return list(tags)
+
+
 
     def get_server_timezone_offset(self):
         # This is an awful hack to get around Jira APIs
