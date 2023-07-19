@@ -565,7 +565,7 @@ class TestCustomTagging:
                 work_items_source=work_items_source
             )
 
-        def it_adds_a_custom_tag_when_the_parent_is_a_feature(self, setup):
+        def it_adds_a_custom_tag_when_the_custom_field_is_populated(self, setup):
             fixture = setup
 
             work_items_source = fixture.work_items_source
@@ -594,3 +594,63 @@ class TestCustomTagging:
             mapped_data = project.map_issue_to_work_item_data(fixture.jira_issue)
 
             assert 'custom_tag:support-item' in mapped_data['tags']
+
+        def it_does_not_add_a_custom_tag_when_the_custom_field_is_not_populated(self, setup):
+            fixture = setup
+
+            work_items_source = fixture.work_items_source
+            with db.orm_session() as session:
+                session.add(work_items_source)
+                work_items_source.custom_fields.append(
+                    dict(
+                        id="customfield_11422",
+                        name="Null Field",
+                    )
+                )
+                # set to the selector for any ch
+                work_items_source.parameters = dict(
+                    custom_tag_mapping=[
+                        dict(
+                            mapping_type=CustomTagMappingType.custom_field_populated.value,
+                            custom_field_mapping=dict(
+                                field_name="Null Field",
+                                tag="support-item"
+                            )
+                        )
+                    ]
+                )
+                project = JiraProject(work_items_source)
+
+            mapped_data = project.map_issue_to_work_item_data(fixture.jira_issue)
+
+            assert 'custom_tag:support-item' not in mapped_data['tags']
+
+        def it_does_not_add_a_custom_tag_when_the_custom_field_does_not_exist(self, setup):
+            fixture = setup
+
+            work_items_source = fixture.work_items_source
+            with db.orm_session() as session:
+                session.add(work_items_source)
+                work_items_source.custom_fields.append(
+                    dict(
+                        id="customfield_nonexistent",
+                        name="Non Existent Field",
+                    )
+                )
+                # set to the selector for any ch
+                work_items_source.parameters = dict(
+                    custom_tag_mapping=[
+                        dict(
+                            mapping_type=CustomTagMappingType.custom_field_populated.value,
+                            custom_field_mapping=dict(
+                                field_name="Non Existent Field",
+                                tag="support-item"
+                            )
+                        )
+                    ]
+                )
+                project = JiraProject(work_items_source)
+
+            mapped_data = project.map_issue_to_work_item_data(fixture.jira_issue)
+
+            assert 'custom_tag:support-item' not in mapped_data['tags']
