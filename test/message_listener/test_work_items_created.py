@@ -38,7 +38,8 @@ work_item_summary = dict(
     tags=['acre'],
     last_updated=datetime.utcnow(),
     created_at=datetime.utcnow(),
-    state='open'
+    state='open',
+    priority='Medium'
 )
 
 
@@ -87,4 +88,41 @@ class TestJiraWorkItemsCreated:
         assert len(result) == 1
         publisher.assert_topic_called_with_message(WorkItemsTopic, ImportWorkItem)
 
+
+    def it_sends_all_fields_to_analytics(self, new_work_items_summary):
+        field_list = [
+            "key",
+            "display_id",
+            "work_item_type",
+            "url",
+            "name",
+            "is_bug",
+            "tags",
+            "state",
+            "created_at",
+            "description",
+            "source_id",
+            "is_epic",
+            "parent_source_display_id",
+            "priority"
+        ]
+        work_items = new_work_items_summary
+        message = fake_send(
+            WorkItemsCreated(
+                send=dict(
+                    organization_key=exathink_organization_key,
+                    work_items_source_key=jira_work_items_source_key,
+                    new_work_items=[
+                        dict_merge(
+                            dict_drop(work_item, ['parent_id']),
+                            dict(parent_source_display_id='Epic-123', is_epic=False, parent_key=None)
+                        )
+                        for work_item in work_items
+                    ]
+                )
+            )
+        )
+        for work_item in message['new_work_items']:
+            for field in field_list:
+                assert field in work_item
 
