@@ -90,7 +90,7 @@ def sync_work_items(work_items_source_key, work_item_list, join_this=None):
         attributes_to_check = ['name', 'description', 'is_bug', 'work_item_type', 'is_epic', 'tags', 'url',
                                'source_state',
                                'source_display_id', 'api_payload', 'work_items_source_id', 'commit_identifiers',
-                               'parent_source_display_id']
+                               'parent_source_display_id','priority']
         # mark unchanged items in the set. We use this downstream to
         # signal that there is no need to propagate this update beyond this subsystem.
         unchanged_items = select([
@@ -150,6 +150,7 @@ def sync_work_items(work_items_source_key, work_item_list, join_this=None):
                     source_last_updated=upsert.excluded.source_last_updated,
                     source_display_id=upsert.excluded.source_display_id,
                     source_state=upsert.excluded.source_state,
+                    priority=upsert.excluded.priority,
                     parent_source_display_id=upsert.excluded.parent_source_display_id,
                     parent_id=upsert.excluded.parent_id,
                     last_sync=upsert.excluded.last_sync,
@@ -387,7 +388,9 @@ def sync_work_items(work_items_source_key, work_item_list, join_this=None):
                     last_sync=work_item.last_sync,
                     source_id=work_item.source_id,
                     commit_identifiers=work_item.commit_identifiers,
-                    is_updated=work_item.has_changes
+                    is_updated=work_item.has_changes,
+                    priority=work_item.priority
+
                 )
                 for work_item in sync_result
             ]
