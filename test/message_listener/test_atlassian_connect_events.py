@@ -60,6 +60,12 @@ def create_issue(project_id, issue_key, issue_id, issue_type='Story', epic_link=
                 id="10000",
                 name=issue_type
             ),
+            priority=dict(
+                id=3,
+                name="Medium",
+                self="https://exathinkdev.atlassian.net/rest/api/2/priority/3",
+                iconUrl="https://exathinkdev.atlassian.net/images/icons/priorities/medium.svg"
+            ),
             customfield_10014=epic_link,
             components=[
                 {

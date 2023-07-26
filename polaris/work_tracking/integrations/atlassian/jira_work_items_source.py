@@ -121,6 +121,7 @@ class JiraProject(JiraWorkItemsSource):
                     source_last_updated=self.jira_time_to_utc_time_string(fields.get('updated')),
                     source_created_at=self.jira_time_to_utc_time_string(fields.get('created')),
                     source_state=fields.get('status').get('name'),
+                    priority=fields.get('priority').get('name'),
 
                     parent_source_display_id=parent_source_display_id,
                     api_payload=issue,

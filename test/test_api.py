@@ -87,6 +87,40 @@ class TestSyncWorkItem:
             f"select count(id) from work_tracking.work_items where work_items_source_id={empty_source.id} and key='{result['key']}'"
         ).scalar() == 1
 
+    def it_returns_the_fields_that_need_to_be_sent_out_to_analytics(self, setup_work_items, new_work_items):
+        _, work_items_sources = setup_work_items
+        empty_source = work_items_sources['empty']
+        # Import once
+        field_list = [
+                      "is_new",
+                      "key",
+                      "work_items_source_key",
+                      "work_item_type",
+                      "display_id",
+                      "url",
+                      "name",
+                      "description",
+                      "is_bug",
+                      "is_epic",
+                      "parent_source_display_id",
+                      "tags",
+                      "created_at",
+                      "updated_at",
+                      "last_sync",
+                      "source_id",
+                      "commit_identifiers",
+                      "is_updated",
+                      "priority"
+                      ]
+
+        result = api.sync_work_item(empty_source.key, work_item_data=new_work_items[0])[0]
+        for field in field_list:
+            assert field in result
+
+
+
+
+
     def it_updates_a_work_item_without_epic_info(self, setup_work_items, new_work_items):
         _, work_items_sources = setup_work_items
         empty_source = work_items_sources['empty']
@@ -94,10 +128,11 @@ class TestSyncWorkItem:
         api.sync_work_items(empty_source.key, work_item_list=new_work_items)
         updated_work_item = new_work_items[0]
         updated_work_item['source_state'] = 'closed'
+        updated_work_item['priority'] = 'Medium'
         result = api.sync_work_item(empty_source.key, work_item_data=updated_work_item)[0]
         assert result['is_updated']
         assert db.connection().execute(
-            f"select count(id) from work_tracking.work_items where work_items_source_id={empty_source.id} and key='{result['key']}' and source_state='closed'"
+            f"select count(id) from work_tracking.work_items where work_items_source_id={empty_source.id} and key='{result['key']}' and source_state='closed' and priority='Medium'"
         ).scalar() == 1
 
     def it_updates_epic_id_when_epic_work_item_exists(self, setup_work_items, new_work_items):
@@ -108,10 +143,11 @@ class TestSyncWorkItem:
         api.sync_work_items(empty_source.key, work_item_list=new_work_items)
         updated_work_item = new_work_items[0]
         updated_work_item['parent_source_display_id'] = new_work_items[-1]['source_display_id']
+        updated_work_item['priority'] = 'Medium'
         result = api.sync_work_item(empty_source.key, work_item_data=updated_work_item)[0]
         assert result['is_updated']
         assert db.connection().execute(
-            f"select count(id) from work_tracking.work_items where work_items_source_id={empty_source.id} and key='{result['key']}' and parent_id is not NULL"
+            f"select count(id) from work_tracking.work_items where work_items_source_id={empty_source.id} and key='{result['key']}' and parent_id is not NULL and priority = 'Medium'"
         ).scalar() == 1
 
     def it_does_not_update_epic_id_when_epic_work_item_does_not_exist(self, setup_work_items, new_work_items):
