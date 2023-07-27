@@ -44,7 +44,7 @@ jira_api_issue_payload = {'id': '10343', 'self': 'https://urjuna.atlassian.net/r
                                                   'iconUrl': 'https://urjuna.atlassian.net/images/icons/priorities/medium.svg',
                                                   'name': 'Medium', 'id': '3'}, 'customfield_10101': None,
                                      'labels': ['data-integration', 'incremental-data-management'],
-                                     'customfield_10016': None, 'customfield_10017': None,
+                                     'customfield_10016': 98, 'customfield_10017': None,
                                      'customfield_10018': {'hasEpicLinkFieldDependency': False, 'showField': False,
                                                            'nonEditableReason': {'reason': 'PLUGIN_LICENSE_ERROR',
                                                                                  'message': 'The Parent Link is only available to Jira Premium users.'}},
@@ -264,9 +264,13 @@ class TestJiraWorkItemSource:
         assert mapped_data['api_payload']
         assert mapped_data['commit_identifiers']
         assert mapped_data['priority']
+        assert mapped_data['releases'] == []
+        assert mapped_data['story_points']
+
+
         # explicitly assert that these are the only fields mapped. The test should fail
         # and force a change in assertions if we change the mapping
-        assert len(mapped_data.keys()) == 16
+        assert len(mapped_data.keys()) == 18
 
     def it_maps_work_item_data_correctly_when_issue_has_parent_field(self, setup):
         fixture = setup
@@ -294,7 +298,7 @@ class TestJiraWorkItemSource:
         assert mapped_data['commit_identifiers']
         # explicitly assert that these are the only fields mapped. The test should fail
         # and force a change in assertions if we change the mapping
-        assert len(mapped_data.keys()) == 16
+        assert len(mapped_data.keys()) == 18
 
 
 class TestCustomTypeMapping:
