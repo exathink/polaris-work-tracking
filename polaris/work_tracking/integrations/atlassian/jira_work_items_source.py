@@ -109,29 +109,9 @@ class JiraProject(JiraWorkItemsSource):
 
                 mapped_type = self.map_work_item_type(issue_type)
 
-                #Get story points info
-                story_points = None
-                story_point_link = find(self.work_items_source.custom_fields, lambda field: field['name'] == 'Story Points')
-                if story_point_link is not None:
-                    story_point_custom_field = story_point_link.get('key')
-                    if story_point_custom_field in fields:
-                        story_points =  fields.get(story_point_custom_field)
+                story_points = self.get_story_points(fields)
 
-                if story_points is None:
-                    story_point_link = find(self.work_items_source.custom_fields,
-                                            lambda field: field['name'] == 'Story point estimate')
-                    if story_point_link is not None:
-                        story_point_custom_field = story_point_link.get('key')
-                        if story_point_custom_field in fields:
-                            story_points = fields.get(story_point_custom_field)
-
-                #Get Release information
-                version_list = fields.get('fixVersions')
-                versions = []
-                if version_list is not None:
-                    for version in version_list:
-                        versions.append(str(version))
-
+                versions = self.get_releases(fields)
 
                 mapped_data = dict(
                     name=fields.get('summary'),
@@ -160,6 +140,32 @@ class JiraProject(JiraWorkItemsSource):
                 raise ProcessingException(f"Map Jira issue failed: Issue did not have field called 'fields' {issue}")
         else:
             raise ProcessingException("Map Jira issue failed: Issue was None")
+
+    def get_releases(self, fields):
+        # Get Release information
+        version_list = fields.get('fixVersions')
+        versions = []
+        if version_list is not None:
+            for version in version_list:
+                versions.append(str(version))
+        return versions
+
+    def get_story_points(self, fields):
+        # Get story points info
+        story_points = None
+        story_point_link = find(self.work_items_source.custom_fields, lambda field: field['name'] == 'Story Points')
+        if story_point_link is not None:
+            story_point_custom_field = story_point_link.get('key')
+            if story_point_custom_field in fields:
+                story_points = fields.get(story_point_custom_field)
+        if story_points is None:
+            story_point_link = find(self.work_items_source.custom_fields,
+                                    lambda field: field['name'] == 'Story point estimate')
+            if story_point_link is not None:
+                story_point_custom_field = story_point_link.get('key')
+                if story_point_custom_field in fields:
+                    story_points = fields.get(story_point_custom_field)
+        return story_points
 
     def resolve_parent_source_key(self, issue):
         fields = issue.get('fields')
