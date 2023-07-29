@@ -109,10 +109,6 @@ class JiraProject(JiraWorkItemsSource):
 
                 mapped_type = self.map_work_item_type(issue_type)
 
-                story_points = self.get_story_points(fields)
-
-                versions = self.get_releases(fields)
-
                 mapped_data = dict(
                     name=fields.get('summary'),
                     description=fields.get('description'),
@@ -127,12 +123,12 @@ class JiraProject(JiraWorkItemsSource):
                     source_created_at=self.jira_time_to_utc_time_string(fields.get('created')),
                     source_state=fields.get('status').get('name'),
                     priority=fields.get('priority').get('name'),
-
+                    releases=self.get_fix_versions(fields),
+                    story_points=self.get_story_points(fields),
                     parent_source_display_id=parent_source_display_id,
                     api_payload=issue,
                     commit_identifiers=[issue.get('key'), issue.get('key').lower(), issue.get('key').capitalize()],
-                    releases=versions,
-                    story_points=story_points
+
                 )
 
                 return mapped_data
@@ -141,7 +137,7 @@ class JiraProject(JiraWorkItemsSource):
         else:
             raise ProcessingException("Map Jira issue failed: Issue was None")
 
-    def get_releases(self, fields):
+    def get_fix_versions(self, fields):
         # Get Release information
         version_list = fields.get('fixVersions')
         versions = []
