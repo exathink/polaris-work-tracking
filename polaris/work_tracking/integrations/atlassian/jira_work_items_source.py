@@ -123,7 +123,7 @@ class JiraProject(JiraWorkItemsSource):
                     source_created_at=self.jira_time_to_utc_time_string(fields.get('created')),
                     source_state=fields.get('status').get('name'),
                     priority=fields.get('priority').get('name'),
-                    releases=fields.get('fixVersions'),
+                    releases=self.get_fix_versions(fields),
                     story_points=self.get_story_points(fields),
                     parent_source_display_id=parent_source_display_id,
                     api_payload=issue,
@@ -136,6 +136,15 @@ class JiraProject(JiraWorkItemsSource):
                 raise ProcessingException(f"Map Jira issue failed: Issue did not have field called 'fields' {issue}")
         else:
             raise ProcessingException("Map Jira issue failed: Issue was None")
+
+    def get_fix_versions(self, fields):
+        # Get Release information
+        version_list = fields.get('fixVersions')
+        versions = []
+        if version_list is not None:
+            for version in version_list:
+                versions.append(str(version))
+        return versions
 
     def get_story_points(self, fields):
         # Get story points info

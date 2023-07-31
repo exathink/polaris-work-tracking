@@ -318,7 +318,7 @@ class WorkItem(Base):
     source_state = Column(String, nullable=False)
     source_display_id = Column(String, nullable=False)
     priority = Column(String, nullable=True)
-    releases = Column(JSONB, nullable=True, default=[], server_default='[]')
+    releases = Column(ARRAY(String), nullable=True, default=[], server_default='{}')
     story_points = Column(Integer, nullable=True)
 
     # timestamps for synchronization

@@ -18,7 +18,7 @@ depends_on = None
 
 def upgrade():
 
-    op.add_column('work_items', sa.Column('releases', postgresql.JSONB(astext_type=sa.Text()), server_default='[]', nullable=True), schema='work_tracking')
+    op.add_column('work_items', sa.Column('releases', postgresql.ARRAY(sa.String()), server_default='{}', nullable=True), schema='work_tracking')
     op.add_column('work_items', sa.Column('story_points', sa.Integer(), nullable=True), schema='work_tracking')
 
 
