@@ -30,7 +30,7 @@ jira_api_issue_payload = {'id': '10343', 'self': 'https://urjuna.atlassian.net/r
                                              '24x24': 'https://urjuna.atlassian.net/secure/projectavatar?size=small&s=small&pid=10008&avatarId=10405',
                                              '16x16': 'https://urjuna.atlassian.net/secure/projectavatar?size=xsmall&s=xsmall&pid=10008&avatarId=10405',
                                              '32x32': 'https://urjuna.atlassian.net/secure/projectavatar?size=medium&s=medium&pid=10008&avatarId=10405'}},
-                                     'customfield_10110': None, 'fixVersions': [], 'aggregatetimespent': None,
+                                     'customfield_10110': None, 'fixVersions': [{"id": "10003", "name": "V1", "self": "https://exathinkdev.atlassian.net/rest/api/2/version/10003", "archived": False, "released": False, "description": "", "releaseDate": "2023-08-03"}, {"id": "10004", "name": "V2", "self": "https://exathinkdev.atlassian.net/rest/api/2/version/10004", "archived": False, "released": False, "description": "", "releaseDate": "2023-09-01"}], 'aggregatetimespent': None,
                                      'customfield_10111': None, 'customfield_10112': None, 'resolution': None,
                                      'customfield_10113': None, 'customfield_10114': None, 'customfield_10105': None,
                                      'customfield_10106': [], 'customfield_10107': None, 'customfield_10108': None,
@@ -264,7 +264,7 @@ class TestJiraWorkItemSource:
         assert mapped_data['api_payload']
         assert mapped_data['commit_identifiers']
         assert mapped_data['priority']
-        assert mapped_data['releases'] == []
+        assert mapped_data['releases'] == ['V1','V2']
         assert mapped_data['story_points']
 
 

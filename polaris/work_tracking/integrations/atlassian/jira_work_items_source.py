@@ -143,7 +143,7 @@ class JiraProject(JiraWorkItemsSource):
         versions = []
         if version_list is not None:
             for version in version_list:
-                versions.append(str(version))
+                versions.append(version.get('name'))
         return versions
 
     def get_story_points(self, fields):
