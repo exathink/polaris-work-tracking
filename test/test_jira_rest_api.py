@@ -30,7 +30,7 @@ jira_api_issue_payload = {'id': '10343', 'self': 'https://urjuna.atlassian.net/r
                                              '24x24': 'https://urjuna.atlassian.net/secure/projectavatar?size=small&s=small&pid=10008&avatarId=10405',
                                              '16x16': 'https://urjuna.atlassian.net/secure/projectavatar?size=xsmall&s=xsmall&pid=10008&avatarId=10405',
                                              '32x32': 'https://urjuna.atlassian.net/secure/projectavatar?size=medium&s=medium&pid=10008&avatarId=10405'}},
-                                     'customfield_10110': None, 'fixVersions': [], 'aggregatetimespent': None,
+                                     'customfield_10110': None, 'fixVersions': [{"id": "10003", "name": "V1", "self": "https://exathinkdev.atlassian.net/rest/api/2/version/10003", "archived": False, "released": False, "description": "", "releaseDate": "2023-08-03"}, {"id": "10004", "name": "V2", "self": "https://exathinkdev.atlassian.net/rest/api/2/version/10004", "archived": False, "released": False, "description": "", "releaseDate": "2023-09-01"}], 'aggregatetimespent': None,
                                      'customfield_10111': None, 'customfield_10112': None, 'resolution': None,
                                      'customfield_10113': None, 'customfield_10114': None, 'customfield_10105': None,
                                      'customfield_10106': [], 'customfield_10107': None, 'customfield_10108': None,
@@ -44,7 +44,7 @@ jira_api_issue_payload = {'id': '10343', 'self': 'https://urjuna.atlassian.net/r
                                                   'iconUrl': 'https://urjuna.atlassian.net/images/icons/priorities/medium.svg',
                                                   'name': 'Medium', 'id': '3'}, 'customfield_10101': None,
                                      'labels': ['data-integration', 'incremental-data-management'],
-                                     'customfield_10016': None, 'customfield_10017': None,
+                                     'customfield_10016': 98, 'customfield_10017': None,
                                      'customfield_10018': {'hasEpicLinkFieldDependency': False, 'showField': False,
                                                            'nonEditableReason': {'reason': 'PLUGIN_LICENSE_ERROR',
                                                                                  'message': 'The Parent Link is only available to Jira Premium users.'}},
@@ -264,9 +264,13 @@ class TestJiraWorkItemSource:
         assert mapped_data['api_payload']
         assert mapped_data['commit_identifiers']
         assert mapped_data['priority']
+        assert mapped_data['releases'] == ['V1','V2']
+        assert mapped_data['story_points']
+
+
         # explicitly assert that these are the only fields mapped. The test should fail
         # and force a change in assertions if we change the mapping
-        assert len(mapped_data.keys()) == 16
+        assert len(mapped_data.keys()) == 18
 
     def it_maps_work_item_data_correctly_when_issue_has_parent_field(self, setup):
         fixture = setup
@@ -294,7 +298,7 @@ class TestJiraWorkItemSource:
         assert mapped_data['commit_identifiers']
         # explicitly assert that these are the only fields mapped. The test should fail
         # and force a change in assertions if we change the mapping
-        assert len(mapped_data.keys()) == 16
+        assert len(mapped_data.keys()) == 18
 
 
 class TestCustomTypeMapping:
@@ -375,6 +379,115 @@ class TestComponentMapping:
         mapped_data = project.map_issue_to_work_item_data(fixture.jira_issue)
 
         assert 'component:Entities' in mapped_data['tags']
+
+
+class TestStoryPointsMapping:
+    class TestWhenBothStoryPointsAndEstimatesAreProvided:
+        @pytest.fixture()
+        def setup(self, jira_work_item_source_fixture, cleanup):
+            work_items_source, _, _ = jira_work_item_source_fixture
+
+            # this payload contains both story points estimate and story points
+            jira_api_issue_with_story_points_info = json.loads(
+                pkg_resources.resource_string(__name__, 'data/jira_payload_for_story_points_mapping_both_provided.json'))
+
+            yield Fixture(
+                jira_issue=jira_api_issue_with_story_points_info,
+                work_items_source=work_items_source
+            )
+
+        def it_maps_data_to_story_points_value_provided(self, setup):
+            fixture = setup
+
+            work_items_source = fixture.work_items_source
+            with db.orm_session() as session:
+                session.add(work_items_source)
+
+                project = JiraProject(work_items_source)
+
+            mapped_data = project.map_issue_to_work_item_data(fixture.jira_issue)
+
+            assert mapped_data['story_points'] == 10
+
+    class TestWhenOnlyStoryPointsProvided:
+        @pytest.fixture()
+        def setup(self, jira_work_item_source_fixture, cleanup):
+            work_items_source, _, _ = jira_work_item_source_fixture
+
+            # this payload contains only story points
+            jira_api_issue_with_story_points_info = json.loads(
+                pkg_resources.resource_string(__name__, 'data/jira_payload_for_story_points_mapping_only_story_points.json'))
+
+            yield Fixture(
+                jira_issue=jira_api_issue_with_story_points_info,
+                work_items_source=work_items_source
+            )
+
+        def it_maps_data_to_story_points_value_provided(self, setup):
+            fixture = setup
+
+            work_items_source = fixture.work_items_source
+            with db.orm_session() as session:
+                session.add(work_items_source)
+
+                project = JiraProject(work_items_source)
+
+            mapped_data = project.map_issue_to_work_item_data(fixture.jira_issue)
+
+            assert mapped_data['story_points'] == 10
+    class TestWhenOnlyStoryPointEstimateProvided:
+        @pytest.fixture()
+        def setup(self, jira_work_item_source_fixture, cleanup):
+            work_items_source, _, _ = jira_work_item_source_fixture
+
+            # this payload contains only story point estimates
+            jira_api_issue_with_story_points_info = json.loads(
+                pkg_resources.resource_string(__name__, 'data/jira_payload_for_story_points_mapping_only_story_point_estimate.json'))
+
+            yield Fixture(
+                jira_issue=jira_api_issue_with_story_points_info,
+                work_items_source=work_items_source
+            )
+
+        def it_maps_data_to_story_points_value_provided(self, setup):
+            fixture = setup
+
+            work_items_source = fixture.work_items_source
+            with db.orm_session() as session:
+                session.add(work_items_source)
+
+                project = JiraProject(work_items_source)
+
+            mapped_data = project.map_issue_to_work_item_data(fixture.jira_issue)
+
+            assert mapped_data['story_points'] == 98
+
+    class TestWhenNeitherProvided:
+        @pytest.fixture()
+        def setup(self, jira_work_item_source_fixture, cleanup):
+            work_items_source, _, _ = jira_work_item_source_fixture
+
+            # this payload contains neither
+            jira_api_issue_with_story_points_info = json.loads(
+                pkg_resources.resource_string(__name__, 'data/jira_payload_for_story_points_mapping_none_provided.json'))
+
+            yield Fixture(
+                jira_issue=jira_api_issue_with_story_points_info,
+                work_items_source=work_items_source
+            )
+
+        def it_maps_data_to_story_points_value_provided(self, setup):
+            fixture = setup
+
+            work_items_source = fixture.work_items_source
+            with db.orm_session() as session:
+                session.add(work_items_source)
+
+                project = JiraProject(work_items_source)
+
+            mapped_data = project.map_issue_to_work_item_data(fixture.jira_issue)
+
+            assert mapped_data['story_points'] is None
 
 
 class TestCustomParentMapping:
