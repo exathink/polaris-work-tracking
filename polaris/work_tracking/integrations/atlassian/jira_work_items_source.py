@@ -108,6 +108,7 @@ class JiraProject(JiraWorkItemsSource):
                 parent_source_display_id = self.resolve_parent_source_key(issue)
 
                 mapped_type = self.map_work_item_type(issue_type)
+
                 mapped_data = dict(
                     name=fields.get('summary'),
                     description=fields.get('description'),
@@ -122,10 +123,12 @@ class JiraProject(JiraWorkItemsSource):
                     source_created_at=self.jira_time_to_utc_time_string(fields.get('created')),
                     source_state=fields.get('status').get('name'),
                     priority=fields.get('priority').get('name'),
-
+                    releases=self.get_fix_versions(fields),
+                    story_points=self.get_story_points(fields),
                     parent_source_display_id=parent_source_display_id,
                     api_payload=issue,
-                    commit_identifiers=[issue.get('key'), issue.get('key').lower(), issue.get('key').capitalize()]
+                    commit_identifiers=[issue.get('key'), issue.get('key').lower(), issue.get('key').capitalize()],
+
                 )
 
                 return mapped_data
@@ -133,6 +136,32 @@ class JiraProject(JiraWorkItemsSource):
                 raise ProcessingException(f"Map Jira issue failed: Issue did not have field called 'fields' {issue}")
         else:
             raise ProcessingException("Map Jira issue failed: Issue was None")
+
+    def get_fix_versions(self, fields):
+        # Get Release information
+        version_list = fields.get('fixVersions')
+        versions = []
+        if version_list is not None:
+            for version in version_list:
+                versions.append(version.get('name'))
+        return versions
+
+    def get_story_points(self, fields):
+        # Get story points info
+        story_points = None
+        story_point_link = find(self.work_items_source.custom_fields, lambda field: field['name'] == 'Story Points')
+        if story_point_link is not None:
+            story_point_custom_field = story_point_link.get('key')
+            if story_point_custom_field in fields:
+                story_points = fields.get(story_point_custom_field)
+        if story_points is None:
+            story_point_link = find(self.work_items_source.custom_fields,
+                                    lambda field: field['name'] == 'Story point estimate')
+            if story_point_link is not None:
+                story_point_custom_field = story_point_link.get('key')
+                if story_point_custom_field in fields:
+                    story_points = fields.get(story_point_custom_field)
+        return story_points
 
     def resolve_parent_source_key(self, issue):
         fields = issue.get('fields')
