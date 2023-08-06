@@ -318,6 +318,8 @@ class WorkItem(Base):
     source_state = Column(String, nullable=False)
     source_display_id = Column(String, nullable=False)
     priority = Column(String, nullable=True)
+    releases = Column(ARRAY(String), nullable=True, default=[], server_default='{}')
+    story_points = Column(Integer, nullable=True)
 
     # timestamps for synchronization
     source_created_at = Column(DateTime, nullable=False)
@@ -389,7 +391,7 @@ class WorkItem(Base):
         updated = False
         for attribute in ['name', 'description', 'is_bug', 'work_item_type', 'is_epic', 'tags', 'url', 'source_state',
                           'source_display_id', 'parent_id', 'api_payload', 'work_items_source_id', 'commit_identifiers',
-                          'parent_source_display_id','priority']:
+                          'parent_source_display_id','priority','releases','story_points']:
             if work_item_data.get(attribute) is not None and getattr(self, attribute) != work_item_data.get(attribute):
                 setattr(self, attribute, work_item_data.get(attribute))
                 updated = True

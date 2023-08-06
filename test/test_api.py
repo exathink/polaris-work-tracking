@@ -110,7 +110,9 @@ class TestSyncWorkItem:
                       "source_id",
                       "commit_identifiers",
                       "is_updated",
-                      "priority"
+                      "priority",
+                      "releases",
+                      "story_points"
                       ]
 
         result = api.sync_work_item(empty_source.key, work_item_data=new_work_items[0])[0]
