@@ -664,6 +664,169 @@ class TestCustomTagging:
 
             assert 'custom_tag:feature-item' in mapped_data['tags']
 
+    class TestCustomTagFromParentTypeAndIssueType:
+        @pytest.fixture()
+        def setup(self, jira_work_item_source_fixture, cleanup):
+            work_items_source, _, _ = jira_work_item_source_fixture
+
+            yield Fixture(
+                jira_story_issue=json.loads(
+                pkg_resources.resource_string(__name__, 'data/jira_payload_for_story_feature_item.json')),
+                jira_task_issue=json.loads(
+                pkg_resources.resource_string(__name__, 'data/jira_payload_for_task_feature_item.json')),
+                work_items_source=work_items_source
+            )
+
+        def it_adds_a_custom_tag_when_the_parent_is_a_feature_and_the_issue_type_is_a_story(self, setup):
+            fixture = setup
+
+            work_items_source = fixture.work_items_source
+            with db.orm_session() as session:
+                session.add(work_items_source)
+                # set to the selector for any ch
+                work_items_source.parameters = dict(
+                    custom_tag_mapping=[
+                        dict(
+                            mapping_type=CustomTagMappingType.path_selector_true.value,
+                            path_selector_value_mapping=dict(
+                                selector="(((fields.issuelinks[?type.name=='Parent/Child'])[?outwardIssue.fields.issuetype.name == 'Feature'])[0]) && (fields.issuetype.name == 'Story')",
+                                tag="feature-item"
+                            )
+                        )
+                    ]
+                )
+                project = JiraProject(work_items_source)
+
+            mapped_data = project.map_issue_to_work_item_data(fixture.jira_story_issue)
+
+            assert 'custom_tag:feature-item' in mapped_data['tags']
+        def it_does_not_add_a_custom_tag_when_the_parent_is_a_feature_and_the_issue_type_is_not_a_story(self, setup):
+            fixture = setup
+
+            work_items_source = fixture.work_items_source
+            with db.orm_session() as session:
+                session.add(work_items_source)
+                # set to the selector for any ch
+                work_items_source.parameters = dict(
+                    custom_tag_mapping=[
+                        dict(
+                            mapping_type=CustomTagMappingType.path_selector_true.value,
+                            path_selector_value_mapping=dict(
+                                selector="(((fields.issuelinks[?type.name=='Parent/Child'])[?outwardIssue.fields.issuetype.name == 'Feature'])[0]) && (fields.issuetype.name == 'Story')",
+                                tag="feature-item"
+                            )
+                        )
+                    ]
+                )
+                project = JiraProject(work_items_source)
+
+            mapped_data = project.map_issue_to_work_item_data(fixture.jira_task_issue)
+
+            assert 'custom_tag:feature-item' not in mapped_data['tags']
+        def it_adds_a_custom_tag_when_the_parent_is_a_feature_and_the_issue_type_is_not_a_story(self, setup):
+            # this tests path_selector_false
+            fixture = setup
+
+            work_items_source = fixture.work_items_source
+            with db.orm_session() as session:
+                session.add(work_items_source)
+                # set to the selector for any ch
+                work_items_source.parameters = dict(
+                    custom_tag_mapping=[
+                        dict(
+                            mapping_type=CustomTagMappingType.path_selector_false.value,
+                            path_selector_value_mapping=dict(
+                                selector="(((fields.issuelinks[?type.name=='Parent/Child'])[?outwardIssue.fields.issuetype.name == 'Feature'])[0]) && (fields.issuetype.name == 'Story')",
+                                tag="feature-item"
+                            )
+                        )
+                    ]
+                )
+                project = JiraProject(work_items_source)
+
+            mapped_data = project.map_issue_to_work_item_data(fixture.jira_task_issue)
+
+            assert 'custom_tag:feature-item' in mapped_data['tags']
+
+        def it_does_not_add_a_custom_tag_when_the_parent_is_a_feature_and_the_issue_type_is_a_story(self, setup):
+            # this tests path_selector_false
+            fixture = setup
+
+            work_items_source = fixture.work_items_source
+            with db.orm_session() as session:
+                session.add(work_items_source)
+                # set to the selector for any ch
+                work_items_source.parameters = dict(
+                    custom_tag_mapping=[
+                        dict(
+                            mapping_type=CustomTagMappingType.path_selector_false.value,
+                            path_selector_value_mapping=dict(
+                                selector="(((fields.issuelinks[?type.name=='Parent/Child'])[?outwardIssue.fields.issuetype.name == 'Feature'])[0]) && (fields.issuetype.name == 'Story')",
+                                tag="feature-item"
+                            )
+                        )
+                    ]
+                )
+                project = JiraProject(work_items_source)
+
+            mapped_data = project.map_issue_to_work_item_data(fixture.jira_story_issue)
+
+            assert 'custom_tag:feature-item' not in mapped_data['tags']
+
+        def it_adds_a_custom_tag_when_the_parent_is_a_feature_and_the_issue_type_value_is_story_(self, setup):
+            # this tests path_selector_false
+            fixture = setup
+
+            work_items_source = fixture.work_items_source
+            with db.orm_session() as session:
+                session.add(work_items_source)
+                # set to the selector for any ch
+                work_items_source.parameters = dict(
+                    custom_tag_mapping=[
+                        dict(
+                            mapping_type=CustomTagMappingType.path_selector_value_equals.value,
+                            path_selector_value_mapping=dict(
+                                selector="(((fields.issuelinks[?type.name=='Parent/Child'])[?outwardIssue.fields.issuetype.name == 'Feature'])[0]) && (fields.issuetype.name)",
+                                value='Story',
+                                tag="feature-item"
+
+                            )
+                        )
+                    ]
+                )
+                project = JiraProject(work_items_source)
+
+            mapped_data = project.map_issue_to_work_item_data(fixture.jira_story_issue)
+
+            assert 'custom_tag:feature-item' in mapped_data['tags']
+
+        def it_adds_a_custom_tag_when_the_parent_is_a_feature_and_the_issue_type_value_is_one_of_story_or_task(self, setup):
+            # this tests path_selector_false
+            fixture = setup
+
+            work_items_source = fixture.work_items_source
+            with db.orm_session() as session:
+                session.add(work_items_source)
+                # set to the selector for any ch
+                work_items_source.parameters = dict(
+                    custom_tag_mapping=[
+                        dict(
+                            mapping_type=CustomTagMappingType.path_selector_value_in.value,
+                            path_selector_value_mapping=dict(
+                                selector="(((fields.issuelinks[?type.name=='Parent/Child'])[?outwardIssue.fields.issuetype.name == 'Feature'])[0]) && (fields.issuetype.name)",
+                                values=['Story', 'Task'],
+                                tag="feature-item"
+
+                            )
+                        )
+                    ]
+                )
+                project = JiraProject(work_items_source)
+
+            mapped_data = project.map_issue_to_work_item_data(fixture.jira_story_issue)
+
+            assert 'custom_tag:feature-item' in mapped_data['tags']
+
     class TestCustomTagFromCustomField:
         @pytest.fixture()
         def setup(self, jira_work_item_source_fixture, cleanup):
