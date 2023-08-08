@@ -785,7 +785,7 @@ class TestCustomTagging:
                     custom_tag_mapping=[
                         dict(
                             mapping_type=CustomTagMappingType.path_selector_value_equals.value,
-                            path_selector_value_mapping=dict(
+                            path_selector_mapping=dict(
                                 selector="(((fields.issuelinks[?type.name=='Parent/Child'])[?outwardIssue.fields.issuetype.name == 'Feature'])[0]) && (fields.issuetype.name)",
                                 value='Story',
                                 tag="feature-item"
@@ -812,7 +812,7 @@ class TestCustomTagging:
                     custom_tag_mapping=[
                         dict(
                             mapping_type=CustomTagMappingType.path_selector_value_in.value,
-                            path_selector_value_mapping=dict(
+                            path_selector_mapping=dict(
                                 selector="(((fields.issuelinks[?type.name=='Parent/Child'])[?outwardIssue.fields.issuetype.name == 'Feature'])[0]) && (fields.issuetype.name)",
                                 values=['Story', 'Task'],
                                 tag="feature-item"
