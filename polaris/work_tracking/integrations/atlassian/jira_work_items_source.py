@@ -207,7 +207,7 @@ class JiraProject(JiraWorkItemsSource):
                             tags.add(f"custom_tag:{path_selector_mapping.get('tag')}")
 
             def map_path_selector_value_tag(issue, mapping_type, mapping, tags):
-                path_selector_mapping = mapping.get('path_selector_value_mapping')
+                path_selector_mapping = mapping.get('path_selector_mapping')
                 if path_selector_mapping is not None:
                     if 'selector' in path_selector_mapping:
                         path_selector_value = jmespath.search(path_selector_mapping['selector'],
