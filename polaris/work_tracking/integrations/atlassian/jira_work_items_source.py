@@ -194,6 +194,32 @@ class JiraProject(JiraWorkItemsSource):
                                                                                issue) is not None:
                         tags.add(f"custom_tag:{path_selector_mapping.get('tag')}")
 
+            def map_boolean_path_selector_tag(issue, mapping_type, mapping, tags):
+                path_selector_mapping = mapping.get('path_selector_value_mapping')
+                if path_selector_mapping is not None:
+                    if 'selector' in path_selector_mapping:
+                        path_selector_value = jmespath.search(path_selector_mapping['selector'],
+                                                                               issue)
+                        if mapping_type == CustomTagMappingType.path_selector_true.value and path_selector_value:
+                            tags.add(f"custom_tag:{path_selector_mapping.get('tag')}")
+
+                        if mapping_type == CustomTagMappingType.path_selector_false.value and not path_selector_value:
+                            tags.add(f"custom_tag:{path_selector_mapping.get('tag')}")
+
+            def map_path_selector_value_tag(issue, mapping_type, mapping, tags):
+                path_selector_mapping = mapping.get('path_selector_value_mapping')
+                if path_selector_mapping is not None:
+                    if 'selector' in path_selector_mapping:
+                        path_selector_value = jmespath.search(path_selector_mapping['selector'],
+                                                                               issue)
+                        if mapping_type == CustomTagMappingType.path_selector_value_equals.value:
+                            if path_selector_value == path_selector_mapping['value']:
+                                tags.add(f"custom_tag:{path_selector_mapping.get('tag')}")
+
+                        if mapping_type == CustomTagMappingType.path_selector_value_in.value:
+                            if path_selector_value in path_selector_mapping['values']:
+                                tags.add(f"custom_tag:{path_selector_mapping.get('tag')}")
+
             def map_custom_field_populated_tag(issue, mapping, tags):
                 custom_field_mapping = mapping.get('custom_field_mapping')
                 if custom_field_mapping is not None:
@@ -207,9 +233,24 @@ class JiraProject(JiraWorkItemsSource):
 
             if self.custom_tag_mapping is not None:
                 for mapping in self.custom_tag_mapping:
-                    if mapping.get('mapping_type') == CustomTagMappingType.path_selector.value:
+                    mapping_type = mapping.get('mapping_type')
+                    # Path selector based mappings
+                    if mapping_type == CustomTagMappingType.path_selector.value:
                         map_path_selector_tag(issue, mapping, tags)
-                    elif mapping.get('mapping_type') == CustomTagMappingType.custom_field_populated.value:
+                    elif mapping_type in [
+                        CustomTagMappingType.path_selector_value_equals.value,
+                        CustomTagMappingType.path_selector_value_in.value
+                    ]:
+                        map_path_selector_value_tag(issue, mapping_type, mapping, tags)
+
+                    elif mapping_type in [
+                        CustomTagMappingType.path_selector_true.value,
+                        CustomTagMappingType.path_selector_false.value
+                    ]:
+                        map_boolean_path_selector_tag(issue, mapping_type,  mapping, tags)
+
+                    # Custom field based mappings.
+                    elif mapping_type in [CustomTagMappingType.custom_field_populated.value]:
                         map_custom_field_populated_tag(issue, mapping, tags)
 
                     else:

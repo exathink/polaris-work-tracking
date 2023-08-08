@@ -314,7 +314,7 @@ class TestUpdateWorkItemsSourceParameters(WorkItemsSourceTest):
 
     class TestUpdateCustomTagMapping:
 
-        def it_creates_a_selector_to_tag_mapping(self, setup):
+        def it_creates_a_path_selector_mapping(self, setup):
             fixture = setup
             organization_key = fixture.organization_key
             work_items_source = fixture.work_items_source
@@ -343,7 +343,7 @@ class TestUpdateWorkItemsSourceParameters(WorkItemsSourceTest):
                         workItemsSourceCustomTagMapping=dict(
                           customTagMapping= [
                               dict(
-                                mappingType='path-selector',
+                                mappingType=CustomTagMappingType.path_selector.value,
                                 pathSelectorMapping=dict(
                                     selector="((fields.issuelinks[?type.name=='Parent/Child'])[?outwardIssue.fields.issuetype.name == 'Feature'])[0]",
                                     tag="feature-item"
@@ -360,7 +360,7 @@ class TestUpdateWorkItemsSourceParameters(WorkItemsSourceTest):
                 assert source.parameters == dict(
                     custom_tag_mapping=[
                         dict(
-                            mapping_type='path-selector',
+                            mapping_type=CustomTagMappingType.path_selector.value,
                             path_selector_mapping = dict(
                                 selector="((fields.issuelinks[?type.name=='Parent/Child'])[?outwardIssue.fields.issuetype.name == 'Feature'])[0]",
                                 tag="feature-item"
@@ -369,6 +369,229 @@ class TestUpdateWorkItemsSourceParameters(WorkItemsSourceTest):
                     ]
                 )
 
+        def it_creates_a_path_selector_true_mapping(self, setup):
+            fixture = setup
+            organization_key = fixture.organization_key
+            work_items_source = fixture.work_items_source
+            connector_key = fixture.connector_key
+
+            client = Client(schema)
+            mutation = """
+                mutation updateWorkItemsSourceCustomTagMapping(
+                    $updateWorkItemsSourceCustomTagMappingInput: UpdateWorkItemsSourceCustomTagMappingInput! 
+                    ) {
+                        updateWorkItemsSourceCustomTagMapping(updateWorkItemsSourceCustomTagMappingInput: $updateWorkItemsSourceCustomTagMappingInput) {
+                            success
+                            errorMessage
+                            updated
+                        }
+                    } 
+            """
+            with patch('polaris.work_tracking.publish.publish'):
+                result = client.execute(mutation, variable_values=dict(
+                    updateWorkItemsSourceCustomTagMappingInput=dict(
+                        organizationKey=organization_key,
+                        connectorKey=str(connector_key),
+                        workItemsSourceKeys=[
+                            str(work_items_source.key)
+                        ],
+                        workItemsSourceCustomTagMapping=dict(
+                          customTagMapping= [
+                              dict(
+                                mappingType=CustomTagMappingType.path_selector_true.value,
+                                pathSelectorMapping=dict(
+                                    selector="((fields.issuelinks[?type.name=='Parent/Child'])[?outwardIssue.fields.issuetype.name == 'Feature'])[0]",
+                                    tag="feature-item"
+                                )
+                            )]
+                        )
+                    )))
+            assert result.get('errors') is None
+            assert result['data']['updateWorkItemsSourceCustomTagMapping']['success']
+            assert result['data']['updateWorkItemsSourceCustomTagMapping']['updated'] == 1
+
+            with db.orm_session() as session:
+                source = WorkItemsSource.find_by_key(session, work_items_source.key)
+                assert source.parameters == dict(
+                    custom_tag_mapping=[
+                        dict(
+                            mapping_type=CustomTagMappingType.path_selector_true.value,
+                            path_selector_mapping = dict(
+                                selector="((fields.issuelinks[?type.name=='Parent/Child'])[?outwardIssue.fields.issuetype.name == 'Feature'])[0]",
+                                tag="feature-item"
+                            )
+                        )
+                    ]
+                )
+
+        def it_creates_a_path_selector_false_mapping(self, setup):
+            fixture = setup
+            organization_key = fixture.organization_key
+            work_items_source = fixture.work_items_source
+            connector_key = fixture.connector_key
+
+            client = Client(schema)
+            mutation = """
+                mutation updateWorkItemsSourceCustomTagMapping(
+                    $updateWorkItemsSourceCustomTagMappingInput: UpdateWorkItemsSourceCustomTagMappingInput! 
+                    ) {
+                        updateWorkItemsSourceCustomTagMapping(updateWorkItemsSourceCustomTagMappingInput: $updateWorkItemsSourceCustomTagMappingInput) {
+                            success
+                            errorMessage
+                            updated
+                        }
+                    } 
+            """
+            with patch('polaris.work_tracking.publish.publish'):
+                result = client.execute(mutation, variable_values=dict(
+                    updateWorkItemsSourceCustomTagMappingInput=dict(
+                        organizationKey=organization_key,
+                        connectorKey=str(connector_key),
+                        workItemsSourceKeys=[
+                            str(work_items_source.key)
+                        ],
+                        workItemsSourceCustomTagMapping=dict(
+                          customTagMapping= [
+                              dict(
+                                mappingType=CustomTagMappingType.path_selector_false.value,
+                                pathSelectorMapping=dict(
+                                    selector="((fields.issuelinks[?type.name=='Parent/Child'])[?outwardIssue.fields.issuetype.name == 'Feature'])[0]",
+                                    tag="feature-item"
+                                )
+                            )]
+                        )
+                    )))
+            assert result.get('errors') is None
+            assert result['data']['updateWorkItemsSourceCustomTagMapping']['success']
+            assert result['data']['updateWorkItemsSourceCustomTagMapping']['updated'] == 1
+
+            with db.orm_session() as session:
+                source = WorkItemsSource.find_by_key(session, work_items_source.key)
+                assert source.parameters == dict(
+                    custom_tag_mapping=[
+                        dict(
+                            mapping_type=CustomTagMappingType.path_selector_false.value,
+                            path_selector_mapping = dict(
+                                selector="((fields.issuelinks[?type.name=='Parent/Child'])[?outwardIssue.fields.issuetype.name == 'Feature'])[0]",
+                                tag="feature-item"
+                            )
+                        )
+                    ]
+                )
+
+        def it_creates_a_path_selector_value_equals_mapping(self, setup):
+            fixture = setup
+            organization_key = fixture.organization_key
+            work_items_source = fixture.work_items_source
+            connector_key = fixture.connector_key
+
+            client = Client(schema)
+            mutation = """
+                mutation updateWorkItemsSourceCustomTagMapping(
+                    $updateWorkItemsSourceCustomTagMappingInput: UpdateWorkItemsSourceCustomTagMappingInput! 
+                    ) {
+                        updateWorkItemsSourceCustomTagMapping(updateWorkItemsSourceCustomTagMappingInput: $updateWorkItemsSourceCustomTagMappingInput) {
+                            success
+                            errorMessage
+                            updated
+                        }
+                    } 
+            """
+            with patch('polaris.work_tracking.publish.publish'):
+                result = client.execute(mutation, variable_values=dict(
+                    updateWorkItemsSourceCustomTagMappingInput=dict(
+                        organizationKey=organization_key,
+                        connectorKey=str(connector_key),
+                        workItemsSourceKeys=[
+                            str(work_items_source.key)
+                        ],
+                        workItemsSourceCustomTagMapping=dict(
+                          customTagMapping= [
+                              dict(
+                                mappingType=CustomTagMappingType.path_selector_value_equals.value,
+                                pathSelectorMapping=dict(
+                                    selector="((fields.issuelinks[?type.name=='Parent/Child'])[?outwardIssue.fields.issuetype.name == 'Feature'])[0]",
+                                    value='Story',
+                                    tag="feature-item"
+                                )
+                            )]
+                        )
+                    )))
+            assert result.get('errors') is None
+            assert result['data']['updateWorkItemsSourceCustomTagMapping']['success']
+            assert result['data']['updateWorkItemsSourceCustomTagMapping']['updated'] == 1
+
+            with db.orm_session() as session:
+                source = WorkItemsSource.find_by_key(session, work_items_source.key)
+                assert source.parameters == dict(
+                    custom_tag_mapping=[
+                        dict(
+                            mapping_type=CustomTagMappingType.path_selector_value_equals.value,
+                            path_selector_mapping = dict(
+                                selector="((fields.issuelinks[?type.name=='Parent/Child'])[?outwardIssue.fields.issuetype.name == 'Feature'])[0]",
+                                value='Story',
+                                tag="feature-item"
+                            )
+                        )
+                    ]
+                )
+
+        def it_creates_a_path_selector_value_in_mapping(self, setup):
+            fixture = setup
+            organization_key = fixture.organization_key
+            work_items_source = fixture.work_items_source
+            connector_key = fixture.connector_key
+
+            client = Client(schema)
+            mutation = """
+                mutation updateWorkItemsSourceCustomTagMapping(
+                    $updateWorkItemsSourceCustomTagMappingInput: UpdateWorkItemsSourceCustomTagMappingInput! 
+                    ) {
+                        updateWorkItemsSourceCustomTagMapping(updateWorkItemsSourceCustomTagMappingInput: $updateWorkItemsSourceCustomTagMappingInput) {
+                            success
+                            errorMessage
+                            updated
+                        }
+                    } 
+            """
+            with patch('polaris.work_tracking.publish.publish'):
+                result = client.execute(mutation, variable_values=dict(
+                    updateWorkItemsSourceCustomTagMappingInput=dict(
+                        organizationKey=organization_key,
+                        connectorKey=str(connector_key),
+                        workItemsSourceKeys=[
+                            str(work_items_source.key)
+                        ],
+                        workItemsSourceCustomTagMapping=dict(
+                          customTagMapping= [
+                              dict(
+                                mappingType=CustomTagMappingType.path_selector_value_in.value,
+                                pathSelectorMapping=dict(
+                                    selector="((fields.issuelinks[?type.name=='Parent/Child'])[?outwardIssue.fields.issuetype.name == 'Feature'])[0]",
+                                    values=['Story', 'Task'],
+                                    tag="feature-item"
+                                )
+                            )]
+                        )
+                    )))
+            assert result.get('errors') is None
+            assert result['data']['updateWorkItemsSourceCustomTagMapping']['success']
+            assert result['data']['updateWorkItemsSourceCustomTagMapping']['updated'] == 1
+
+            with db.orm_session() as session:
+                source = WorkItemsSource.find_by_key(session, work_items_source.key)
+                assert source.parameters == dict(
+                    custom_tag_mapping=[
+                        dict(
+                            mapping_type=CustomTagMappingType.path_selector_value_in.value,
+                            path_selector_mapping = dict(
+                                selector="((fields.issuelinks[?type.name=='Parent/Child'])[?outwardIssue.fields.issuetype.name == 'Feature'])[0]",
+                                values=['Story', 'Task'],
+                                tag="feature-item"
+                            )
+                        )
+                    ]
+                )
         def it_creates_a_custom_field_populated_mapping(self, setup):
             fixture = setup
             organization_key = fixture.organization_key
@@ -463,3 +686,166 @@ class TestUpdateWorkItemsSourceParameters(WorkItemsSourceTest):
                     )))
             assert result.get('errors') is None
             assert_topic_and_message(publish, WorkItemsTopic, CustomTagMappingChanged)
+
+        class TestInputValidation:
+            def it_validates_mapping_types(self, setup):
+                fixture = setup
+                organization_key = fixture.organization_key
+                work_items_source = fixture.work_items_source
+                connector_key = fixture.connector_key
+
+                client = Client(schema)
+                mutation = """
+                    mutation updateWorkItemsSourceCustomTagMapping(
+                        $updateWorkItemsSourceCustomTagMappingInput: UpdateWorkItemsSourceCustomTagMappingInput! 
+                        ) {
+                            updateWorkItemsSourceCustomTagMapping(updateWorkItemsSourceCustomTagMappingInput: $updateWorkItemsSourceCustomTagMappingInput) {
+                                success
+                                errorMessage
+                                updated
+                            }
+                        } 
+                """
+                with patch('polaris.work_tracking.publish.publish'):
+                    result = client.execute(mutation, variable_values=dict(
+                        updateWorkItemsSourceCustomTagMappingInput=dict(
+                            organizationKey=organization_key,
+                            connectorKey=str(connector_key),
+                            workItemsSourceKeys=[
+                                str(work_items_source.key)
+                            ],
+                            workItemsSourceCustomTagMapping=dict(
+                                customTagMapping=[
+                                    dict(
+                                        mappingType='invalid-mapping-type',
+                                        pathSelectorMapping=dict(
+                                            selector="((fields.issuelinks[?type.name=='Parent/Child'])[?outwardIssue.fields.issuetype.name == 'Feature'])[0]",
+                                            tag="feature-item"
+                                        )
+                                    )]
+                            )
+                        )))
+
+                assert result.get('errors') is not None
+
+            def it_validates_path_selectors(self, setup):
+                fixture = setup
+                organization_key = fixture.organization_key
+                work_items_source = fixture.work_items_source
+                connector_key = fixture.connector_key
+
+                client = Client(schema)
+                mutation = """
+                    mutation updateWorkItemsSourceCustomTagMapping(
+                        $updateWorkItemsSourceCustomTagMappingInput: UpdateWorkItemsSourceCustomTagMappingInput! 
+                        ) {
+                            updateWorkItemsSourceCustomTagMapping(updateWorkItemsSourceCustomTagMappingInput: $updateWorkItemsSourceCustomTagMappingInput) {
+                                success
+                                errorMessage
+                                updated
+                            }
+                        } 
+                """
+                with patch('polaris.work_tracking.publish.publish'):
+                    result = client.execute(mutation, variable_values=dict(
+                        updateWorkItemsSourceCustomTagMappingInput=dict(
+                            organizationKey=organization_key,
+                            connectorKey=str(connector_key),
+                            workItemsSourceKeys=[
+                                str(work_items_source.key)
+                            ],
+                            workItemsSourceCustomTagMapping=dict(
+                                customTagMapping=[
+                                    dict(
+                                        mappingType=CustomTagMappingType.path_selector.value,
+                                        pathSelectorMapping=dict(
+                                            selector="invalid-jmes-path-expression.!",
+                                            tag="feature-item"
+                                        )
+                                    )]
+                            )
+                        )))
+
+                assert result.get('errors') is not None
+
+            def it_validates_path_selector_value_equals(self, setup):
+                fixture = setup
+                organization_key = fixture.organization_key
+                work_items_source = fixture.work_items_source
+                connector_key = fixture.connector_key
+
+                client = Client(schema)
+                mutation = """
+                    mutation updateWorkItemsSourceCustomTagMapping(
+                        $updateWorkItemsSourceCustomTagMappingInput: UpdateWorkItemsSourceCustomTagMappingInput! 
+                        ) {
+                            updateWorkItemsSourceCustomTagMapping(updateWorkItemsSourceCustomTagMappingInput: $updateWorkItemsSourceCustomTagMappingInput) {
+                                success
+                                errorMessage
+                                updated
+                            }
+                        } 
+                """
+                with patch('polaris.work_tracking.publish.publish'):
+                    result = client.execute(mutation, variable_values=dict(
+                        updateWorkItemsSourceCustomTagMappingInput=dict(
+                            organizationKey=organization_key,
+                            connectorKey=str(connector_key),
+                            workItemsSourceKeys=[
+                                str(work_items_source.key)
+                            ],
+                            workItemsSourceCustomTagMapping=dict(
+                                customTagMapping=[
+                                    dict(
+                                        mappingType=CustomTagMappingType.path_selector_value_equals.value,
+                                        pathSelectorMapping=dict(
+                                            selector="fields.issuetype.name",
+                                            tag="feature-item"
+                                        )
+                                    )]
+                            )
+                        )))
+
+                assert result.get('errors') is not None
+
+            def it_validates_path_selector_value_in(self, setup):
+                fixture = setup
+                organization_key = fixture.organization_key
+                work_items_source = fixture.work_items_source
+                connector_key = fixture.connector_key
+
+                client = Client(schema)
+                mutation = """
+                    mutation updateWorkItemsSourceCustomTagMapping(
+                        $updateWorkItemsSourceCustomTagMappingInput: UpdateWorkItemsSourceCustomTagMappingInput! 
+                        ) {
+                            updateWorkItemsSourceCustomTagMapping(updateWorkItemsSourceCustomTagMappingInput: $updateWorkItemsSourceCustomTagMappingInput) {
+                                success
+                                errorMessage
+                                updated
+                            }
+                        } 
+                """
+                with patch('polaris.work_tracking.publish.publish'):
+                    result = client.execute(mutation, variable_values=dict(
+                        updateWorkItemsSourceCustomTagMappingInput=dict(
+                            organizationKey=organization_key,
+                            connectorKey=str(connector_key),
+                            workItemsSourceKeys=[
+                                str(work_items_source.key)
+                            ],
+                            workItemsSourceCustomTagMapping=dict(
+                                customTagMapping=[
+                                    dict(
+                                        mappingType=CustomTagMappingType.path_selector_value_in.value,
+                                        pathSelectorMapping=dict(
+                                            selector="fields.issuetype.name",
+                                            tag="feature-item"
+                                        )
+                                    )]
+                            )
+                        )))
+
+                assert result.get('errors') is not None
+
+
