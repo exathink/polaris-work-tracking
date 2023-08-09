@@ -125,6 +125,7 @@ class JiraProject(JiraWorkItemsSource):
                     priority=fields.get('priority').get('name'),
                     releases=self.get_fix_versions(fields),
                     story_points=self.get_story_points(fields),
+                    sprints=self.get_sprints(fields),
                     parent_source_display_id=parent_source_display_id,
                     api_payload=issue,
                     commit_identifiers=[issue.get('key'), issue.get('key').lower(), issue.get('key').capitalize()],
@@ -162,6 +163,19 @@ class JiraProject(JiraWorkItemsSource):
                 if story_point_custom_field in fields:
                     story_points = fields.get(story_point_custom_field)
         return story_points
+
+    def get_sprints(self, fields):
+        # Get sprints
+        sprints = []
+        sprint_link = find(self.work_items_source.custom_fields, lambda field: field['name'].lower() == 'sprint')
+        if sprint_link is not None:
+            sprint_custom_field = sprint_link.get('key')
+            if sprint_custom_field in fields:
+                sprint_list = fields.get(sprint_custom_field)
+                if sprint_list is not None:
+                    for sprint in sprint_list:
+                        sprints.append(sprint.get('name'))
+        return sprints
 
     def resolve_parent_source_key(self, issue):
         fields = issue.get('fields')
