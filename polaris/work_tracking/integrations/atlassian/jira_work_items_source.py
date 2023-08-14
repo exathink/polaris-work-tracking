@@ -95,6 +95,13 @@ class JiraProject(JiraWorkItemsSource):
             if parent_key is not None:
                 return parent_key
 
+    def find_in_custom_fields(self, fields, field_name):
+        custom_field_metadata = filter(lambda field: field['name'].lower() == field_name.lower(),
+                                   self.work_items_source.custom_fields)
+        for metadata in custom_field_metadata:
+            custom_field_key = metadata.get('key')
+            if custom_field_key in fields:
+                return fields.get(custom_field_key)
 
     def map_issue_to_work_item_data(self, issue):
         if issue is not None:
@@ -148,20 +155,10 @@ class JiraProject(JiraWorkItemsSource):
 
     def get_story_points(self, fields):
         # Get story points info
-        story_points = None
-        story_point_link = find(self.work_items_source.custom_fields, lambda field: field['name'] == 'Story Points')
-        if story_point_link is not None:
-            story_point_custom_field = story_point_link.get('key')
-            if story_point_custom_field in fields:
-                story_points = fields.get(story_point_custom_field)
-        if story_points is None:
-            story_point_link = find(self.work_items_source.custom_fields,
-                                    lambda field: field['name'] == 'Story point estimate')
-            if story_point_link is not None:
-                story_point_custom_field = story_point_link.get('key')
-                if story_point_custom_field in fields:
-                    story_points = fields.get(story_point_custom_field)
-        return story_points
+        for custom_field in ['Story Points', 'Story Point Estimate']:
+            story_points = self.find_in_custom_fields(fields, custom_field)
+            if story_points is not None:
+                return story_points
 
     def resolve_parent_source_key(self, issue):
         fields = issue.get('fields')

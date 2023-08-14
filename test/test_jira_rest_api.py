@@ -489,6 +489,62 @@ class TestStoryPointsMapping:
 
             assert mapped_data['story_points'] is None
 
+    class TestWhenMultInstancesOfStoryPointsProvidedSecondValid:
+        @pytest.fixture()
+        def setup(self, jira_work_item_source_with_multiple_story_points_fixture, cleanup):
+            work_items_source, _, _ = jira_work_item_source_with_multiple_story_points_fixture
+
+            # this payload contains both story points estimate and story points
+            jira_api_issue_with_story_points_info = json.loads(
+                pkg_resources.resource_string(__name__,
+                                              'data/jira_payload_for_multiple_story_points_fields_provided.json'))
+
+            yield Fixture(
+                jira_issue=jira_api_issue_with_story_points_info,
+                work_items_source=work_items_source
+            )
+
+        def it_maps_data_to_story_points_value_provided(self, setup):
+            fixture = setup
+
+            work_items_source = fixture.work_items_source
+            with db.orm_session() as session:
+                session.add(work_items_source)
+
+                project = JiraProject(work_items_source)
+
+            mapped_data = project.map_issue_to_work_item_data(fixture.jira_issue)
+
+            assert mapped_data['story_points'] == 4
+
+    class TestWhenMultInstancesOfStoryPointsProvidedFirstValid:
+        @pytest.fixture()
+        def setup(self, jira_work_item_source_with_multiple_story_points_fixture, cleanup):
+            work_items_source, _, _ = jira_work_item_source_with_multiple_story_points_fixture
+
+            # this payload contains both story points estimate and story points
+            jira_api_issue_with_story_points_info = json.loads(
+                pkg_resources.resource_string(__name__,
+                                              'data/jira_payload_for_multiple_story_points_fields_provided_first_valid.json'))
+
+            yield Fixture(
+                jira_issue=jira_api_issue_with_story_points_info,
+                work_items_source=work_items_source
+            )
+
+        def it_maps_data_to_story_points_value_provided(self, setup):
+            fixture = setup
+
+            work_items_source = fixture.work_items_source
+            with db.orm_session() as session:
+                session.add(work_items_source)
+
+                project = JiraProject(work_items_source)
+
+            mapped_data = project.map_issue_to_work_item_data(fixture.jira_issue)
+
+            assert mapped_data['story_points'] == 6
+
 
 class TestCustomParentMapping:
     class TestWhenCustomParentExists:
