@@ -112,7 +112,8 @@ class TestSyncWorkItem:
                       "is_updated",
                       "priority",
                       "releases",
-                      "story_points"
+                      "story_points",
+                      "sprints"
                       ]
 
         result = api.sync_work_item(empty_source.key, work_item_data=new_work_items[0])[0]

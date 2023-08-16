@@ -132,6 +132,7 @@ class JiraProject(JiraWorkItemsSource):
                     priority=fields.get('priority').get('name'),
                     releases=self.get_fix_versions(fields),
                     story_points=self.get_story_points(fields),
+                    sprints=self.get_sprints(fields),
                     parent_source_display_id=parent_source_display_id,
                     api_payload=issue,
                     commit_identifiers=[issue.get('key'), issue.get('key').lower(), issue.get('key').capitalize()],
@@ -146,12 +147,10 @@ class JiraProject(JiraWorkItemsSource):
 
     def get_fix_versions(self, fields):
         # Get Release information
-        version_list = fields.get('fixVersions')
-        versions = []
-        if version_list is not None:
-            for version in version_list:
-                versions.append(version.get('name'))
-        return versions
+        return [
+            fix_version.get('name')
+            for fix_version in (fields.get('fixVersions') or [])
+        ]
 
     def get_story_points(self, fields):
         # Get story points info
@@ -159,6 +158,14 @@ class JiraProject(JiraWorkItemsSource):
             story_points = self.find_in_custom_fields(fields, custom_field)
             if story_points is not None:
                 return story_points
+
+    def get_sprints(self, fields):
+        # Get sprints
+        return [
+            sprint.get('name')
+            for sprint in (self.find_in_custom_fields(fields, "Sprint") or [])
+        ]
+
 
     def resolve_parent_source_key(self, issue):
         fields = issue.get('fields')
