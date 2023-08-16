@@ -147,12 +147,10 @@ class JiraProject(JiraWorkItemsSource):
 
     def get_fix_versions(self, fields):
         # Get Release information
-        version_list = fields.get('fixVersions')
-        versions = []
-        if version_list is not None:
-            for version in version_list:
-                versions.append(version.get('name'))
-        return versions
+        return [
+            fix_version.get('name')
+            for fix_version in (fields.get('fixVersions') or [])
+        ]
 
     def get_story_points(self, fields):
         # Get story points info
@@ -163,12 +161,11 @@ class JiraProject(JiraWorkItemsSource):
 
     def get_sprints(self, fields):
         # Get sprints
-        sprints = []
-        sprint_list = self.find_in_custom_fields(fields, "Sprint")
-        if sprint_list is not None:
-            for sprint in sprint_list:
-                sprints.append(sprint.get('name'))
-        return sprints
+        return [
+            sprint.get('name')
+            for sprint in (self.find_in_custom_fields(fields, "Sprint") or [])
+        ]
+
 
     def resolve_parent_source_key(self, issue):
         fields = issue.get('fields')
