@@ -98,7 +98,26 @@ def jira_work_item_source_fixture(setup_work_tracking_schema, app_fixture):
             organization_key=organization_key,
             commit_mapping_scope='organization',
             import_state=WorkItemsSourceImportState.auto_update.value,
-            custom_fields=[{"id": "customfield_10014", "key": "customfield_10014", "name": "Epic Link"},{"id": "customfield_10029", "key": "customfield_10029", "name": "Story Points", "custom": True, "schema": {"type": "number", "custom": "com.atlassian.jira.plugin.system.customfieldtypes:float", "customId": 10029}},{"id": "customfield_10016", "key": "customfield_10016", "name": "Story point estimate", "custom": True, "schema": {"type": "number", "custom": "com.pyxis.greenhopper.jira:jsw-story-points", "customId": 10016}}]
+            custom_fields=[{"id": "customfield_10014", "key": "customfield_10014", "name": "Epic Link"},{"id": "customfield_10029", "key": "customfield_10029", "name": "Story Points", "custom": True, "schema": {"type": "number", "custom": "com.atlassian.jira.plugin.system.customfieldtypes:float", "customId": 10029}},{"id": "customfield_10016", "key": "customfield_10016", "name": "Story point estimate", "custom": True, "schema": {"type": "number", "custom": "com.pyxis.greenhopper.jira:jsw-story-points", "customId": 10016}},{
+    "id": "customfield_10007",
+    "key": "customfield_10007",
+    "name": "Sprint",
+    "custom": True,
+    "schema": {
+      "type": "array",
+      "items": "json",
+      "custom": "com.pyxis.greenhopper.jira:gh-sprint",
+      "customId": 10007
+    },
+    "navigable": True,
+    "orderable": True,
+    "searchable": True,
+    "clauseNames": [
+      "cf[10007]",
+      "Sprint"
+    ],
+    "untranslatedName": "Sprint"
+  }]
         )
         session.add(work_items_source)
         session.flush()

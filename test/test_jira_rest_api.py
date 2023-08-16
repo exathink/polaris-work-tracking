@@ -68,7 +68,17 @@ jira_api_issue_payload = {'id': '10343', 'self': 'https://urjuna.atlassian.net/r
                                              'name': 'In Progress'}}, 'components': [], 'timeoriginalestimate': None,
                                      'description': None, 'customfield_10010': None, 'customfield_10014': None,
                                      'customfield_10015': None, 'timetracking': {}, 'customfield_10005': None,
-                                     'customfield_10006': None, 'security': None, 'customfield_10007': None,
+                                     'customfield_10006': None, 'security': None, "customfield_10007": [
+                                      {
+                                        "id": 4358,
+                                        "goal": "",
+                                        "name": "Sprint 1",
+                                        "state": "active",
+                                        "boardId": 293,
+                                        "endDate": "2023-08-08T16:09:00.000Z",
+                                        "startDate": "2023-07-26T17:11:55.788Z"
+                                      }
+                                        ],
                                      'customfield_10008': None, 'customfield_10009': None, 'attachment': [],
                                      'aggregatetimeestimate': None, 'summary': 'Jira connector is not mapping labels. ',
                                      'creator': {
@@ -266,11 +276,12 @@ class TestJiraWorkItemSource:
         assert mapped_data['priority']
         assert mapped_data['releases'] == ['V1','V2']
         assert mapped_data['story_points']
+        assert mapped_data['sprints'] == ['Sprint 1']
 
 
         # explicitly assert that these are the only fields mapped. The test should fail
         # and force a change in assertions if we change the mapping
-        assert len(mapped_data.keys()) == 18
+        assert len(mapped_data.keys()) == 19
 
     def it_maps_work_item_data_correctly_when_issue_has_parent_field(self, setup):
         fixture = setup
@@ -298,7 +309,7 @@ class TestJiraWorkItemSource:
         assert mapped_data['commit_identifiers']
         # explicitly assert that these are the only fields mapped. The test should fail
         # and force a change in assertions if we change the mapping
-        assert len(mapped_data.keys()) == 18
+        assert len(mapped_data.keys()) == 19
 
 
 class TestCustomTypeMapping:
@@ -987,3 +998,58 @@ class TestCustomTagging:
             mapped_data = project.map_issue_to_work_item_data(fixture.jira_issue)
 
             assert 'custom_tag:support-item' not in mapped_data['tags']
+
+class TestSprintsMapping:
+    class TestWhenOnlyOneSprintProvided:
+        @pytest.fixture()
+        def setup(self, jira_work_item_source_fixture, cleanup):
+            work_items_source, _, _ = jira_work_item_source_fixture
+
+            # this payload contains both story points estimate and story points
+            jira_api_issue_with_one_sprint = json.loads(
+                pkg_resources.resource_string(__name__, 'data/jira_payload_for_sprints.json'))
+
+            yield Fixture(
+                jira_issue=jira_api_issue_with_one_sprint,
+                work_items_source=work_items_source
+            )
+
+        def it_maps_data_to_one_sprint_value(self, setup):
+            fixture = setup
+
+            work_items_source = fixture.work_items_source
+            with db.orm_session() as session:
+                session.add(work_items_source)
+
+                project = JiraProject(work_items_source)
+
+            mapped_data = project.map_issue_to_work_item_data(fixture.jira_issue)
+
+            assert mapped_data['sprints'] == ['Sprint 1']
+
+    class TestWhenOnlyMultipleSprintsProvided:
+        @pytest.fixture()
+        def setup(self, jira_work_item_source_fixture, cleanup):
+            work_items_source, _, _ = jira_work_item_source_fixture
+
+            # this payload contains both story points estimate and story points
+            jira_api_issue_with_multiple_sprints = json.loads(
+                pkg_resources.resource_string(__name__, 'data/jira_payload_for_multiple_sprints.json'))
+
+            yield Fixture(
+                jira_issue=jira_api_issue_with_multiple_sprints,
+                work_items_source=work_items_source
+            )
+
+        def it_maps_data_to_one_sprint_value(self, setup):
+            fixture = setup
+
+            work_items_source = fixture.work_items_source
+            with db.orm_session() as session:
+                session.add(work_items_source)
+
+                project = JiraProject(work_items_source)
+
+            mapped_data = project.map_issue_to_work_item_data(fixture.jira_issue)
+
+            assert mapped_data['sprints'] == ['Sprint 1', 'Sprint 2']
