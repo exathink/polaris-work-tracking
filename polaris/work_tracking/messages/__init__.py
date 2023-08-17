@@ -15,7 +15,7 @@ from .resolve_work_items_for_epic import ResolveWorkItemsForEpic
 from .gitlab_project_event import GitlabProjectEvent
 from .trello_board_event import TrelloBoardEvent
 from .work_items_source_parameters_changed import ParentPathSelectorsChanged, CustomTagMappingChanged
-
+from .reprocess_work_items import ReprocessWorkItems
 
 # Add this to the global message factory so that the messages can be deserialized on receipt.
 register_messages([
@@ -25,6 +25,7 @@ register_messages([
     GitlabProjectEvent,
     TrelloBoardEvent,
     ParentPathSelectorsChanged,
-    CustomTagMappingChanged
+    CustomTagMappingChanged,
+    ReprocessWorkItems
 ])
 

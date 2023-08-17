@@ -15,10 +15,11 @@ from polaris.common import db
 from polaris.messaging.message_consumer import MessageConsumer
 from polaris.messaging.messages import ImportWorkItems, ImportWorkItem, WorkItemsCreated, WorkItemsUpdated, \
     WorkItemsSourceCreated, WorkItemsSourceUpdated, ProjectImported, ConnectorCreated, ConnectorEvent, WorkItemMoved, \
-    WorkItemDeleted, ReprocessWorkItems
+    WorkItemDeleted
 
 from polaris.work_tracking.messages import AtlassianConnectWorkItemEvent, RefreshConnectorProjects, \
-    ResolveWorkItemsForEpic, GitlabProjectEvent, TrelloBoardEvent, ParentPathSelectorsChanged, CustomTagMappingChanged
+    ResolveWorkItemsForEpic, GitlabProjectEvent, TrelloBoardEvent, ParentPathSelectorsChanged, CustomTagMappingChanged,\
+    ReprocessWorkItems
 
 from polaris.messaging.topics import WorkItemsTopic, ConnectorsTopic, TopicSubscriber
 from polaris.messaging.utils import raise_message_processing_error

@@ -10,11 +10,12 @@
 
 
 from polaris.messaging.messages import WorkItemsSourceCreated, ProjectImported, \
-    WorkItemsCreated, WorkItemsUpdated, ImportWorkItems, ImportWorkItem, ReprocessWorkItems
+    WorkItemsCreated, WorkItemsUpdated, ImportWorkItems, ImportWorkItem
 from polaris.messaging.topics import WorkItemsTopic, ConnectorsTopic
 from polaris.messaging.utils import publish
 from polaris.work_tracking.messages import AtlassianConnectWorkItemEvent, RefreshConnectorProjects, \
-    ResolveWorkItemsForEpic, GitlabProjectEvent, TrelloBoardEvent, ParentPathSelectorsChanged
+    ResolveWorkItemsForEpic, GitlabProjectEvent, TrelloBoardEvent, ParentPathSelectorsChanged, \
+    ReprocessWorkItems
 
 from polaris.integrations.publish import connector_event
 from polaris.work_tracking.messages.work_items_source_parameters_changed import CustomTagMappingChanged
