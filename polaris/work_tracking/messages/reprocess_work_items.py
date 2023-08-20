@@ -3,10 +3,10 @@
 #
 from marshmallow import fields
 
-from polaris.messaging.messages import Message
+from polaris.messaging.messages import Command
 
-class ReprocessWorkItems(Message):
-    message_type = 'work_items.reprocess_work_items'
+class ReprocessWorkItems(Command):
+    message_type = 'commands.reprocess_work_items'
     organization_key = fields.String(required=True)
     work_items_source_key = fields.String(required=True)
     attributes_to_check = fields.List(fields.String(),required=False, allow_none=True)
