@@ -403,14 +403,20 @@ class WorkItemsTopicSubscriber(TopicSubscriber):
         organization_key = message['organization_key']
         work_items_source_key = message['work_items_source_key']
         logger.info(f"Processing  {message.message_type}: for organization {organization_key} and work_items_source {work_items_source_key}")
-        return self.reprocess_work_items(organization_key, work_items_source_key, ['parent_source_display_id'])
+        try:
+            return self.reprocess_work_items(organization_key, work_items_source_key, ['parent_source_display_id'])
+        except Exception as exc:
+            raise_message_processing_error(message, 'Failed to process reprocess work items', str(exc))
 
     def process_custom_tag_mapping_changed(self, message):
         organization_key = message['organization_key']
         work_items_source_key = message['work_items_source_key']
         logger.info(f"Processing  {message.message_type}: for organization {organization_key} and work_items_source {work_items_source_key}")
 
-        return self.reprocess_work_items(organization_key, work_items_source_key,['tags'])
+        try:
+            return self.reprocess_work_items(organization_key, work_items_source_key,['tags'])
+        except Exception as exc:
+            raise_message_processing_error(message, 'Failed to process reprocess work items', str(exc))
 
     def process_reprocess_work_items(self, message):
         organization_key = message['organization_key']
@@ -419,30 +425,30 @@ class WorkItemsTopicSubscriber(TopicSubscriber):
 
         logger.info(
             f"Processing  {message.message_type}: for  work_items_source {work_items_source_key}")
-
-        return self.reprocess_work_items(organization_key, work_items_source_key,attributes_to_check)
-
-    def reprocess_work_items(self, organization_key, work_items_source_key, attributes_to_check):
         try:
-            messages = []
-            for work_items in commands.reprocess_work_items(work_items_source_key, attributes_to_check=attributes_to_check):
-                if len(work_items) > 0:
-                    work_items_updated_message = WorkItemsUpdated(
-                        send=dict(
-                            organization_key=organization_key,
-                            work_items_source_key=work_items_source_key,
-                            updated_work_items=work_items
-                        )
-                    )
-                    self.publish(
-                        WorkItemsTopic,
-                        work_items_updated_message
-                    )
-                    messages.append(work_items_updated_message)
-            return messages
-
+            return self.reprocess_work_items(organization_key, work_items_source_key,attributes_to_check)
         except Exception as exc:
             raise_message_processing_error(message, 'Failed to process reprocess work items', str(exc))
+
+    def reprocess_work_items(self, organization_key, work_items_source_key, attributes_to_check):
+
+        messages = []
+        for work_items in commands.reprocess_work_items(work_items_source_key, attributes_to_check=attributes_to_check):
+            if len(work_items) > 0:
+                work_items_updated_message = WorkItemsUpdated(
+                    send=dict(
+                        organization_key=organization_key,
+                        work_items_source_key=work_items_source_key,
+                        updated_work_items=work_items
+                    )
+                )
+                self.publish(
+                    WorkItemsTopic,
+                    work_items_updated_message
+                )
+                messages.append(work_items_updated_message)
+        return messages
+
 
 
 class ConnectorsTopicSubscriber(TopicSubscriber):
