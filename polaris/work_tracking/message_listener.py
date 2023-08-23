@@ -421,7 +421,7 @@ class WorkItemsTopicSubscriber(TopicSubscriber):
     def process_reprocess_work_items(self, message):
         organization_key = message['organization_key']
         work_items_source_key = message['work_items_source_key']
-        attributes_to_check = message['attributes_to_check']
+        attributes_to_check = message.get('attributes_to_check')
 
         logger.info(
             f"Processing  {message.message_type}: for  work_items_source {work_items_source_key}")
