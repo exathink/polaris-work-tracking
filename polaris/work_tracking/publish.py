@@ -14,7 +14,8 @@ from polaris.messaging.messages import WorkItemsSourceCreated, ProjectImported, 
 from polaris.messaging.topics import WorkItemsTopic, ConnectorsTopic
 from polaris.messaging.utils import publish
 from polaris.work_tracking.messages import AtlassianConnectWorkItemEvent, RefreshConnectorProjects, \
-    ResolveWorkItemsForEpic, GitlabProjectEvent, TrelloBoardEvent, ParentPathSelectorsChanged
+    ResolveWorkItemsForEpic, GitlabProjectEvent, TrelloBoardEvent, ParentPathSelectorsChanged, \
+    ReprocessWorkItems
 
 from polaris.integrations.publish import connector_event
 from polaris.work_tracking.messages.work_items_source_parameters_changed import CustomTagMappingChanged
@@ -216,6 +217,17 @@ def custom_tag_mapping_changed(organization_key, work_items_source_key, channel=
         channel=channel
     )
 
+def reprocess_work_items(work_items_source_key, attributes_to_check, channel=None):
+    message = ReprocessWorkItems(send=dict(
+        work_items_source_key=work_items_source_key,
+        attributes_to_check=attributes_to_check
+    ))
+    publish(
+        WorkItemsTopic,
+        message,
+        channel=channel
+    )
+
 
 def import_work_item_command(organization_key, work_items_source_key, source_id, channel=None):
     message = ImportWorkItem(send=dict(
@@ -228,6 +240,19 @@ def import_work_item_command(organization_key, work_items_source_key, source_id,
         message,
         channel=channel
     )
+
+def reprocess_work_items_command(organization_key, work_items_source_key, attributes_to_check, channel=None):
+    message = ReprocessWorkItems(send=dict(
+        organization_key=organization_key,
+        work_items_source_key=work_items_source_key,
+        attributes_to_check=attributes_to_check
+    ))
+    publish(
+        WorkItemsTopic,
+        message,
+        channel=channel
+    )
+
 
 
 # This shim is here only to explictly mark connector event as a referenced symbol.

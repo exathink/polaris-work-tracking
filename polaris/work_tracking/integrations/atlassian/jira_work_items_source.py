@@ -105,7 +105,7 @@ class JiraProject(JiraWorkItemsSource):
 
     def map_issue_to_work_item_data(self, issue):
         if issue is not None:
-            fields = issue.get('fields')
+            fields = issue.get('fields', None)
             if fields is not None:
                 if 'issuetype' in fields:
                     issue_type = fields.get('issuetype').get('name')
@@ -129,7 +129,7 @@ class JiraProject(JiraWorkItemsSource):
                     source_last_updated=self.jira_time_to_utc_time_string(fields.get('updated')),
                     source_created_at=self.jira_time_to_utc_time_string(fields.get('created')),
                     source_state=fields.get('status').get('name'),
-                    priority=fields.get('priority').get('name'),
+                    priority=fields.get('priority').get('name') if 'priority' in fields else None,
                     releases=self.get_fix_versions(fields),
                     story_points=self.get_story_points(fields),
                     sprints=self.get_sprints(fields),

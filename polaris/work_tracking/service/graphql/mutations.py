@@ -128,6 +128,11 @@ class ImportProjectsInput(graphene.InputObjectType):
     projects = graphene.List(ProjectImport, required=True)
 
 
+class ReprocessWorkItemsInput(graphene.InputObjectType):
+    organization_key = graphene.String(required=True)
+    work_items_source_key = graphene.String(required=True)
+    attributes_to_check = graphene.List(graphene.String,required=False)
+
 class ImportProjects(graphene.Mutation):
     class Arguments:
         import_projects_input = ImportProjectsInput(required=True)
@@ -592,4 +597,20 @@ class UpdateWorkItemsSourceCustomTagMapping(graphene.Mutation):
         return UpdateWorkItemsSourceCustomTagMapping(
             success=result.get('success', False),
             updated=result.get('updated', 0)
+        )
+
+class ReprocessWorkItems(graphene.Mutation):
+    class Arguments:
+        reprocess_work_items_input = ReprocessWorkItemsInput(required=True)
+
+    success = graphene.Boolean()
+
+    def mutate(self, info, reprocess_work_items_input):
+        logger.info("Reprocess Work Items called")
+
+        publish.reprocess_work_items_command(organization_key=reprocess_work_items_input.organization_key,
+            work_items_source_key=reprocess_work_items_input.work_items_source_key, attributes_to_check=reprocess_work_items_input.attributes_to_check
+        )
+        return ReprocessWorkItems(
+            success=True
         )

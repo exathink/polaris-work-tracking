@@ -18,7 +18,8 @@ from polaris.messaging.messages import ImportWorkItems, ImportWorkItem, WorkItem
     WorkItemDeleted
 
 from polaris.work_tracking.messages import AtlassianConnectWorkItemEvent, RefreshConnectorProjects, \
-    ResolveWorkItemsForEpic, GitlabProjectEvent, TrelloBoardEvent, ParentPathSelectorsChanged, CustomTagMappingChanged
+    ResolveWorkItemsForEpic, GitlabProjectEvent, TrelloBoardEvent, ParentPathSelectorsChanged, CustomTagMappingChanged,\
+    ReprocessWorkItems
 
 from polaris.messaging.topics import WorkItemsTopic, ConnectorsTopic, TopicSubscriber
 from polaris.messaging.utils import raise_message_processing_error
@@ -68,7 +69,8 @@ class WorkItemsTopicSubscriber(TopicSubscriber):
                 CustomTagMappingChanged,
                 # Commands
                 ImportWorkItem,
-                ImportWorkItems
+                ImportWorkItems,
+                ReprocessWorkItems
             ],
             publisher=publisher,
             exclusive=False
@@ -165,6 +167,9 @@ class WorkItemsTopicSubscriber(TopicSubscriber):
 
         elif CustomTagMappingChanged.message_type == message.message_type:
             return self.process_custom_tag_mapping_changed(message)
+
+        elif ReprocessWorkItems.message_type == message.message_type:
+            return self.process_reprocess_work_items(message)
 
     def process_import_work_item(self, message):
         work_items_source_key = message['work_items_source_key']
@@ -398,27 +403,10 @@ class WorkItemsTopicSubscriber(TopicSubscriber):
         organization_key = message['organization_key']
         work_items_source_key = message['work_items_source_key']
         logger.info(f"Processing  {message.message_type}: for organization {organization_key} and work_items_source {work_items_source_key}")
-
         try:
-            messages = []
-            for work_items in commands.reprocess_work_items(work_items_source_key, attributes_to_check=['parent_source_display_id']):
-                if len(work_items)> 0:
-                    work_items_updated_message = WorkItemsUpdated(
-                            send=dict(
-                                organization_key=organization_key,
-                                work_items_source_key=work_items_source_key,
-                                updated_work_items=work_items
-                            )
-                        )
-                    self.publish(
-                            WorkItemsTopic,
-                            work_items_updated_message
-                        )
-                    messages.append(work_items_updated_message)
-
-            return messages
+            return self.reprocess_work_items(organization_key, work_items_source_key, ['parent_source_display_id'])
         except Exception as exc:
-            raise_message_processing_error(message, 'Failed to process parent path selectors changed', str(exc))
+            raise_message_processing_error(message, 'Failed to process parent path selector changed message', str(exc))
 
     def process_custom_tag_mapping_changed(self, message):
         organization_key = message['organization_key']
@@ -426,25 +414,41 @@ class WorkItemsTopicSubscriber(TopicSubscriber):
         logger.info(f"Processing  {message.message_type}: for organization {organization_key} and work_items_source {work_items_source_key}")
 
         try:
-            messages = []
-            for work_items in commands.reprocess_work_items(work_items_source_key, attributes_to_check=['tags']):
-                if len(work_items)> 0:
-                    work_items_updated_message = WorkItemsUpdated(
-                            send=dict(
-                                organization_key=organization_key,
-                                work_items_source_key=work_items_source_key,
-                                updated_work_items=work_items
-                            )
-                        )
-                    self.publish(
-                            WorkItemsTopic,
-                            work_items_updated_message
-                        )
-                    messages.append(work_items_updated_message)
-
-            return messages
+            return self.reprocess_work_items(organization_key, work_items_source_key,['tags'])
         except Exception as exc:
-            raise_message_processing_error(message, 'Failed to process custom tag mapping changed', str(exc))
+            raise_message_processing_error(message, 'Failed to process custom tag mapping changed message', str(exc))
+
+    def process_reprocess_work_items(self, message):
+        organization_key = message['organization_key']
+        work_items_source_key = message['work_items_source_key']
+        attributes_to_check = message.get('attributes_to_check')
+
+        logger.info(
+            f"Processing  {message.message_type}: for  work_items_source {work_items_source_key}")
+        try:
+            return self.reprocess_work_items(organization_key, work_items_source_key,attributes_to_check)
+        except Exception as exc:
+            raise_message_processing_error(message, 'Failed to process reprocess work items message', str(exc))
+
+    def reprocess_work_items(self, organization_key, work_items_source_key, attributes_to_check):
+
+        messages = []
+        for work_items in commands.reprocess_work_items(work_items_source_key, attributes_to_check=attributes_to_check):
+            if len(work_items) > 0:
+                work_items_updated_message = WorkItemsUpdated(
+                    send=dict(
+                        organization_key=organization_key,
+                        work_items_source_key=work_items_source_key,
+                        updated_work_items=work_items
+                    )
+                )
+                self.publish(
+                    WorkItemsTopic,
+                    work_items_updated_message
+                )
+                messages.append(work_items_updated_message)
+        return messages
+
 
 
 class ConnectorsTopicSubscriber(TopicSubscriber):
