@@ -303,4 +303,52 @@ class TestReprocessWorkItems(WorkItemsSourceTest):
 
             publisher.assert_not_called()
 
+        def it_publishes_all_work_items_when_there_are_no_attributes_specified(self, setup):
+            fixture = setup
+            project = fixture.project
+            organization_key = fixture.organization_key
+            work_items_source = fixture.work_items_source
+            mapped_data = project.map_issue_to_work_item_data(jira_api_issue_payload)
+            initial_state = api.sync_work_items(work_items_source.key, [mapped_data])
 
+
+            message = fake_send(
+                ReprocessWorkItems(send=dict(
+                    organization_key=organization_key,
+                    work_items_source_key=work_items_source.key,
+                ))
+            )
+            publisher = mock_publisher()
+            subscriber = WorkItemsTopicSubscriber(mock_channel, publisher=publisher)
+            subscriber.consumer_context = mock_consumer
+
+            messages = subscriber.dispatch(mock_channel, message)
+            assert len(messages) == 1
+
+            publisher.assert_topic_called_with_message(WorkItemsTopic, WorkItemsUpdated, call_count=1)
+
+        def it_handles_empty_api_payloads(self, setup):
+            fixture = setup
+            project = fixture.project
+            organization_key = fixture.organization_key
+            work_items_source = fixture.work_items_source
+            mapped_data = project.map_issue_to_work_item_data(jira_api_issue_payload)
+            # we need to consider this case since older data did not always store API payloads
+            mapped_data['api_payload'] = dict()
+            initial_state = api.sync_work_items(work_items_source.key, [mapped_data])
+
+
+            message = fake_send(
+                ReprocessWorkItems(send=dict(
+                    organization_key=organization_key,
+                    work_items_source_key=work_items_source.key,
+                ))
+            )
+            publisher = mock_publisher()
+            subscriber = WorkItemsTopicSubscriber(mock_channel, publisher=publisher)
+            subscriber.consumer_context = mock_consumer
+
+            messages = subscriber.dispatch(mock_channel, message)
+            assert len(messages) == 0
+
+            publisher.assert_not_called()
