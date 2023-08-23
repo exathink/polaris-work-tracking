@@ -505,3 +505,58 @@ class TestImportProject:
                                       )
             assert response['errors']
             publish.assert_not_called()
+
+
+class TestReprocessWorkItems:
+    def it_publishes_reprocess_work_items_message_when_no_attributes_to_check(self, setup_import_project):
+        _, work_items_sources_keys = setup_import_project
+
+        client = Client(schema)
+        source_key = work_items_sources_keys[0]
+        with patch('polaris.work_tracking.publish.publish') as publish:
+            response = client.execute("""
+                mutation reprocessWorkItems($reprocessWorkItemsInput: ReprocessWorkItemsInput!) {
+                    reprocessWorkItems(reprocessWorkItemsInput: $reprocessWorkItemsInput) {
+                       success
+                    }
+                }
+            """,
+                                      variable_values=
+                                      dict(
+                                          reprocessWorkItemsInput=dict(
+                                              organizationKey=str(polaris_organization_key),
+                                              workItemsSourceKey=str(source_key)
+                                                  )
+
+                                          )
+                                      )
+
+            publish.assert_called()
+
+    def it_publishes_reprocess_work_items_message_with_attributes_to_check(self, setup_import_project):
+        _, work_items_sources_keys = setup_import_project
+
+        client = Client(schema)
+        source_key = work_items_sources_keys[0]
+        with patch('polaris.work_tracking.publish.publish') as publish:
+            response = client.execute("""
+                mutation reprocessWorkItems($reprocessWorkItemsInput: ReprocessWorkItemsInput!) {
+                    reprocessWorkItems(reprocessWorkItemsInput: $reprocessWorkItemsInput) {
+                       success
+                    }
+                }
+            """,
+                                      variable_values=
+                                      dict(
+                                          reprocessWorkItemsInput=dict(
+                                              organizationKey=str(polaris_organization_key),
+                                              workItemsSourceKey=str(source_key),
+                                              attributesToCheck=['priority']
+                                                  )
+
+                                          )
+                                      )
+
+            publish.assert_called()
+
+

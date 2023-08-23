@@ -133,6 +133,7 @@ def reprocess_work_items(work_items_source_key, attributes_to_check=None, batch_
                 reprocessed_work_items = [
                     work_items_source_provider.map_issue_to_work_item_data(work_item.api_payload)
                     for work_item in original_work_items
+                    if len(work_item.api_payload) > 0
                 ]
                 changed_items = changed_work_items(original_work_items, reprocessed_work_items, attributes_to_check)
                 yield api.sync_work_items(work_items_source_key, changed_items, session) or []
