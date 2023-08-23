@@ -406,7 +406,7 @@ class WorkItemsTopicSubscriber(TopicSubscriber):
         try:
             return self.reprocess_work_items(organization_key, work_items_source_key, ['parent_source_display_id'])
         except Exception as exc:
-            raise_message_processing_error(message, 'Failed to process reprocess work items', str(exc))
+            raise_message_processing_error(message, 'Failed to process parent path selector changed message', str(exc))
 
     def process_custom_tag_mapping_changed(self, message):
         organization_key = message['organization_key']
@@ -416,7 +416,7 @@ class WorkItemsTopicSubscriber(TopicSubscriber):
         try:
             return self.reprocess_work_items(organization_key, work_items_source_key,['tags'])
         except Exception as exc:
-            raise_message_processing_error(message, 'Failed to process reprocess work items', str(exc))
+            raise_message_processing_error(message, 'Failed to process custom tag mapping changed message', str(exc))
 
     def process_reprocess_work_items(self, message):
         organization_key = message['organization_key']
@@ -428,7 +428,7 @@ class WorkItemsTopicSubscriber(TopicSubscriber):
         try:
             return self.reprocess_work_items(organization_key, work_items_source_key,attributes_to_check)
         except Exception as exc:
-            raise_message_processing_error(message, 'Failed to process reprocess work items', str(exc))
+            raise_message_processing_error(message, 'Failed to process reprocess work items message', str(exc))
 
     def reprocess_work_items(self, organization_key, work_items_source_key, attributes_to_check):
 
