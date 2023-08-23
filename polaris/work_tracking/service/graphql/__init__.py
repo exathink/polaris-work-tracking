@@ -25,7 +25,8 @@ from .mutations import \
     ImportWorkItems, \
     UpdateWorkItemsSourceSyncParameters, \
     UpdateWorkItemsSourceParentPathSelectors, \
-    UpdateWorkItemsSourceCustomTagMapping
+    UpdateWorkItemsSourceCustomTagMapping, \
+    ReprocessWorkItems
 
 
 class Query(
@@ -58,6 +59,7 @@ class Mutations(
     update_work_items_source_parent_path_selectors = UpdateWorkItemsSourceParentPathSelectors.Field()
     update_work_items_source_custom_tag_mapping = UpdateWorkItemsSourceCustomTagMapping.Field()
 
+    reprocess_work_items = ReprocessWorkItems.Field()
 
     register_work_items_source_connector_webhooks = RegisterWorkItemsSourcesConnectorWebhooks.Field()
     refresh_connector_projects = RefreshConnectorProjects.Field()
