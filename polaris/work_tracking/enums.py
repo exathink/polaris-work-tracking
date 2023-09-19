@@ -28,3 +28,5 @@ class CustomTagMappingType(Enum):
     path_selector_false = 'path-selector-false'
 
     custom_field_populated = 'custom-field-populated'
+
+    custom_field_value = 'custom-field-value'

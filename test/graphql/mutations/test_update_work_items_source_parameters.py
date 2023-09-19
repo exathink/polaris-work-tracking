@@ -647,6 +647,60 @@ class TestUpdateWorkItemsSourceParameters(WorkItemsSourceTest):
                     ]
                 )
 
+
+        def it_creates_a_custom_field_value_mapping(self, setup):
+            fixture = setup
+            organization_key = fixture.organization_key
+            work_items_source = fixture.work_items_source
+            connector_key = fixture.connector_key
+
+            client = Client(schema)
+            mutation = """
+                mutation updateWorkItemsSourceCustomTagMapping(
+                    $updateWorkItemsSourceCustomTagMappingInput: UpdateWorkItemsSourceCustomTagMappingInput! 
+                    ) {
+                        updateWorkItemsSourceCustomTagMapping(updateWorkItemsSourceCustomTagMappingInput: $updateWorkItemsSourceCustomTagMappingInput) {
+                            success
+                            errorMessage
+                            updated
+                        }
+                    } 
+            """
+            with patch('polaris.work_tracking.publish.publish'):
+                result = client.execute(mutation, variable_values=dict(
+                    updateWorkItemsSourceCustomTagMappingInput=dict(
+                        organizationKey=organization_key,
+                        connectorKey=str(connector_key),
+                        workItemsSourceKeys=[
+                            str(work_items_source.key)
+                        ],
+                        workItemsSourceCustomTagMapping=dict(
+                          customTagMapping= [
+                              dict(
+                                mappingType=CustomTagMappingType.custom_field_value.value,
+                                customFieldMapping=dict(
+                                    fieldName="Team",
+                                )
+                            )]
+                        )
+                    )))
+            assert result.get('errors') is None
+            assert result['data']['updateWorkItemsSourceCustomTagMapping']['success']
+            assert result['data']['updateWorkItemsSourceCustomTagMapping']['updated'] == 1
+
+            with db.orm_session() as session:
+                source = WorkItemsSource.find_by_key(session, work_items_source.key)
+                assert source.parameters == dict(
+                    custom_tag_mapping=[
+                        dict(
+                            mapping_type=CustomTagMappingType.custom_field_value.value,
+                            custom_field_mapping = dict(
+                                field_name="Team"
+                            )
+                        )
+                    ]
+                )
+
         def it_publishes_the_custom_tag_mapping_changed_message(self, setup):
             fixture = setup
             organization_key = fixture.organization_key

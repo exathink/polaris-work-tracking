@@ -235,6 +235,25 @@ class JiraProject(JiraWorkItemsSource):
                             if value is not None:
                                 tags.add(f"custom_tag:{custom_field_mapping.get('tag')}")
 
+            def map_custom_field_value_tag(issue, mapping, tags):
+                custom_field_mapping = mapping.get('custom_field_mapping')
+                if custom_field_mapping is not None:
+                    if 'field_name' in custom_field_mapping:
+                        field_name = custom_field_mapping['field_name']
+                        field = find(self.work_items_source.custom_fields,
+                                     lambda field: field['name'] == field_name)
+                        if field is not None and 'id' in field:
+                            value = issue['fields'].get(field['id'])
+                            if value is not None:
+                                if isinstance(value, dict):
+                                    if 'value' in value:
+                                        tags.add(f"custom_tag:{field_name.replace(' ', '_')}_{value['value'].replace(' ', '_')}")
+                                    elif 'name' in value:
+                                        tags.add(f"custom_tag:{field_name.replace(' ', '_')}_{value['name'].replace(' ', '_')}")
+                                    else:
+                                        logger.warning(f"Could not extract a value for tag for custom field {field_name}")
+
+
             if self.custom_tag_mapping is not None:
                 for mapping in self.custom_tag_mapping:
                     mapping_type = mapping.get('mapping_type')
@@ -254,8 +273,11 @@ class JiraProject(JiraWorkItemsSource):
                         map_boolean_path_selector_tag(issue, mapping_type,  mapping, tags)
 
                     # Custom field based mappings.
-                    elif mapping_type in [CustomTagMappingType.custom_field_populated.value]:
+                    elif mapping_type == CustomTagMappingType.custom_field_populated.value:
                         map_custom_field_populated_tag(issue, mapping, tags)
+
+                    elif mapping_type == CustomTagMappingType.custom_field_value.value:
+                        map_custom_field_value_tag(issue, mapping, tags)
 
                     else:
                         logger.warning(
