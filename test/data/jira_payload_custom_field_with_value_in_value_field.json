@@ -1,0 +1,251 @@
+{
+  "id": "10662",
+  "key": "PP-521",
+  "self": "https://exathinkdev.atlassian.net/rest/api/latest/issue/10662",
+  "expand": "operations,versionedRepresentations,editmeta,changelog,customfield_10010.requestTypePractice,renderedFields",
+  "fields": {
+    "votes": {
+      "self": "https://exathinkdev.atlassian.net/rest/api/2/issue/PP-521/votes",
+      "votes": 0,
+      "hasVoted": false
+    },
+    "labels": [],
+    "parent": {
+      "id": "10637",
+      "key": "PP-496",
+      "self": "https://exathinkdev.atlassian.net/rest/api/2/issue/10637",
+      "fields": {
+        "status": {
+          "id": "10001",
+          "name": "Backlog",
+          "self": "https://exathinkdev.atlassian.net/rest/api/2/status/10001",
+          "iconUrl": "https://exathinkdev.atlassian.net/",
+          "description": "",
+          "statusCategory": {
+            "id": 2,
+            "key": "new",
+            "name": "To Do",
+            "self": "https://exathinkdev.atlassian.net/rest/api/2/statuscategory/2",
+            "colorName": "blue-gray"
+          }
+        },
+        "summary": "Customer Enhancements",
+        "priority": {
+          "id": "3",
+          "name": "Medium",
+          "self": "https://exathinkdev.atlassian.net/rest/api/2/priority/3",
+          "iconUrl": "https://exathinkdev.atlassian.net/images/icons/priorities/medium.svg"
+        },
+        "issuetype": {
+          "id": "10000",
+          "name": "Epic",
+          "self": "https://exathinkdev.atlassian.net/rest/api/2/issuetype/10000",
+          "iconUrl": "https://exathinkdev.atlassian.net/images/icons/issuetypes/epic.svg",
+          "subtask": false,
+          "description": "A big user story that needs to be broken down. Created by Jira Software - do not edit or delete.",
+          "hierarchyLevel": 1
+        }
+      }
+    },
+    "status": {
+      "id": "10042",
+      "name": "DEPLOYED TO PROD",
+      "self": "https://exathinkdev.atlassian.net/rest/api/2/status/10042",
+      "iconUrl": "https://exathinkdev.atlassian.net/",
+      "description": "This status is managed internally by Jira Software",
+      "statusCategory": {
+        "id": 3,
+        "key": "done",
+        "name": "Done",
+        "self": "https://exathinkdev.atlassian.net/rest/api/2/statuscategory/3",
+        "colorName": "green"
+      }
+    },
+    "created": "2023-07-19T09:29:09.848-0500",
+    "creator": {
+      "self": "https://exathinkdev.atlassian.net/rest/api/2/user?accountId=557058%3Afe3847a4-f489-452f-8a83-0629c51e0455",
+      "active": true,
+      "timeZone": "America/Chicago",
+      "accountId": "557058:fe3847a4-f489-452f-8a83-0629c51e0455",
+      "avatarUrls": {
+        "16x16": "https://secure.gravatar.com/avatar/ff19230d4b6d9a5d7d441dc62fec4619?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FK-2.png",
+        "24x24": "https://secure.gravatar.com/avatar/ff19230d4b6d9a5d7d441dc62fec4619?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FK-2.png",
+        "32x32": "https://secure.gravatar.com/avatar/ff19230d4b6d9a5d7d441dc62fec4619?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FK-2.png",
+        "48x48": "https://secure.gravatar.com/avatar/ff19230d4b6d9a5d7d441dc62fec4619?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FK-2.png"
+      },
+      "accountType": "atlassian",
+      "displayName": "KrishnaK"
+    },
+    "duedate": null,
+    "project": {
+      "id": "10013",
+      "key": "PP",
+      "name": "Polaris Platform",
+      "self": "https://exathinkdev.atlassian.net/rest/api/2/project/10013",
+      "avatarUrls": {
+        "16x16": "https://exathinkdev.atlassian.net/rest/api/2/universal_avatar/view/type/project/avatar/10412?size=xsmall",
+        "24x24": "https://exathinkdev.atlassian.net/rest/api/2/universal_avatar/view/type/project/avatar/10412?size=small",
+        "32x32": "https://exathinkdev.atlassian.net/rest/api/2/universal_avatar/view/type/project/avatar/10412?size=medium",
+        "48x48": "https://exathinkdev.atlassian.net/rest/api/2/universal_avatar/view/type/project/avatar/10412"
+      },
+      "simplified": false,
+      "projectTypeKey": "software"
+    },
+    "summary": "Map tags based on custom fields",
+    "updated": "2023-08-11T12:26:56.628-0500",
+    "watches": {
+      "self": "https://exathinkdev.atlassian.net/rest/api/2/issue/PP-521/watchers",
+      "isWatching": false,
+      "watchCount": 1
+    },
+    "worklog": {
+      "total": 0,
+      "startAt": 0,
+      "worklogs": [],
+      "maxResults": 20
+    },
+    "assignee": {
+      "self": "https://exathinkdev.atlassian.net/rest/api/2/user?accountId=557058%3Afe3847a4-f489-452f-8a83-0629c51e0455",
+      "active": true,
+      "timeZone": "America/Chicago",
+      "accountId": "557058:fe3847a4-f489-452f-8a83-0629c51e0455",
+      "avatarUrls": {
+        "16x16": "https://secure.gravatar.com/avatar/ff19230d4b6d9a5d7d441dc62fec4619?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FK-2.png",
+        "24x24": "https://secure.gravatar.com/avatar/ff19230d4b6d9a5d7d441dc62fec4619?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FK-2.png",
+        "32x32": "https://secure.gravatar.com/avatar/ff19230d4b6d9a5d7d441dc62fec4619?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FK-2.png",
+        "48x48": "https://secure.gravatar.com/avatar/ff19230d4b6d9a5d7d441dc62fec4619?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FK-2.png"
+      },
+      "accountType": "atlassian",
+      "displayName": "KrishnaK"
+    },
+    "priority": {
+      "id": "3",
+      "name": "Medium",
+      "self": "https://exathinkdev.atlassian.net/rest/api/2/priority/3",
+      "iconUrl": "https://exathinkdev.atlassian.net/images/icons/priorities/medium.svg"
+    },
+    "progress": {
+      "total": 0,
+      "progress": 0
+    },
+    "reporter": {
+      "self": "https://exathinkdev.atlassian.net/rest/api/2/user?accountId=557058%3Afe3847a4-f489-452f-8a83-0629c51e0455",
+      "active": true,
+      "timeZone": "America/Chicago",
+      "accountId": "557058:fe3847a4-f489-452f-8a83-0629c51e0455",
+      "avatarUrls": {
+        "16x16": "https://secure.gravatar.com/avatar/ff19230d4b6d9a5d7d441dc62fec4619?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FK-2.png",
+        "24x24": "https://secure.gravatar.com/avatar/ff19230d4b6d9a5d7d441dc62fec4619?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FK-2.png",
+        "32x32": "https://secure.gravatar.com/avatar/ff19230d4b6d9a5d7d441dc62fec4619?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FK-2.png",
+        "48x48": "https://secure.gravatar.com/avatar/ff19230d4b6d9a5d7d441dc62fec4619?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FK-2.png"
+      },
+      "accountType": "atlassian",
+      "displayName": "KrishnaK"
+    },
+    "security": null,
+    "subtasks": [],
+    "versions": [],
+    "issuetype": {
+      "id": "10001",
+      "name": "Story",
+      "self": "https://exathinkdev.atlassian.net/rest/api/2/issuetype/10001",
+      "iconUrl": "https://exathinkdev.atlassian.net/rest/api/2/universal_avatar/view/type/issuetype/avatar/10315?size=medium",
+      "subtask": false,
+      "avatarId": 10315,
+      "description": "Stories track functionality or features expressed as user goals.",
+      "hierarchyLevel": 0
+    },
+    "timespent": null,
+    "workratio": -1,
+    "attachment": [],
+    "components": [
+    ],
+    "issuelinks": [],
+    "lastViewed": null,
+    "resolution": null,
+    "description": "We need the ability to do custom tag mapping based on custom fields. \n\nInstead of doing general jmsepath expressions here, we will use a direct name to value or name exists type mapping here and handle the details in the connector. ",
+    "environment": null,
+    "fixVersions": [
+      {
+        "id": "10010",
+        "name": "2023.7",
+        "self": "https://exathinkdev.atlassian.net/rest/api/2/version/10010",
+        "archived": false,
+        "released": false,
+        "description": "",
+        "releaseDate": "2023-08-31"
+      }
+    ],
+    "timeestimate": null,
+    "timetracking": {},
+    "resolutiondate": null,
+    "issuerestriction": {
+      "shouldDisplay": false,
+      "issuerestrictions": {}
+    },
+    "aggregateprogress": {
+      "total": 0,
+      "progress": 0
+    },
+    "customfield_10000": "{}",
+    "customfield_10001": null,
+    "customfield_10002": null,
+    "customfield_10003": null,
+    "customfield_10004": null,
+    "customfield_10005": null,
+    "customfield_10006": null,
+    "customfield_10007": null,
+    "customfield_10008": null,
+    "customfield_10009": null,
+    "customfield_10010": null,
+    "customfield_10014": "PP-496",
+    "customfield_10015": null,
+    "customfield_10016": null,
+    "customfield_10017": null,
+    "customfield_10018": {
+      "showField": false,
+      "nonEditableReason": {
+        "reason": "PLUGIN_LICENSE_ERROR",
+        "message": "The Parent Link is only available to Jira Premium users."
+      },
+      "hasEpicLinkFieldDependency": false
+    },
+    "customfield_10019": null,
+    "customfield_10020": null,
+    "customfield_10021": null,
+    "customfield_10022": "0|i001ew:v1",
+    "customfield_10023": null,
+    "customfield_10024": [],
+    "customfield_10025": null,
+    "customfield_10026": null,
+    "customfield_10029": null,
+    "customfield_10030": null,
+    "customfield_10031": null,
+    "customfield_10032": null,
+    "customfield_10033": null,
+    "customfield_10034": null,
+    "customfield_10035": null,
+    "customfield_10036": null,
+    "customfield_10037": [],
+    "customfield_10038": null,
+    "customfield_10039": null,
+    "customfield_10040": null,
+    "customfield_10041": null,
+    "customfield_10042": null,
+    "customfield_10043": null,
+    "customfield_10044": null,
+    "customfield_10045": null,
+    "customfield_10046": null,
+    "customfield_10047": null,
+    "customfield_10048": {
+      "id": "10020",
+      "self": "https://exathinkdev.atlassian.net/rest/api/2/customFieldOption/10020",
+      "value": "Apples"
+    },
+    "aggregatetimespent": null,
+    "timeoriginalestimate": null,
+    "aggregatetimeestimate": null,
+    "statuscategorychangedate": "2023-07-24T10:38:21.512-0500",
+    "aggregatetimeoriginalestimate": null
+  }
+}
