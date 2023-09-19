@@ -505,9 +505,15 @@ class PathSelectorMappingInput(graphene.InputObjectType):
 class CustomFieldMappingInput(graphene.InputObjectType):
     field_name = graphene.String(required=True, description="""
                                         Name of the custom field. Must match exactly in the 
-                                        associated meta data for custom fields
+                                        associated meta data for custom fields.
+                                        
+                                        If the mapping_type is custom_field_value the value of this custom field
+                                        will be add as tag of the form <custom_field>:<field_name>_<field_value>. 
+                                        Any spaces in the field name or value will be replaced by underscores in the
+                                        generated tag. 
+                                    
                                         """)
-    tag = graphene.String(required=True, description="A tag of the form custom_tag:<tag> will be added to the tags")
+    tag = graphene.String(required=False, description="Required when mapping_type is custom_field_populated. A tag of the form custom_tag:<tag> will be added to the tags")
 
 
 class WorkItemsSourceCustomTagMappingItem(graphene.InputObjectType):
