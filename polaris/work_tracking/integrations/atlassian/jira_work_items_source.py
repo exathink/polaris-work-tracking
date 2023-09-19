@@ -244,9 +244,14 @@ class JiraProject(JiraWorkItemsSource):
                                      lambda field: field['name'] == field_name)
                         if field is not None and 'id' in field:
                             value = issue['fields'].get(field['id'])
-                            if value is not None and isinstance(value, dict) and 'name' in value:
-                                tags.add(f"custom_tag:{field_name.replace(' ', '_')}_{value['name'].replace(' ', '_')}")
-
+                            if value is not None:
+                                if isinstance(value, dict):
+                                    if 'value' in value:
+                                        tags.add(f"custom_tag:{field_name.replace(' ', '_')}_{value['value'].replace(' ', '_')}")
+                                    elif 'name' in value:
+                                        tags.add(f"custom_tag:{field_name.replace(' ', '_')}_{value['name'].replace(' ', '_')}")
+                                    else:
+                                        logger.warning(f"Could not extract a value for tag for custom field {field_name}")
 
 
             if self.custom_tag_mapping is not None:
