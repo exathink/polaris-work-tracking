@@ -135,14 +135,15 @@ def reprocess_work_items(work_items_source_key, attributes_to_check=None, batch_
         with db.orm_session(join_this) as session:
             work_items_source_provider = work_items_source_factory.get_provider_impl(None, work_items_source_key, join_this=session)
             original_work_items, starting = WorkItemsSource.fetch_work_items_batch(work_items_source_key, batch_size, starting)
+
             if len(original_work_items) > 0:
-                reprocessed_work_items = [
-                    # remapping is a best effort exercise. If any one item throws an exception we continue with the
-                    # batch.
-                    map_issue_to_work_item_data_ignore_exceptions(work_items_source_provider, work_item)
-                    for work_item in original_work_items
-                    if len(work_item.api_payload) > 0
-                ]
+                reprocessed_work_items = []
+                for work_item in original_work_items:
+                    if len(work_item.api_payload) > 0:
+                        reprocessed_work_item = map_issue_to_work_item_data_ignore_exceptions(work_items_source_provider, work_item)
+                        if reprocessed_work_item is not None:
+                            reprocessed_work_items.append(reprocessed_work_item)
+
                 changed_items = changed_work_items(original_work_items, reprocessed_work_items, attributes_to_check)
                 yield api.sync_work_items(work_items_source_key, changed_items, session) or []
 
