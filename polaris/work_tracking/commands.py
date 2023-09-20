@@ -119,6 +119,12 @@ def changed_work_items(work_items_batch, reprocessed_work_items, attributes_to_c
 
 
 def reprocess_work_items(work_items_source_key, attributes_to_check=None, batch_size=1000, join_this=None):
+    def map_issue_to_work_item_data_ignore_exceptions(work_items_source_provider, work_item):
+        try:
+            return work_items_source_provider.map_issue_to_work_item_data(work_item.api_payload)
+        except Exception as exc:
+            logger.warning(f"Could not remap work item {work_item.source_display_id}: exception {str(exc)} was raised.")
+
     starting = None
     while True:
         # We always want to use a new session for each batch of work items
@@ -131,7 +137,9 @@ def reprocess_work_items(work_items_source_key, attributes_to_check=None, batch_
             original_work_items, starting = WorkItemsSource.fetch_work_items_batch(work_items_source_key, batch_size, starting)
             if len(original_work_items) > 0:
                 reprocessed_work_items = [
-                    work_items_source_provider.map_issue_to_work_item_data(work_item.api_payload)
+                    # remapping is a best effort exercise. If any one item throws an exception we continue with the
+                    # batch.
+                    map_issue_to_work_item_data_ignore_exceptions(work_items_source_provider, work_item)
                     for work_item in original_work_items
                     if len(work_item.api_payload) > 0
                 ]
