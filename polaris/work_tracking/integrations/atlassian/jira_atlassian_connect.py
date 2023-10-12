@@ -30,7 +30,9 @@ class JiraConnectorContext:
     addon_key = config_provider.get('JIRA_CONNECTOR_APP_KEY', 'localdev.exathink.polaris.jira')
     addon_description = config_provider.get('JIRA_CONNECTOR_DESCRIPTION', "Jira Connector for Polaris Flow")
     addon_scopes = ["READ", "WRITE"]
-    addon_version = 1
+
+    # 10/12/2023: Updated from version 1 to 1.0.1 to resolve https://ecosystem.atlassian.net/browse/AMS-24987
+    addon_version = "1.0.1"
     api_migrations = {
             "context-qsh": True,
             "signed-install": True
