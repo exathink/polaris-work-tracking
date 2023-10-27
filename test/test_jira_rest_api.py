@@ -575,7 +575,7 @@ class TestStoryPointsMapping:
 
             assert mapped_data['story_points'] == 6
 
-class TestImpedimentMapping:
+class TestFlaggedMapping:
 
     class TestFlaggedWorkItem:
         @pytest.fixture()
