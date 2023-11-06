@@ -215,3 +215,13 @@ class TestModel:
         work_item_data['sprints'] = ['Sprint xyz']
         updated = work_item.update(work_item_data)
         assert updated
+
+    def it_updates_work_item_flagged(self, setup):
+        fixture = setup
+
+        work_item = [wi for wi in fixture.work_items][0]
+
+        work_item_data = dict()
+        work_item_data['flagged'] = True
+        updated = work_item.update(work_item_data)
+        assert updated

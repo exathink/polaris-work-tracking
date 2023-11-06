@@ -30,7 +30,17 @@ jira_api_issue_payload = {'id': '10343', 'self': 'https://urjuna.atlassian.net/r
                                              '24x24': 'https://urjuna.atlassian.net/secure/projectavatar?size=small&s=small&pid=10008&avatarId=10405',
                                              '16x16': 'https://urjuna.atlassian.net/secure/projectavatar?size=xsmall&s=xsmall&pid=10008&avatarId=10405',
                                              '32x32': 'https://urjuna.atlassian.net/secure/projectavatar?size=medium&s=medium&pid=10008&avatarId=10405'}},
-                                     'customfield_10110': None, 'fixVersions': [{"id": "10003", "name": "V1", "self": "https://exathinkdev.atlassian.net/rest/api/2/version/10003", "archived": False, "released": False, "description": "", "releaseDate": "2023-08-03"}, {"id": "10004", "name": "V2", "self": "https://exathinkdev.atlassian.net/rest/api/2/version/10004", "archived": False, "released": False, "description": "", "releaseDate": "2023-09-01"}], 'aggregatetimespent': None,
+                                     'customfield_10110': None, 'fixVersions': [{"id": "10003", "name": "V1",
+                                                                                 "self": "https://exathinkdev.atlassian.net/rest/api/2/version/10003",
+                                                                                 "archived": False, "released": False,
+                                                                                 "description": "",
+                                                                                 "releaseDate": "2023-08-03"},
+                                                                                {"id": "10004", "name": "V2",
+                                                                                 "self": "https://exathinkdev.atlassian.net/rest/api/2/version/10004",
+                                                                                 "archived": False, "released": False,
+                                                                                 "description": "",
+                                                                                 "releaseDate": "2023-09-01"}],
+                                     'aggregatetimespent': None,
                                      'customfield_10111': None, 'customfield_10112': None, 'resolution': None,
                                      'customfield_10113': None, 'customfield_10114': None, 'customfield_10105': None,
                                      'customfield_10106': [], 'customfield_10107': None, 'customfield_10108': None,
@@ -69,16 +79,19 @@ jira_api_issue_payload = {'id': '10343', 'self': 'https://urjuna.atlassian.net/r
                                      'description': None, 'customfield_10010': None, 'customfield_10014': None,
                                      'customfield_10015': None, 'timetracking': {}, 'customfield_10005': None,
                                      'customfield_10006': None, 'security': None, "customfield_10007": [
-                                      {
-                                        "id": 4358,
-                                        "goal": "",
-                                        "name": "Sprint 1",
-                                        "state": "active",
-                                        "boardId": 293,
-                                        "endDate": "2023-08-08T16:09:00.000Z",
-                                        "startDate": "2023-07-26T17:11:55.788Z"
-                                      }
-                                        ],
+                                  {
+                                      "id": 4358,
+                                      "goal": "",
+                                      "name": "Sprint 1",
+                                      "state": "active",
+                                      "boardId": 293,
+                                      "endDate": "2023-08-08T16:09:00.000Z",
+                                      "startDate": "2023-07-26T17:11:55.788Z"
+                                  }
+                              ],
+                                     'customfield_10030': [{"id": "10019",
+                                                            "self": "https://exathinkdev.atlassian.net/rest/api/2/customFieldOption/10019",
+                                                            "value": "Impediment"}],
                                      'customfield_10008': None, 'customfield_10009': None, 'attachment': [],
                                      'aggregatetimeestimate': None, 'summary': 'Jira connector is not mapping labels. ',
                                      'creator': {
@@ -274,14 +287,14 @@ class TestJiraWorkItemSource:
         assert mapped_data['api_payload']
         assert mapped_data['commit_identifiers']
         assert mapped_data['priority']
-        assert mapped_data['releases'] == ['V1','V2']
+        assert mapped_data['releases'] == ['V1', 'V2']
         assert mapped_data['story_points']
         assert mapped_data['sprints'] == ['Sprint 1']
-
+        assert mapped_data['flagged'] == True
 
         # explicitly assert that these are the only fields mapped. The test should fail
         # and force a change in assertions if we change the mapping
-        assert len(mapped_data.keys()) == 19
+        assert len(mapped_data.keys()) == 20
 
     def it_maps_work_item_data_correctly_when_issue_has_parent_field(self, setup):
         fixture = setup
@@ -307,9 +320,10 @@ class TestJiraWorkItemSource:
         assert mapped_data['parent_source_display_id']
         assert mapped_data['api_payload']
         assert mapped_data['commit_identifiers']
+
         # explicitly assert that these are the only fields mapped. The test should fail
         # and force a change in assertions if we change the mapping
-        assert len(mapped_data.keys()) == 19
+        assert len(mapped_data.keys()) == 20
 
 
 class TestCustomTypeMapping:
@@ -400,7 +414,8 @@ class TestStoryPointsMapping:
 
             # this payload contains both story points estimate and story points
             jira_api_issue_with_story_points_info = json.loads(
-                pkg_resources.resource_string(__name__, 'data/jira_payload_for_story_points_mapping_both_provided.json'))
+                pkg_resources.resource_string(__name__,
+                                              'data/jira_payload_for_story_points_mapping_both_provided.json'))
 
             yield Fixture(
                 jira_issue=jira_api_issue_with_story_points_info,
@@ -427,7 +442,8 @@ class TestStoryPointsMapping:
 
             # this payload contains only story points
             jira_api_issue_with_story_points_info = json.loads(
-                pkg_resources.resource_string(__name__, 'data/jira_payload_for_story_points_mapping_only_story_points.json'))
+                pkg_resources.resource_string(__name__,
+                                              'data/jira_payload_for_story_points_mapping_only_story_points.json'))
 
             yield Fixture(
                 jira_issue=jira_api_issue_with_story_points_info,
@@ -446,6 +462,7 @@ class TestStoryPointsMapping:
             mapped_data = project.map_issue_to_work_item_data(fixture.jira_issue)
 
             assert mapped_data['story_points'] == 10
+
     class TestWhenOnlyStoryPointEstimateProvided:
         @pytest.fixture()
         def setup(self, jira_work_item_source_fixture, cleanup):
@@ -453,7 +470,8 @@ class TestStoryPointsMapping:
 
             # this payload contains only story point estimates
             jira_api_issue_with_story_points_info = json.loads(
-                pkg_resources.resource_string(__name__, 'data/jira_payload_for_story_points_mapping_only_story_point_estimate.json'))
+                pkg_resources.resource_string(__name__,
+                                              'data/jira_payload_for_story_points_mapping_only_story_point_estimate.json'))
 
             yield Fixture(
                 jira_issue=jira_api_issue_with_story_points_info,
@@ -480,7 +498,8 @@ class TestStoryPointsMapping:
 
             # this payload contains neither
             jira_api_issue_with_story_points_info = json.loads(
-                pkg_resources.resource_string(__name__, 'data/jira_payload_for_story_points_mapping_none_provided.json'))
+                pkg_resources.resource_string(__name__,
+                                              'data/jira_payload_for_story_points_mapping_none_provided.json'))
 
             yield Fixture(
                 jira_issue=jira_api_issue_with_story_points_info,
@@ -555,6 +574,63 @@ class TestStoryPointsMapping:
             mapped_data = project.map_issue_to_work_item_data(fixture.jira_issue)
 
             assert mapped_data['story_points'] == 6
+
+class TestFlaggedMapping:
+
+    class TestFlaggedWorkItem:
+        @pytest.fixture()
+        def setup(self, jira_work_item_source_fixture, cleanup):
+            work_items_source, _, _ = jira_work_item_source_fixture
+
+            # this payload contains a flagged work item
+            jira_api_issue_with_flag = json.loads(
+                pkg_resources.resource_string(__name__,
+                                              'data/jira_payload_for_flagged.json'))
+
+            yield Fixture(
+                jira_issue=jira_api_issue_with_flag,
+                work_items_source=work_items_source
+            )
+
+        def it_maps_data_to_indicate_flagged(self, setup):
+            fixture = setup
+
+            work_items_source = fixture.work_items_source
+            with db.orm_session() as session:
+                session.add(work_items_source)
+
+                project = JiraProject(work_items_source)
+
+            mapped_data = project.map_issue_to_work_item_data(fixture.jira_issue)
+
+            assert mapped_data['flagged'] is True
+
+    class TestNotFlaggedWorkItem:
+        @pytest.fixture()
+        def setup(self, jira_work_item_source_fixture, cleanup):
+            work_items_source, _, _ = jira_work_item_source_fixture
+
+            # this payload contains a flagged work item
+            jira_api_issue_without_flag = json.loads(
+                pkg_resources.resource_string(__name__,
+                                              'data/jira_payload_for_not_flagged.json'))
+
+            yield Fixture(
+                jira_issue=jira_api_issue_without_flag,
+                work_items_source=work_items_source
+            )
+
+        def it_maps_data_to_indicate_not_flagged(self, setup):
+            fixture = setup
+
+            work_items_source = fixture.work_items_source
+            with db.orm_session() as session:
+                session.add(work_items_source)
+                project = JiraProject(work_items_source)
+
+            mapped_data = project.map_issue_to_work_item_data(fixture.jira_issue)
+
+            assert mapped_data['flagged'] is False
 
 
 class TestCustomParentMapping:
@@ -738,9 +814,9 @@ class TestCustomTagging:
 
             yield Fixture(
                 jira_story_issue=json.loads(
-                pkg_resources.resource_string(__name__, 'data/jira_payload_for_story_feature_item.json')),
+                    pkg_resources.resource_string(__name__, 'data/jira_payload_for_story_feature_item.json')),
                 jira_task_issue=json.loads(
-                pkg_resources.resource_string(__name__, 'data/jira_payload_for_task_feature_item.json')),
+                    pkg_resources.resource_string(__name__, 'data/jira_payload_for_task_feature_item.json')),
                 work_items_source=work_items_source
             )
 
@@ -767,6 +843,7 @@ class TestCustomTagging:
             mapped_data = project.map_issue_to_work_item_data(fixture.jira_story_issue)
 
             assert 'custom_tag:feature-item' in mapped_data['tags']
+
         def it_does_not_add_a_custom_tag_when_the_parent_is_a_feature_and_the_issue_type_is_not_a_story(self, setup):
             fixture = setup
 
@@ -790,6 +867,7 @@ class TestCustomTagging:
             mapped_data = project.map_issue_to_work_item_data(fixture.jira_task_issue)
 
             assert 'custom_tag:feature-item' not in mapped_data['tags']
+
         def it_adds_a_custom_tag_when_the_parent_is_a_feature_and_the_issue_type_is_not_a_story(self, setup):
             # this tests path_selector_false
             fixture = setup
@@ -867,7 +945,8 @@ class TestCustomTagging:
 
             assert 'custom_tag:feature-item' in mapped_data['tags']
 
-        def it_adds_a_custom_tag_when_the_parent_is_a_feature_and_the_issue_type_value_is_one_of_story_or_task(self, setup):
+        def it_adds_a_custom_tag_when_the_parent_is_a_feature_and_the_issue_type_value_is_one_of_story_or_task(self,
+                                                                                                               setup):
             # this tests path_selector_false
             fixture = setup
 
@@ -1011,7 +1090,8 @@ class TestCustomTagging:
 
                 # this payload contains an issue with a custom field whose
                 jira_api_issue_with_components = json.loads(
-                    pkg_resources.resource_string(__name__, 'data/jira_payload_custom_field_with_value_in_name_field.json'))
+                    pkg_resources.resource_string(__name__,
+                                                  'data/jira_payload_custom_field_with_value_in_name_field.json'))
 
                 yield Fixture(
                     jira_issue=jira_api_issue_with_components,
@@ -1074,7 +1154,7 @@ class TestCustomTagging:
 
                 mapped_data = project.map_issue_to_work_item_data(fixture.jira_issue)
 
-                assert len(mapped_data['tags'] ) == 0
+                assert len(mapped_data['tags']) == 0
 
             def it_does_not_add_a_custom_tag_when_the_custom_field_does_not_exist(self, setup):
                 fixture = setup
@@ -1114,7 +1194,8 @@ class TestCustomTagging:
 
                 # this payload contains an issue with a custom field whose
                 jira_api_issue_with_components = json.loads(
-                    pkg_resources.resource_string(__name__, 'data/jira_payload_custom_field_with_value_in_value_field.json'))
+                    pkg_resources.resource_string(__name__,
+                                                  'data/jira_payload_custom_field_with_value_in_value_field.json'))
 
                 yield Fixture(
                     jira_issue=jira_api_issue_with_components,
@@ -1207,6 +1288,7 @@ class TestCustomTagging:
                 mapped_data = project.map_issue_to_work_item_data(fixture.jira_issue)
 
                 assert len(mapped_data['tags']) == 0
+
 
 class TestSprintsMapping:
     class TestWhenOnlyOneSprintProvided:

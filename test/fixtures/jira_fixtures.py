@@ -46,8 +46,6 @@ payload = dict(
 )
 
 
-
-
 @pytest.fixture(scope='module')
 def setup_integrations_schema(db_up):
     integrations.recreate_all(db.engine())
@@ -98,66 +96,87 @@ def jira_work_item_source_fixture(setup_work_tracking_schema, app_fixture):
             organization_key=organization_key,
             commit_mapping_scope='organization',
             import_state=WorkItemsSourceImportState.auto_update.value,
-            custom_fields=[{"id": "customfield_10014", "key": "customfield_10014", "name": "Epic Link"},{"id": "customfield_10029", "key": "customfield_10029", "name": "Story Points", "custom": True, "schema": {"type": "number", "custom": "com.atlassian.jira.plugin.system.customfieldtypes:float", "customId": 10029}},{"id": "customfield_10016", "key": "customfield_10016", "name": "Story point estimate", "custom": True, "schema": {"type": "number", "custom": "com.pyxis.greenhopper.jira:jsw-story-points", "customId": 10016}},{
-    "id": "customfield_10007",
-    "key": "customfield_10007",
-    "name": "Sprint",
-    "custom": True,
-    "schema": {
-      "type": "array",
-      "items": "json",
-      "custom": "com.pyxis.greenhopper.jira:gh-sprint",
-      "customId": 10007
-    },
-    "navigable": True,
-    "orderable": True,
-    "searchable": True,
-    "clauseNames": [
-      "cf[10007]",
-      "Sprint"
-    ],
-    "untranslatedName": "Sprint"
-  }]
+            custom_fields=[{"id": "customfield_10014", "key": "customfield_10014", "name": "Epic Link"},
+                           {"id": "customfield_10029", "key": "customfield_10029", "name": "Story Points",
+                            "custom": True, "schema": {"type": "number",
+                                                       "custom": "com.atlassian.jira.plugin.system.customfieldtypes:float",
+                                                       "customId": 10029}},
+                           {"id": "customfield_10016", "key": "customfield_10016", "name": "Story point estimate",
+                            "custom": True,
+                            "schema": {"type": "number", "custom": "com.pyxis.greenhopper.jira:jsw-story-points",
+                                       "customId": 10016}}, {
+                               "id": "customfield_10007",
+                               "key": "customfield_10007",
+                               "name": "Sprint",
+                               "custom": True,
+                               "schema": {
+                                   "type": "array",
+                                   "items": "json",
+                                   "custom": "com.pyxis.greenhopper.jira:gh-sprint",
+                                   "customId": 10007
+                               },
+                               "navigable": True,
+                               "orderable": True,
+                               "searchable": True,
+                               "clauseNames": [
+                                   "cf[10007]",
+                                   "Sprint"
+                               ],
+                               "untranslatedName": "Sprint"
+                           },
+                           {"id": "customfield_10030", "key": "customfield_10030", "name": "Flagged", "custom": True,
+                            "schema": {"type": "array", "items": "option",
+                                       "custom": "com.atlassian.jira.plugin.system.customfieldtypes:multicheckboxes",
+                                       "customId": 10030},
+                            "navigable": True, "orderable": True, "searchable": True,
+                            "clauseNames": ["cf[10030]", "Flagged", "Flagged[Checkboxes]"],
+                            "untranslatedName": "Flagged"}
+                           ]
         )
         session.add(work_items_source)
         session.flush()
 
     yield work_items_source, jira_project_id, connector_key
 
+
 @pytest.fixture
 def jira_work_item_source_with_multiple_story_points_fixture(setup_work_tracking_schema, app_fixture):
-  _, _, connector_key = app_fixture
-  jira_project_id = "10001"
-  with db.orm_session() as session:
-    session.expire_on_commit = False
-    work_items_source = work_tracking.WorkItemsSource(
-      key=uuid.uuid4(),
-      connector_key=str(connector_key),
-      integration_type='jira',
-      work_items_source_type=JiraWorkItemSourceType.project.value,
-      name='test',
-      source_id=jira_project_id,
-      parameters=dict(),
-      account_key=account_key,
-      organization_key=organization_key,
-      commit_mapping_scope='organization',
-      import_state=WorkItemsSourceImportState.auto_update.value,
-      custom_fields=[{"id": "customfield_10014", "key": "customfield_10014", "name": "Epic Link"},
-                     {"id": "customfield_11563", "key": "customfield_11563", "name": "Story Points", "custom": True,
-                      "schema": {"type": "number", "custom": "com.atlassian.jira.plugin.system.customfieldtypes:float",
-                                 "customId": 11563}},
-                     {"id": "customfield_10011", "key": "customfield_10011", "name": "Story Points", "custom": True,
-                      "schema": {"type": "number", "custom": "com.atlassian.jira.plugin.system.customfieldtypes:float",
-                                 "customId": 10011}},
-                     {"id": "customfield_10016", "key": "customfield_10016", "name": "Story point estimate",
-                      "custom": True,
-                      "schema": {"type": "number", "custom": "com.pyxis.greenhopper.jira:jsw-story-points",
-                                 "customId": 10016}}]
-    )
-    session.add(work_items_source)
-    session.flush()
+    _, _, connector_key = app_fixture
+    jira_project_id = "10001"
+    with db.orm_session() as session:
+        session.expire_on_commit = False
+        work_items_source = work_tracking.WorkItemsSource(
+            key=uuid.uuid4(),
+            connector_key=str(connector_key),
+            integration_type='jira',
+            work_items_source_type=JiraWorkItemSourceType.project.value,
+            name='test',
+            source_id=jira_project_id,
+            parameters=dict(),
+            account_key=account_key,
+            organization_key=organization_key,
+            commit_mapping_scope='organization',
+            import_state=WorkItemsSourceImportState.auto_update.value,
+            custom_fields=[{"id": "customfield_10014", "key": "customfield_10014", "name": "Epic Link"},
+                           {"id": "customfield_11563", "key": "customfield_11563", "name": "Story Points",
+                            "custom": True,
+                            "schema": {"type": "number",
+                                       "custom": "com.atlassian.jira.plugin.system.customfieldtypes:float",
+                                       "customId": 11563}},
+                           {"id": "customfield_10011", "key": "customfield_10011", "name": "Story Points",
+                            "custom": True,
+                            "schema": {"type": "number",
+                                       "custom": "com.atlassian.jira.plugin.system.customfieldtypes:float",
+                                       "customId": 10011}},
+                           {"id": "customfield_10016", "key": "customfield_10016", "name": "Story point estimate",
+                            "custom": True,
+                            "schema": {"type": "number", "custom": "com.pyxis.greenhopper.jira:jsw-story-points",
+                                       "customId": 10016}}]
+        )
+        session.add(work_items_source)
+        session.flush()
 
-  yield work_items_source, jira_project_id, connector_key
+    yield work_items_source, jira_project_id, connector_key
 
 
 class WorkItemsSourceTest:
