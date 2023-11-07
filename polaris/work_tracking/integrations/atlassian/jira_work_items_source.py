@@ -133,6 +133,7 @@ class JiraProject(JiraWorkItemsSource):
                     releases=self.get_fix_versions(fields),
                     story_points=self.get_story_points(fields),
                     sprints=self.get_sprints(fields),
+                    flagged=self.get_flagged(fields),
                     parent_source_display_id=parent_source_display_id,
                     api_payload=issue,
                     commit_identifiers=[issue.get('key'), issue.get('key').lower(), issue.get('key').capitalize()],
@@ -166,6 +167,12 @@ class JiraProject(JiraWorkItemsSource):
             for sprint in (self.find_in_custom_fields(fields, "Sprint") or [])
         ]
 
+    def get_flagged(self, fields):
+        # Get flagged info
+        if self.find_in_custom_fields(fields, "Flagged") is None:
+            return False
+        else:
+            return True
 
     def resolve_parent_source_key(self, issue):
         fields = issue.get('fields')
