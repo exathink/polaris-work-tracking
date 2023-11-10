@@ -4,7 +4,6 @@
 
 # Unauthorized use or copying of this file and its contents, via any medium
 # is strictly prohibited. The work product in this file is proprietary and
-# confidential.
 
 # Author: Krishna Kumar
 
@@ -90,7 +89,7 @@ def sync_work_items(work_items_source_key, work_item_list, join_this=None):
         attributes_to_check = ['name', 'description', 'is_bug', 'work_item_type', 'is_epic', 'tags', 'url',
                                'source_state',
                                'source_display_id', 'api_payload', 'work_items_source_id', 'commit_identifiers',
-                               'parent_source_display_id','priority','releases','story_points','sprints','flagged']
+                               'parent_source_display_id','priority','releases','story_points','sprints','flagged','changelog']
         # mark unchanged items in the set. We use this downstream to
         # signal that there is no need to propagate this update beyond this subsystem.
         unchanged_items = select([
@@ -155,6 +154,7 @@ def sync_work_items(work_items_source_key, work_item_list, join_this=None):
                     story_points=upsert.excluded.story_points,
                     sprints=upsert.excluded.sprints,
                     flagged=upsert.excluded.flagged,
+                    changelog=upsert.excluded.changelog,
                     parent_source_display_id=upsert.excluded.parent_source_display_id,
                     parent_id=upsert.excluded.parent_id,
                     last_sync=upsert.excluded.last_sync,
@@ -397,7 +397,8 @@ def sync_work_items(work_items_source_key, work_item_list, join_this=None):
                     releases=work_item.releases,
                     story_points=work_item.story_points,
                     sprints=work_item.sprints,
-                    flagged=work_item.flagged
+                    flagged=work_item.flagged,
+                    changelog=work_item.changelog
 
                 )
                 for work_item in sync_result

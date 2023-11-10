@@ -106,6 +106,13 @@ class JiraProject(JiraWorkItemsSource):
     def map_issue_to_work_item_data(self, issue):
         if issue is not None:
             fields = issue.get('fields', None)
+
+            if  issue.get('changelog') is not None:
+                changelog = self.parse_changelog(issue.get('changelog'))
+            else:
+                changelog = []
+
+
             if fields is not None:
                 if 'issuetype' in fields:
                     issue_type = fields.get('issuetype').get('name')
@@ -137,7 +144,7 @@ class JiraProject(JiraWorkItemsSource):
                     parent_source_display_id=parent_source_display_id,
                     api_payload=issue,
                     commit_identifiers=[issue.get('key'), issue.get('key').lower(), issue.get('key').capitalize()],
-
+                    changelog=changelog,
                 )
 
                 return mapped_data
@@ -145,6 +152,14 @@ class JiraProject(JiraWorkItemsSource):
                 raise ProcessingException(f"Map Jira issue failed: Issue did not have field called 'fields' {issue}")
         else:
             raise ProcessingException("Map Jira issue failed: Issue was None")
+
+    def parse_changelog(self,changelog):
+        return [
+            {'created': history.get('created'),
+             'previous_state': history.get('items')[0]['fromString'], 'state': history.get('items')[0]['toString']}
+            for history in (changelog.get('histories')[::-1] or []) if history.get('items')[0]['field'] == 'status'
+        ]
+
 
     def get_fix_versions(self, fields):
         # Get Release information
@@ -338,6 +353,7 @@ class JiraProject(JiraWorkItemsSource):
         query_params = dict(
             fields="*all,-comment",
             jql=jql,
+            expand='changelog',
             maxResults=100
         )
 
