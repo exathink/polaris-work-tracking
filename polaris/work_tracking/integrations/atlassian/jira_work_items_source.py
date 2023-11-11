@@ -11,6 +11,7 @@
 import logging
 from datetime import datetime, timedelta
 import jmespath
+import itertools
 
 from polaris.utils.collections import find
 
@@ -154,10 +155,17 @@ class JiraProject(JiraWorkItemsSource):
             raise ProcessingException("Map Jira issue failed: Issue was None")
 
     def parse_changelog(self,changelog):
+        # return [
+        #     {'created': history.get('created'),
+        #      'previous_state': history.get('items')[0]['fromString'], 'state': history.get('items')[0]['toString'],'seq_no': index}
+        #     for history in (changelog.get('histories')[::-1] or []) if history.get('items')[0]['field'] == 'status'
+        # ]
+        counter = itertools.count(1)
+
         return [
             {'created': history.get('created'),
-             'previous_state': history.get('items')[0]['fromString'], 'state': history.get('items')[0]['toString']}
-            for history in (changelog.get('histories')[::-1] or []) if history.get('items')[0]['field'] == 'status'
+             'previous_state': history.get('items')[0]['fromString'], 'state': history.get('items')[0]['toString'],'seq_no': next(counter)}
+            for index, history in enumerate((changelog.get('histories')[::-1] or [])) if history.get('items')[0]['field'] == 'status'
         ]
 
 
