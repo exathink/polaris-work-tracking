@@ -155,7 +155,7 @@ class JiraProject(JiraWorkItemsSource):
             raise ProcessingException("Map Jira issue failed: Issue was None")
 
     def parse_changelog(self,changelog):
-        counter = itertools.count(1)
+        counter = itertools.count(2)
 
         return [
             {'created': history.get('created'),
