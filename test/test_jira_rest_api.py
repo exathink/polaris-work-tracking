@@ -776,7 +776,7 @@ class TestChangeLogMapping:
 
             mapped_data = project.map_issue_to_work_item_data(fixture.jira_issue)
 
-            assert mapped_data['changelog'] == []
+            assert mapped_data['changelog'] is None
 
 
 class TestCustomParentMapping:
