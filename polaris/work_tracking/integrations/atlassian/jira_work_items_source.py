@@ -107,11 +107,11 @@ class JiraProject(JiraWorkItemsSource):
     def map_issue_to_work_item_data(self, issue):
         if issue is not None:
             fields = issue.get('fields', None)
-
+            changelog = None
             if  issue.get('changelog') is not None:
                 changelog = self.parse_changelog(issue.get('changelog'))
-            else:
-                changelog = []
+                if len(changelog) == 0:
+                    changelog = None
 
 
             if fields is not None:
