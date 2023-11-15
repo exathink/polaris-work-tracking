@@ -158,7 +158,7 @@ class JiraProject(JiraWorkItemsSource):
         counter = itertools.count(2)
 
         return [
-            {'created': history.get('created'),
+            {'created_at': history.get('created'),
              'previous_state': history.get('items')[0]['fromString'], 'state': history.get('items')[0]['toString'],'seq_no': next(counter)}
             for index, history in enumerate((changelog.get('histories')[::-1] or [])) if history.get('items')[0]['field'] == 'status'
         ]
