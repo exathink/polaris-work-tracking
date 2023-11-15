@@ -335,7 +335,7 @@ class TestJiraWorkItemSource:
         assert mapped_data['story_points']
         assert mapped_data['sprints'] == ['Sprint 1']
         assert mapped_data['flagged'] == True
-        assert mapped_data['changelog'] == [{'created_at': '2023-11-08T16:55:00.575-0600',
+        assert mapped_data['changelog'] == [{'created_at': '2023-11-08T22:55:00.575000',
                                              'previous_state': 'To Do',
                                              'seq_no': 2,
                                              'state': 'In Progress'}
@@ -709,7 +709,7 @@ class TestChangeLogMapping:
 
             mapped_data = project.map_issue_to_work_item_data(fixture.jira_issue)
 
-            assert mapped_data['changelog'] == [{'created_at': '2023-11-08T16:55:00.575-0600',
+            assert mapped_data['changelog'] == [{'created_at': '2023-11-08T22:55:00.575000',
                                                  'previous_state': 'To Do',
                                                  'seq_no': 2,
                                                  'state': 'In Progress'}
@@ -741,11 +741,11 @@ class TestChangeLogMapping:
 
             mapped_data = project.map_issue_to_work_item_data(fixture.jira_issue)
 
-            assert mapped_data['changelog'] == [{'created_at': '2023-11-08T16:55:00.575-0600',
+            assert mapped_data['changelog'] == [{'created_at': '2023-11-08T22:55:00.575000',
                                                  'previous_state': 'To Do',
                                                  'seq_no': 2,
                                                  'state': 'In Progress'},
-                                                {'created_at': '2023-11-09T16:55:00.575-0600',
+                                                {'created_at': '2023-11-09T22:55:00.575000',
                                                  'previous_state': 'In Progress',
                                                  'seq_no': 3,
                                                  'state': 'Done'}
