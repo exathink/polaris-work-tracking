@@ -322,7 +322,7 @@ class WorkItem(Base):
     story_points = Column(Integer, nullable=True)
     sprints = Column(ARRAY(String), nullable=True, default=[], server_default='{}')
     flagged = Column(Boolean, nullable=True, default=False, server_default='FALSE')
-    changelog = Column(JSONB, nullable=True, default={}, server_default='{}')
+    changelog = Column(JSONB, nullable=True)
 
     # timestamps for synchronization
     source_created_at = Column(DateTime, nullable=False)
