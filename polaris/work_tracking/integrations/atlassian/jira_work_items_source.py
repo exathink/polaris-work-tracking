@@ -105,12 +105,11 @@ class JiraProject(JiraWorkItemsSource):
 
     def map_issue_to_work_item_data(self, issue):
         if issue is not None:
+
+
+
             fields = issue.get('fields', None)
-            changelog = None
-            if issue.get('changelog') is not None:
-                changelog = self.parse_changelog(issue.get('changelog'))
-                if len(changelog) == 0:
-                    changelog = None
+
 
             if fields is not None:
                 if 'issuetype' in fields:
@@ -143,8 +142,12 @@ class JiraProject(JiraWorkItemsSource):
                     parent_source_display_id=parent_source_display_id,
                     api_payload=issue,
                     commit_identifiers=[issue.get('key'), issue.get('key').lower(), issue.get('key').capitalize()],
-                    changelog=changelog,
+                    changelog=None
                 )
+
+                if issue.get('changelog') is not None:
+                    changelog = self.parse_changelog(issue.get('changelog'))
+                    mapped_data['changelog'] = changelog
 
                 return mapped_data
             else:
@@ -153,21 +156,22 @@ class JiraProject(JiraWorkItemsSource):
             raise ProcessingException("Map Jira issue failed: Issue was None")
 
     def parse_changelog(self, changelog):
-        counter = itertools.count(2)
 
-        return [
+        #Changelogs for items that are resolved, have two items in the history - the first called resolved and the second is the status
+        status_change_log =  [
             {'created_at': self.jira_time_to_utc_time_string(history.get('created')),
              'previous_state': history.get('items')[0]['fromString'] if history.get('items')[0][
                                                                             'field'] == 'status' else
+             # Changelogs for items that are resolved, have two items in the history - the first called resolved and the second is the status
              history.get('items')[1]['fromString'],
              'state': history.get('items')[0]['toString'] if history.get('items')[0][
                                                                  'field'] == 'status' else history.get('items')[1][
                  'toString']
-                ,
-             'seq_no': next(counter)}
-            for index, history in enumerate((changelog.get('histories')[::-1] or [])) if
+            }
+            for history in changelog.get('histories')[::-1]  if
             history.get('items')[0]['field'] in ('status', 'resolution')
         ]
+        return status_change_log if len(status_change_log)>0 else  None
 
     def get_fix_versions(self, fields):
         # Get Release information

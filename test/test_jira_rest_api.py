@@ -337,7 +337,6 @@ class TestJiraWorkItemSource:
         assert mapped_data['flagged'] == True
         assert mapped_data['changelog'] == [{'created_at': '2023-11-08T22:55:00.575000',
                                              'previous_state': 'To Do',
-                                             'seq_no': 2,
                                              'state': 'In Progress'}
                                             ]
 
@@ -711,7 +710,6 @@ class TestChangeLogMapping:
 
             assert mapped_data['changelog'] == [{'created_at': '2023-11-08T22:55:00.575000',
                                                  'previous_state': 'To Do',
-                                                 'seq_no': 2,
                                                  'state': 'In Progress'}
                                                 ]
 
@@ -743,11 +741,9 @@ class TestChangeLogMapping:
 
             assert mapped_data['changelog'] == [{'created_at': '2023-11-08T22:55:00.575000',
                                                  'previous_state': 'To Do',
-                                                 'seq_no': 2,
                                                  'state': 'In Progress'},
                                                 {'created_at': '2023-11-09T22:55:00.575000',
                                                  'previous_state': 'In Progress',
-                                                 'seq_no': 3,
                                                  'state': 'Done'}
                                                 ]
     class TestIssueWithNoChangeLog:
