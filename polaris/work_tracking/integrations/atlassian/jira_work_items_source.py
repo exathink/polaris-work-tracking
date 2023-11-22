@@ -11,7 +11,6 @@
 import logging
 from datetime import datetime, timedelta
 import jmespath
-import itertools
 
 from polaris.utils.collections import find
 
@@ -106,10 +105,7 @@ class JiraProject(JiraWorkItemsSource):
     def map_issue_to_work_item_data(self, issue):
         if issue is not None:
 
-
-
             fields = issue.get('fields', None)
-
 
             if fields is not None:
                 if 'issuetype' in fields:
@@ -157,21 +153,24 @@ class JiraProject(JiraWorkItemsSource):
 
     def parse_changelog(self, changelog):
 
-        #Changelogs for items that are resolved, have two items in the history - the first called resolved and the second is the status
-        status_change_log =  [
-            {'created_at': self.jira_time_to_utc_time_string(history.get('created')),
-             'previous_state': history.get('items')[0]['fromString'] if history.get('items')[0][
-                                                                            'field'] == 'status' else
-             # Changelogs for items that are resolved, have two items in the history - the first called resolved and the second is the status
-             history.get('items')[1]['fromString'],
-             'state': history.get('items')[0]['toString'] if history.get('items')[0][
-                                                                 'field'] == 'status' else history.get('items')[1][
-                 'toString']
-            }
-            for history in changelog.get('histories')[::-1]  if
-            history.get('items')[0]['field'] in ('status', 'resolution')
-        ]
-        return status_change_log if len(status_change_log)>0 else  None
+        status_change_log = []
+
+        for history in changelog.get('histories')[::-1] or []:
+            try:
+                if history.get('items')[0]['field'] == 'status':
+                    status_change_log.append({'created_at': self.jira_time_to_utc_time_string(history.get('created')),
+                                              'previous_state': history.get('items')[0]['fromString'],
+                                              'state': history.get('items')[0]['toString']
+                                              })
+                elif history.get('items')[0]['field'] == 'resolution':
+                    status_change_log.append({'created_at': self.jira_time_to_utc_time_string(history.get('created')),
+                                      'previous_state': history.get('items')[1]['fromString'],
+                                      'state': history.get('items')[1]['toString']
+                                      })
+            except:
+                raise ProcessingException("Map Jira issue failed: Changelog format was incorrect")
+
+        return status_change_log
 
     def get_fix_versions(self, fields):
         # Get Release information
