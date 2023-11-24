@@ -170,7 +170,7 @@ class JiraProject(JiraWorkItemsSource):
             except:
                 raise ProcessingException("Map Jira issue failed: Changelog format was incorrect")
 
-        return status_change_log
+        return status_change_log if len(status_change_log) >0 else None
 
     def get_fix_versions(self, fields):
         # Get Release information

@@ -774,6 +774,33 @@ class TestChangeLogMapping:
 
             assert mapped_data['changelog'] is None
 
+    class TestIssueWithNoStatusChangesInChangeLog:
+        @pytest.fixture()
+        def setup(self, jira_work_item_source_fixture, cleanup):
+            work_items_source, _, _ = jira_work_item_source_fixture
+
+            # this payload contains a three histories - two of which are status changes
+            jira_api_issue_for_no_status_changes_in_changelog = json.loads(
+                pkg_resources.resource_string(__name__,
+                                              'data/jira_payload_for_no_status_changes_in_changelog.json'))
+
+            yield Fixture(
+                jira_issue=jira_api_issue_for_no_status_changes_in_changelog,
+                work_items_source=work_items_source
+            )
+
+        def it_handles_issues_with_no_status_changes_in_changelog(self, setup):
+            fixture = setup
+
+            work_items_source = fixture.work_items_source
+            with db.orm_session() as session:
+                session.add(work_items_source)
+
+                project = JiraProject(work_items_source)
+
+            mapped_data = project.map_issue_to_work_item_data(fixture.jira_issue)
+
+            assert mapped_data['changelog'] is None
 
 class TestCustomParentMapping:
     class TestWhenCustomParentExists:
