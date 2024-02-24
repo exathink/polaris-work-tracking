@@ -154,7 +154,6 @@ def sync_work_items(work_items_source_key, work_item_list, join_this=None):
                     story_points=upsert.excluded.story_points,
                     sprints=upsert.excluded.sprints,
                     flagged=upsert.excluded.flagged,
-                    changelog=upsert.excluded.changelog,
                     parent_source_display_id=upsert.excluded.parent_source_display_id,
                     parent_id=upsert.excluded.parent_id,
                     last_sync=upsert.excluded.last_sync,
