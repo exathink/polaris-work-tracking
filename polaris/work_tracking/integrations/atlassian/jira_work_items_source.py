@@ -65,7 +65,6 @@ class JiraProject(JiraWorkItemsSource):
         # we return story as the default value of the type
         return self.work_item_type_map.get(issue_type, JiraWorkItemType.story.value)
 
-
     def is_custom_type(self, issue_type):
         return issue_type.lower() not in self.work_item_type_map
 
@@ -97,7 +96,7 @@ class JiraProject(JiraWorkItemsSource):
 
     def find_in_custom_fields(self, fields, field_name):
         custom_field_metadata = filter(lambda field: field['name'].lower() == field_name.lower(),
-                                   self.work_items_source.custom_fields)
+                                       self.work_items_source.custom_fields)
         for metadata in custom_field_metadata:
             custom_field_key = metadata.get('key')
             if custom_field_key in fields:
@@ -105,7 +104,9 @@ class JiraProject(JiraWorkItemsSource):
 
     def map_issue_to_work_item_data(self, issue):
         if issue is not None:
+
             fields = issue.get('fields', None)
+
             if fields is not None:
                 if 'issuetype' in fields:
                     issue_type = fields.get('issuetype').get('name')
@@ -137,14 +138,39 @@ class JiraProject(JiraWorkItemsSource):
                     parent_source_display_id=parent_source_display_id,
                     api_payload=issue,
                     commit_identifiers=[issue.get('key'), issue.get('key').lower(), issue.get('key').capitalize()],
-
+                    changelog=None
                 )
+
+                if issue.get('changelog') is not None:
+                    changelog = self.parse_changelog(issue.get('changelog'))
+                    mapped_data['changelog'] = changelog
 
                 return mapped_data
             else:
                 raise ProcessingException(f"Map Jira issue failed: Issue did not have field called 'fields' {issue}")
         else:
             raise ProcessingException("Map Jira issue failed: Issue was None")
+
+    def parse_changelog(self, changelog):
+
+        status_change_log = []
+
+        for history in changelog.get('histories')[::-1] or []:
+            try:
+                if history.get('items')[0]['field'] == 'status':
+                    status_change_log.append({'created_at': self.jira_time_to_utc_time_string(history.get('created')),
+                                              'previous_state': history.get('items')[0]['fromString'],
+                                              'state': history.get('items')[0]['toString']
+                                              })
+                elif history.get('items')[0]['field'] == 'resolution':
+                    status_change_log.append({'created_at': self.jira_time_to_utc_time_string(history.get('created')),
+                                      'previous_state': history.get('items')[1]['fromString'],
+                                      'state': history.get('items')[1]['toString']
+                                      })
+            except:
+                raise ProcessingException("Map Jira issue failed: Changelog format was incorrect")
+
+        return status_change_log if len(status_change_log) >0 else None
 
     def get_fix_versions(self, fields):
         # Get Release information
@@ -180,7 +206,7 @@ class JiraProject(JiraWorkItemsSource):
         # see if we have configured custom path lookups - these override the default
         # mechanism for parent selection.
         if self.parent_path_selectors is not None:
-            parent_link =  self.get_custom_parent_key(issue)
+            parent_link = self.get_custom_parent_key(issue)
             if parent_link is not None:
                 return parent_link
 
@@ -210,7 +236,7 @@ class JiraProject(JiraWorkItemsSource):
                 if path_selector_mapping is not None:
                     if 'selector' in path_selector_mapping:
                         path_selector_value = jmespath.search(path_selector_mapping['selector'],
-                                                                               issue)
+                                                              issue)
                         if mapping_type == CustomTagMappingType.path_selector_true.value and path_selector_value:
                             tags.add(f"custom_tag:{path_selector_mapping.get('tag')}")
 
@@ -222,7 +248,7 @@ class JiraProject(JiraWorkItemsSource):
                 if path_selector_mapping is not None:
                     if 'selector' in path_selector_mapping:
                         path_selector_value = jmespath.search(path_selector_mapping['selector'],
-                                                                               issue)
+                                                              issue)
                         if mapping_type == CustomTagMappingType.path_selector_value_equals.value:
                             if path_selector_value == path_selector_mapping['value']:
                                 tags.add(f"custom_tag:{path_selector_mapping.get('tag')}")
@@ -254,12 +280,14 @@ class JiraProject(JiraWorkItemsSource):
                             if value is not None:
                                 if isinstance(value, dict):
                                     if 'value' in value:
-                                        tags.add(f"custom_tag:{field_name.replace(' ', '_')}_{value['value'].replace(' ', '_')}")
+                                        tags.add(
+                                            f"custom_tag:{field_name.replace(' ', '_')}_{value['value'].replace(' ', '_')}")
                                     elif 'name' in value:
-                                        tags.add(f"custom_tag:{field_name.replace(' ', '_')}_{value['name'].replace(' ', '_')}")
+                                        tags.add(
+                                            f"custom_tag:{field_name.replace(' ', '_')}_{value['name'].replace(' ', '_')}")
                                     else:
-                                        logger.warning(f"Could not extract a value for tag for custom field {field_name}")
-
+                                        logger.warning(
+                                            f"Could not extract a value for tag for custom field {field_name}")
 
             if self.custom_tag_mapping is not None:
                 for mapping in self.custom_tag_mapping:
@@ -277,7 +305,7 @@ class JiraProject(JiraWorkItemsSource):
                         CustomTagMappingType.path_selector_true.value,
                         CustomTagMappingType.path_selector_false.value
                     ]:
-                        map_boolean_path_selector_tag(issue, mapping_type,  mapping, tags)
+                        map_boolean_path_selector_tag(issue, mapping_type, mapping, tags)
 
                     # Custom field based mappings.
                     elif mapping_type == CustomTagMappingType.custom_field_populated.value:
@@ -297,12 +325,10 @@ class JiraProject(JiraWorkItemsSource):
         for component in fields.get('components', []):
             tags.add(f"component:{component['name']}")
 
-        #apply any custom tag mappers
+        # apply any custom tag mappers
         apply_custom_tags(issue, tags)
 
         return list(tags)
-
-
 
     def get_server_timezone_offset(self):
         # This is an awful hack to get around Jira APIs
@@ -338,6 +364,7 @@ class JiraProject(JiraWorkItemsSource):
         query_params = dict(
             fields="*all,-comment",
             jql=jql,
+            expand='changelog',
             maxResults=100
         )
 
@@ -377,7 +404,8 @@ class JiraProject(JiraWorkItemsSource):
                 logger.error(f'Response body was empty: Request {response.request}')
 
         else:
-            logger.error(f"Could not fetch work items for to sync for project  {self.project_id}. Response {response.status_code} {response.text}")
+            logger.error(
+                f"Could not fetch work items for to sync for project  {self.project_id}. Response {response.status_code} {response.text}")
 
         yield []
 
@@ -422,7 +450,8 @@ class JiraProject(JiraWorkItemsSource):
                 )
                 body = response.json()
         else:
-            logger.error(f"Could not fetch work items for epic {epic_source_id}. Response {response.status_code} {response.text}")
+            logger.error(
+                f"Could not fetch work items for epic {epic_source_id}. Response {response.status_code} {response.text}")
 
         yield []
 
@@ -448,15 +477,16 @@ class JiraProject(JiraWorkItemsSource):
                         work_item_data = self.map_issue_to_work_item_data(issues[0])
 
                     else:
-                        logger.error(f"Could not fetch work item with key: {source_id}: No issues were returned. Response was {body}")
+                        logger.error(
+                            f"Could not fetch work item with key: {source_id}: No issues were returned. Response was {body}")
                 else:
                     logger.error("Null response json body returned for JQL query.")
             else:
-                logger.error(f"Could not fetch work item with key {source_id}. Response: {response.status_code} {response.text}")
+                logger.error(
+                    f"Could not fetch work item with key {source_id}. Response: {response.status_code} {response.text}")
 
             return work_item_data
         except Exception as exc:
             logger.error(f"Fetch work item {source_id} failed for jira project {self.work_items_source.name}")
-            raise ProcessingException(f'Unexpected error when fetching work item {source_id} from jira project: {self.work_items_source.name}')
-
-
+            raise ProcessingException(
+                f'Unexpected error when fetching work item {source_id} from jira project: {self.work_items_source.name}')

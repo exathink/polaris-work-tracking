@@ -17,6 +17,50 @@ from polaris.common import db
 
 # Serialized version of a jira message for issue. Use as mock for unit tests that work with issue objects.
 jira_api_issue_payload = {'id': '10343', 'self': 'https://urjuna.atlassian.net/rest/api/2/10343', 'key': 'PO-298',
+                          'changelog': {"startAt": 0, "maxResults": 2, "total": 2, "histories": [{"id": "17217",
+                                                                                                  "author": {
+                                                                                                      "self": "https://exathinkdev.atlassian.net/rest/api/2/user?accountId=629f8ef1c97b1b00687b2091",
+                                                                                                      "accountId": "629f8ef1c97b1b00687b2091",
+                                                                                                      "avatarUrls": {
+                                                                                                          "48x48": "https://secure.gravatar.com/avatar/d8b346d030eba69e72a6d6865dbf9594?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FPM-3.png",
+                                                                                                          "24x24": "https://secure.gravatar.com/avatar/d8b346d030eba69e72a6d6865dbf9594?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FPM-3.png",
+                                                                                                          "16x16": "https://secure.gravatar.com/avatar/d8b346d030eba69e72a6d6865dbf9594?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FPM-3.png",
+                                                                                                          "32x32": "https://secure.gravatar.com/avatar/d8b346d030eba69e72a6d6865dbf9594?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FPM-3.png"},
+                                                                                                      "displayName": "Priya Mukundan",
+                                                                                                      "active": True,
+                                                                                                      "timeZone": "America/Chicago",
+                                                                                                      "accountType": "atlassian"},
+                                                                                                  "created": "2023-11-08T16:55:00.575-0600",
+                                                                                                  "items": [{
+                                                                                                                "field": "status",
+                                                                                                                "fieldtype": "jira",
+                                                                                                                "fieldId": "status",
+                                                                                                                "from": "10047",
+                                                                                                                "fromString": "To Do",
+                                                                                                                "to": "10048",
+                                                                                                                "toString": "In Progress"}]},
+                                                                                                 {"id": "16966",
+                                                                                                  "author": {
+                                                                                                      "self": "https://exathinkdev.atlassian.net/rest/api/2/user?accountId=629f8ef1c97b1b00687b2091",
+                                                                                                      "accountId": "629f8ef1c97b1b00687b2091",
+                                                                                                      "avatarUrls": {
+                                                                                                          "48x48": "https://secure.gravatar.com/avatar/d8b346d030eba69e72a6d6865dbf9594?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FPM-3.png",
+                                                                                                          "24x24": "https://secure.gravatar.com/avatar/d8b346d030eba69e72a6d6865dbf9594?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FPM-3.png",
+                                                                                                          "16x16": "https://secure.gravatar.com/avatar/d8b346d030eba69e72a6d6865dbf9594?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FPM-3.png",
+                                                                                                          "32x32": "https://secure.gravatar.com/avatar/d8b346d030eba69e72a6d6865dbf9594?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FPM-3.png"},
+                                                                                                      "displayName": "Priya Mukundan",
+                                                                                                      "active": True,
+                                                                                                      "timeZone": "America/Chicago",
+                                                                                                      "accountType": "atlassian"},
+                                                                                                  "created": "2023-10-23T10:06:38.386-0500",
+                                                                                                  "items": [{
+                                                                                                                "field": "Flagged",
+                                                                                                                "fieldtype": "custom",
+                                                                                                                "fieldId": "customfield_10030",
+                                                                                                                "from": None,
+                                                                                                                "fromString": None,
+                                                                                                                "to": "[10019]",
+                                                                                                                "toString": "Impediment"}]}]},
                           'fields': {'statuscategorychangedate': '2020-09-20T13:34:37.712-0500',
                                      'issuetype': {'self': 'https://urjuna.atlassian.net/rest/api/2/issuetype/10103',
                                                    'id': '10103', 'description': 'A problem or error.',
@@ -291,10 +335,14 @@ class TestJiraWorkItemSource:
         assert mapped_data['story_points']
         assert mapped_data['sprints'] == ['Sprint 1']
         assert mapped_data['flagged'] == True
+        assert mapped_data['changelog'] == [{'created_at': '2023-11-08T22:55:00.575000',
+                                             'previous_state': 'To Do',
+                                             'state': 'In Progress'}
+                                            ]
 
         # explicitly assert that these are the only fields mapped. The test should fail
         # and force a change in assertions if we change the mapping
-        assert len(mapped_data.keys()) == 20
+        assert len(mapped_data.keys()) == 21
 
     def it_maps_work_item_data_correctly_when_issue_has_parent_field(self, setup):
         fixture = setup
@@ -323,7 +371,7 @@ class TestJiraWorkItemSource:
 
         # explicitly assert that these are the only fields mapped. The test should fail
         # and force a change in assertions if we change the mapping
-        assert len(mapped_data.keys()) == 20
+        assert len(mapped_data.keys()) == 21
 
 
 class TestCustomTypeMapping:
@@ -575,8 +623,8 @@ class TestStoryPointsMapping:
 
             assert mapped_data['story_points'] == 6
 
-class TestFlaggedMapping:
 
+class TestFlaggedMapping:
     class TestFlaggedWorkItem:
         @pytest.fixture()
         def setup(self, jira_work_item_source_fixture, cleanup):
@@ -632,6 +680,127 @@ class TestFlaggedMapping:
 
             assert mapped_data['flagged'] is False
 
+
+class TestChangeLogMapping:
+    class TestChangelogThatIncludesDifferentFields:
+        @pytest.fixture()
+        def setup(self, jira_work_item_source_fixture, cleanup):
+            work_items_source, _, _ = jira_work_item_source_fixture
+
+            # this payload contains a two histories - only one of which is a status change
+            jira_api_issue_with_single_status_changelog = json.loads(
+                pkg_resources.resource_string(__name__,
+                                              'data/jira_payload_for_single_status_changelog.json'))
+
+            yield Fixture(
+                jira_issue=jira_api_issue_with_single_status_changelog,
+                work_items_source=work_items_source
+            )
+
+        def it_only_maps_status_changelogs(self, setup):
+            fixture = setup
+
+            work_items_source = fixture.work_items_source
+            with db.orm_session() as session:
+                session.add(work_items_source)
+
+                project = JiraProject(work_items_source)
+
+            mapped_data = project.map_issue_to_work_item_data(fixture.jira_issue)
+
+            assert mapped_data['changelog'] == [{'created_at': '2023-11-08T22:55:00.575000',
+                                                 'previous_state': 'To Do',
+                                                 'state': 'In Progress'}
+                                                ]
+
+    class TestChangelogWithMultipleStatusChanges:
+        @pytest.fixture()
+        def setup(self, jira_work_item_source_fixture, cleanup):
+            work_items_source, _, _ = jira_work_item_source_fixture
+
+            # this payload contains a three histories - two of which are status changes
+            jira_api_issue_with_multiple_status_changelog = json.loads(
+                pkg_resources.resource_string(__name__,
+                                              'data/jira_payload_for_multiple_status_changelog.json'))
+
+            yield Fixture(
+                jira_issue=jira_api_issue_with_multiple_status_changelog,
+                work_items_source=work_items_source
+            )
+
+        def it_maps_all_status_changelogs(self, setup):
+            fixture = setup
+
+            work_items_source = fixture.work_items_source
+            with db.orm_session() as session:
+                session.add(work_items_source)
+
+                project = JiraProject(work_items_source)
+
+            mapped_data = project.map_issue_to_work_item_data(fixture.jira_issue)
+
+            assert mapped_data['changelog'] == [{'created_at': '2023-11-08T22:55:00.575000',
+                                                 'previous_state': 'To Do',
+                                                 'state': 'In Progress'},
+                                                {'created_at': '2023-11-09T22:55:00.575000',
+                                                 'previous_state': 'In Progress',
+                                                 'state': 'Done'}
+                                                ]
+    class TestIssueWithNoChangeLog:
+        @pytest.fixture()
+        def setup(self, jira_work_item_source_fixture, cleanup):
+            work_items_source, _, _ = jira_work_item_source_fixture
+
+            # this payload contains a three histories - two of which are status changes
+            jira_api_issue_with_no_changelog = json.loads(
+                pkg_resources.resource_string(__name__,
+                                              'data/jira_payload_with_no_changelog.json'))
+
+            yield Fixture(
+                jira_issue=jira_api_issue_with_no_changelog,
+                work_items_source=work_items_source
+            )
+
+        def it_handles_issues_with_no_changelog(self, setup):
+            fixture = setup
+
+            work_items_source = fixture.work_items_source
+            with db.orm_session() as session:
+                session.add(work_items_source)
+
+                project = JiraProject(work_items_source)
+
+            mapped_data = project.map_issue_to_work_item_data(fixture.jira_issue)
+
+            assert mapped_data['changelog'] is None
+
+    class TestIssueWithNoStatusChangesInChangeLog:
+        @pytest.fixture()
+        def setup(self, jira_work_item_source_fixture, cleanup):
+            work_items_source, _, _ = jira_work_item_source_fixture
+
+            # this payload contains a three histories - two of which are status changes
+            jira_api_issue_for_no_status_changes_in_changelog = json.loads(
+                pkg_resources.resource_string(__name__,
+                                              'data/jira_payload_for_no_status_changes_in_changelog.json'))
+
+            yield Fixture(
+                jira_issue=jira_api_issue_for_no_status_changes_in_changelog,
+                work_items_source=work_items_source
+            )
+
+        def it_handles_issues_with_no_status_changes_in_changelog(self, setup):
+            fixture = setup
+
+            work_items_source = fixture.work_items_source
+            with db.orm_session() as session:
+                session.add(work_items_source)
+
+                project = JiraProject(work_items_source)
+
+            mapped_data = project.map_issue_to_work_item_data(fixture.jira_issue)
+
+            assert mapped_data['changelog'] is None
 
 class TestCustomParentMapping:
     class TestWhenCustomParentExists:
