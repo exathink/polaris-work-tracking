@@ -8,7 +8,7 @@ Babel==2.9.1
 bcrypt==3.1.4
 blinker==1.4
 Brotli==1.0.9
-certifi==2023.7.22
+certifi==2024.2.2
 cffi==1.15.0
 charset-normalizer==2.0.10
 click==7.1.2
@@ -33,7 +33,7 @@ Flask-WTF==1.0.0
 graphene==2.1.9
 graphql-core==2.3.2
 graphql-relay==2.0.1
-idna==3.4
+idna==3.6
 iniconfig==1.1.1
 itsdangerous==1.1.0
 Jinja2==2.11.3
