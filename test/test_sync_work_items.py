@@ -13,6 +13,7 @@ from unittest.mock import patch
 import json
 import pkg_resources
 import pytest
+import logging
 
 from polaris.work_tracking.integrations.atlassian.jira_work_items_source import JiraProject
 
@@ -207,8 +208,6 @@ class TestSyncApi(WorkItemsSourceTest):
             assert len([result for result in next_state if result['is_new']]) == 0
             assert len([result for result in next_state if result['is_updated']]) == 1
 
-
-
         class TestParentChildResolution:
 
             def it_resolves_the_parent_child_relationship_if_the_parent_and_child_arrive_together(self, setup):
@@ -304,9 +303,7 @@ class TestSyncApi(WorkItemsSourceTest):
                                                                           source_display_id=parent_issue[
                                                                               'source_display_id'])
 
-
                     assert updated_child['parent_key'] == str(parent_work_item.key)
-
 
             def it_resolves_the_parent_child_relationships_when_all_arrive_together(self, setup):
                 fixture = setup
@@ -346,10 +343,12 @@ class TestSyncApi(WorkItemsSourceTest):
                     assert find(initial_state,
                                 lambda item: item['display_id'] == issue_a['source_display_id'])['parent_key'] is None
                     assert find(initial_state,
-                                lambda item: item['display_id'] == issue_b['source_display_id'])['parent_key'] == str(item_a.key)
+                                lambda item: item['display_id'] == issue_b['source_display_id'])['parent_key'] == str(
+                        item_a.key)
 
                     assert find(initial_state,
-                                lambda item: item['display_id'] == child_issue['source_display_id'])['parent_key'] == str(item_a.key)
+                                lambda item: item['display_id'] == child_issue['source_display_id'])[
+                               'parent_key'] == str(item_a.key)
 
             def it_resolves_the_parent_child_relationships_when_all_are_existing_and_rewired(self, setup):
                 fixture = setup
@@ -397,17 +396,19 @@ class TestSyncApi(WorkItemsSourceTest):
                     assert find(next_state,
                                 lambda item: item['display_id'] == issue_a['source_display_id'])['parent_key'] is None
                     assert find(next_state,
-                                lambda item: item['display_id'] == issue_b['source_display_id'])['parent_key'] == str(item_a.key)
+                                lambda item: item['display_id'] == issue_b['source_display_id'])['parent_key'] == str(
+                        item_a.key)
 
                     assert find(next_state,
-                                lambda item: item['display_id'] == child_issue['source_display_id'])['parent_key'] == str(item_b.key)
+                                lambda item: item['display_id'] == child_issue['source_display_id'])[
+                               'parent_key'] == str(item_b.key)
 
         class TestParentChildResolutionAcrossWorkItemsSources:
 
             @pytest.fixture
             def setup(self, setup):
                 fixture = setup
-                cross_project_source_id="10002"
+                cross_project_source_id = "10002"
                 cross_project_wis = work_tracking.WorkItemsSource(
                     key=uuid.uuid4(),
                     connector_key=str(fixture.connector_key),
@@ -447,7 +448,7 @@ class TestSyncApi(WorkItemsSourceTest):
                 # make the parent child relationship. in the sample data these are not related by default.
                 child_issue['parent_source_display_id'] = parent_issue['source_display_id']
 
-                #first add the parent
+                # first add the parent
                 parent_state = api.sync_work_items(cross_project_wis.key, [parent_issue])
 
                 child_state = api.sync_work_items(work_items_source.key, [child_issue])
@@ -479,12 +480,11 @@ class TestSyncApi(WorkItemsSourceTest):
                 # make the parent child relationship. in the sample data these are not related by default.
                 child_issue['parent_source_display_id'] = parent_issue['source_display_id']
 
-
-                #first add the child
+                # first add the child
                 child_state = api.sync_work_items(work_items_source.key, [child_issue])
                 # we cannot resolve the parent here since it has not arrived yet
                 assert db.connection().execute(
-                    f"select parent_id from work_tracking.work_items where source_display_id='{child_issue['source_display_id']}'").scalar() is  None
+                    f"select parent_id from work_tracking.work_items where source_display_id='{child_issue['source_display_id']}'").scalar() is None
 
                 #  add the parent
                 parent_state = api.sync_work_items(cross_project_wis.key, [parent_issue])
@@ -495,8 +495,6 @@ class TestSyncApi(WorkItemsSourceTest):
                 # we expect the parent of the child issue to be resolved and returned here.
                 assert len(parent_state) == 2
 
-
-
                 with db.orm_session() as session:
                     parent_work_item = WorkItem.find_by_source_display_id(session,
                                                                           work_items_source_id=cross_project_wis.id,
@@ -506,3 +504,164 @@ class TestSyncApi(WorkItemsSourceTest):
                                          lambda item: item['display_id'] == child_issue['source_display_id'])
                     assert updated_child['parent_key'] == str(parent_work_item.key)
                     assert updated_child['work_items_source_key'] == str(work_items_source.key)
+
+        class TestChangelogUpdates:
+
+            def it_sets_the_changelog_to_null_when_it_is_not_present(self, setup):
+                fixture = setup
+                project = fixture.project
+                work_items_source = fixture.work_items_source
+                issue_templates = fixture.issue_templates
+
+                test_issue = fixture.issue_with_components
+
+                work_item_list = [
+                    project.map_issue_to_work_item_data(test_issue)
+                ]
+
+                initial_state = api.sync_work_items(work_items_source.key, work_item_list)
+                assert len(initial_state) == 1
+                assert initial_state[0]['changelog'] is None
+
+            def it_sets_the_changelog_when_it_is_provided_on_initial_import(self, setup):
+                fixture = setup
+                project = fixture.project
+                work_items_source = fixture.work_items_source
+                issue_templates = fixture.issue_templates
+
+                test_issue = fixture.issue_with_components
+                test_issue['changelog'] = {
+                    "total": 1,
+                    "startAt": 0,
+                    "histories": [
+                        {
+                            "id": "17409",
+                            "items": [
+                                {
+                                    "to": "10000",
+                                    "from": None,
+                                    "field": "resolution",
+                                    "fieldId": "resolution",
+                                    "toString": "Done",
+                                    "fieldtype": "jira",
+                                    "fromString": None
+                                },
+                                {
+                                    "to": "10003",
+                                    "from": "3",
+                                    "field": "status",
+                                    "fieldId": "status",
+                                    "toString": "Done",
+                                    "fieldtype": "jira",
+                                    "fromString": "In Progress"
+                                }
+                            ],
+                            "author": {
+                                "self": "https://exathinkdev.atlassian.net/rest/api/2/user?accountId=557058%3Afe3847a4-f489-452f-8a83-0629c51e0455",
+                                "active": True,
+                                "timeZone": "America/Chicago",
+                                "accountId": "557058:fe3847a4-f489-452f-8a83-0629c51e0455",
+                                "avatarUrls": {
+                                    "16x16": "https://secure.gravatar.com/avatar/ff19230d4b6d9a5d7d441dc62fec4619?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FK-2.png",
+                                    "24x24": "https://secure.gravatar.com/avatar/ff19230d4b6d9a5d7d441dc62fec4619?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FK-2.png",
+                                    "32x32": "https://secure.gravatar.com/avatar/ff19230d4b6d9a5d7d441dc62fec4619?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FK-2.png",
+                                    "48x48": "https://secure.gravatar.com/avatar/ff19230d4b6d9a5d7d441dc62fec4619?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FK-2.png"
+                                },
+                                "accountType": "atlassian",
+                                "displayName": "KrishnaK"
+                            },
+                            "created": "2024-02-23T08:06:38.425-0600"
+                        },
+
+                    ],
+                    "maxResults": 1
+                }
+
+                work_item_list = [
+                    project.map_issue_to_work_item_data(test_issue)
+                ]
+
+                initial_state = api.sync_work_items(work_items_source.key, work_item_list)
+
+                assert len(initial_state) == 1
+                assert initial_state[0]['changelog'] is not None
+
+            def it_does_not_update_the_changelog_after_initial_import(self, setup):
+                # We are enforcing this condition, since we want to maintain our own
+                # state tracking after initial import. The full changelog is not sent over on
+                # callbacks, and since we use the same import/update paths for both it
+                # resets the OG changelog. The reason we are importing changelog is to capture the
+                # OG history of changes we have not seen prior to import. The current changelog
+                # is on the api_payload, so if we ever need to resync we can  create an explicit API
+                # operation to do this. Trying to keep two version of the changelog in sync dynamically
+                # is not worth the effort at present. We can revisit if a use case presents itself.
+
+                fixture = setup
+                project = fixture.project
+                work_items_source = fixture.work_items_source
+                issue_templates = fixture.issue_templates
+
+                test_issue = fixture.issue_with_components
+                test_issue['changelog'] = {
+                    "total": 1,
+                    "startAt": 0,
+                    "histories": [
+                        {
+                            "id": "17409",
+                            "items": [
+                                {
+                                    "to": "10000",
+                                    "from": None,
+                                    "field": "resolution",
+                                    "fieldId": "resolution",
+                                    "toString": "Done",
+                                    "fieldtype": "jira",
+                                    "fromString": None
+                                },
+                                {
+                                    "to": "10003",
+                                    "from": "3",
+                                    "field": "status",
+                                    "fieldId": "status",
+                                    "toString": "Done",
+                                    "fieldtype": "jira",
+                                    "fromString": "In Progress"
+                                }
+                            ],
+                            "author": {
+                                "self": "https://exathinkdev.atlassian.net/rest/api/2/user?accountId=557058%3Afe3847a4-f489-452f-8a83-0629c51e0455",
+                                "active": True,
+                                "timeZone": "America/Chicago",
+                                "accountId": "557058:fe3847a4-f489-452f-8a83-0629c51e0455",
+                                "avatarUrls": {
+                                    "16x16": "https://secure.gravatar.com/avatar/ff19230d4b6d9a5d7d441dc62fec4619?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FK-2.png",
+                                    "24x24": "https://secure.gravatar.com/avatar/ff19230d4b6d9a5d7d441dc62fec4619?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FK-2.png",
+                                    "32x32": "https://secure.gravatar.com/avatar/ff19230d4b6d9a5d7d441dc62fec4619?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FK-2.png",
+                                    "48x48": "https://secure.gravatar.com/avatar/ff19230d4b6d9a5d7d441dc62fec4619?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FK-2.png"
+                                },
+                                "accountType": "atlassian",
+                                "displayName": "KrishnaK"
+                            },
+                            "created": "2024-02-23T08:06:38.425-0600"
+                        },
+
+                    ],
+                    "maxResults": 1
+                }
+                work_item_list = [
+                    project.map_issue_to_work_item_data(test_issue)
+                ]
+
+                initial_state = api.sync_work_items(work_items_source.key, work_item_list)
+
+                test_issue['changelog'] = None
+
+                work_item_list = [
+                    project.map_issue_to_work_item_data(test_issue)
+                ]
+
+
+                next_state = api.sync_work_items(work_items_source.key, work_item_list)
+
+                assert len(next_state) == 1
+                assert next_state[0]['changelog'] is not None
